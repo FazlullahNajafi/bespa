@@ -1,0 +1,70 @@
+{
+  "common": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "back": "Back",
+    "retry": "Try again",
+    "loading": "Loading…"
+  },
+  "tabs": {
+    "home": "Home",
+    "transport": "Transport",
+    "calendar": "Calendar",
+    "services": "Services",
+    "profile": "Profile"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to see your village.",
+      "action": "Sign in",
+      "toSignUp": "New here? Create an account"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "subtitle": "You'll pick your village next.",
+      "action": "Create account",
+      "toSignIn": "Already have an account? Sign in",
+      "checkEmail": "Check your email",
+      "checkEmailBody": "We sent a confirmation link to {{email}}. Open it to finish signing up."
+    },
+    "fields": {
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "At least 8 characters"
+    },
+    "validation": {
+      "nameRequired": "Please enter your name.",
+      "emailRequired": "Please enter your email.",
+      "emailInvalid": "That doesn't look like an email address.",
+      "passwordRequired": "Please enter a password.",
+      "passwordTooShort": "Passwords must be at least 8 characters."
+    },
+    "phoneLater": "You can add and verify your phone number later, from your profile."
+  },
+  "errors": {
+    "offline": "You're offline. This needs a connection — we'll retry when you're back.",
+    "invalid_credentials": "That email and password don't match. Check both and try again.",
+    "email_taken": "An account already exists for that email. Try signing in instead.",
+    "weak_password": "Please choose a longer password — at least 8 characters.",
+    "email_not_confirmed": "Please open the confirmation link we emailed you, then sign in.",
+    "rate_limited": "Too many attempts. Please wait a minute and try again.",
+    "not_permitted": "You don't have permission to do that.",
+    "phone_unverified": "Please verify your phone number first.",
+    "seat_unavailable": "Someone just took that seat. Please pick another.",
+    "hold_expired": "Your seat hold expired. Please pick your seats again.",
+    "unknown": "Something went wrong. Please try again.",
+    "invalid_input": "That selection is no longer valid. Please pick again."
+  },
+  "onboarding": {
+    "title": "Which village are you from?",
+    "subtitle": "This decides whose notices, directory and places you see — and who can see you.",
+    "confirm": "Continue as a member of {{village}}",
+    "backTo": "Back to {{name}}",
+    "hasChildren": "Opens the next level",
+    "selectable": "Selects this place",
+    "leafReady": "That's the last level. Confirm below.",
+    "leafEmpty": "Nothing is listed under this yet. Go back and pick another."
+  }
+}
