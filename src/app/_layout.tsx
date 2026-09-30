@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -89,7 +90,26 @@ function RootNavigator() {
   );
 }
 
+/**
+ * `useFonts` rather than the `expo-font` config plugin, which the SDK 57 docs otherwise
+ * prefer. The plugin does not run on web, and more importantly it derives the family name
+ * per platform — from the filename on Android, from the font's own metadata on iOS — so
+ * `DMSans-SemiBold` on one platform is `DM Sans` on the other. Loading at runtime makes
+ * the key here the family name everywhere, which is what `theme/tokens` relies on.
+ */
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    'DMSans-Regular': require('../../assets/fonts/DMSans-Regular.ttf'),
+    'DMSans-Medium': require('../../assets/fonts/DMSans-Medium.ttf'),
+    'DMSans-SemiBold': require('../../assets/fonts/DMSans-SemiBold.ttf'),
+    'DMSans-Bold': require('../../assets/fonts/DMSans-Bold.ttf'),
+  });
+
+  // Hold behind the splash rather than render in a fallback face and reflow. A load
+  // *failure* is different: proceed on system fonts instead of trapping the user behind a
+  // splash screen forever over a typeface.
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <SafeAreaProvider>

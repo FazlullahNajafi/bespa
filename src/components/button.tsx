@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { layout, radius, type } from '@/theme/tokens';
+import { fontFamily, layout, radius, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -39,11 +39,14 @@ export function Button({
     danger: colors.danger,
   }[variant];
 
+  // Not white: in the dark theme both `primary` and `danger` lighten, so a white label
+  // drops to 2.77:1 and 3.46:1 respectively. `onPrimary`/`onDanger` carry the readable
+  // label colour for whichever theme is active.
   const foreground = {
-    primary: '#FFFFFF',
+    primary: colors.onPrimary,
     secondary: colors.primary,
     ghost: colors.primary,
-    danger: '#FFFFFF',
+    danger: colors.onDanger,
   }[variant];
 
   return (
@@ -92,6 +95,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
+    // Names the real semibold face, not just a weight: `type.body` carries the Regular
+    // family, and asking for 600 on it yields Regular on Android and fake-bold on web.
+    fontFamily: fontFamily.semibold,
     fontWeight: '600',
     textAlign: 'center',
   },

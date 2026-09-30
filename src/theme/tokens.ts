@@ -1,8 +1,14 @@
 /**
- * Design tokens — spec 08.
+ * Design tokens — spec 08, with the palette taken from the Bespa Claude Design project
+ * (`design/bespa_design/design-system.jsx`).
  *
- * Named for the place, so the palette stays honest: the Suru river, snow, the stone of
- * the valley, apricot bloom, willow green, saffron, garnet.
+ * Light is the design's **Suru Dawn** (warm parchment, twilight indigo, apricot); dark is
+ * its **Twilight**. The design's other two light themes (Drass Snow, Stone Village) are
+ * not shipped — they existed for the Tweaks panel, which was a design tool rather than a
+ * product feature.
+ *
+ * Named for the place, so the palette stays honest: the Suru valley at dawn, parchment,
+ * ink, apricot bloom, terracotta, glacier teal.
  *
  * Rules encoded here rather than left to each screen:
  *   - Contrast is non-negotiable (>=4.5:1 body, >=3:1 large/icons) in BOTH themes.
@@ -10,36 +16,72 @@
  *   - Colour is never the sole signal. Seat/issue/notice states pair a hue with a glyph;
  *     see `seatState` below, which carries both.
  *   - 4pt spacing scale, 12pt card radius, 16pt gutters, one elevation level.
+ *
+ * DEVIATIONS FROM THE DESIGN, all of them contrast failures measured against white
+ * (light) or the Twilight surface (dark). Each is the smallest darkening along the same
+ * hue that clears the floor, so the design's colour character survives:
+ *   - light `accent`  #e8915a -> #ce8150 — was 2.43:1 as an icon/large colour, needs 3.0
+ *   - light `success` #5a8a6b -> #548064 — was 3.98:1 as text, needs 4.5
+ *   - light `info`    #5d8a99 -> #547c8a — was 3.78:1 as text, needs 4.5
+ *   - `onPrimary` added. The design paints button labels white in every theme, but dark
+ *     `primary` is a LIGHT indigo (#7e9bd9): white on it is 2.77:1, unreadable. Dark
+ *     therefore labels its primary buttons with near-black (6.63:1).
+ *   - `onDanger` added, for the same reason: dark `danger` is a light terracotta
+ *     (#D76A51) and white on it is 3.46:1. Dark labels its danger buttons near-black.
+ *   - `warning` added. The design has no warning hue, but spec 08 needs one for the
+ *     held-seat state and `PendingChip`. Light and dark need different values: a single
+ *     amber cannot clear 4.5:1 on both parchment and near-black.
+ *
+ * `inkFaint` fails 4.5:1 in every one of the design's themes (2.55–3.41). Rather than
+ * change it, it is exposed as `textFaint` and reserved for decorative and disabled text
+ * only — never for anything a user has to read. Disabled controls are exempt from the
+ * contrast requirement; genuinely faint body text is not, and must use `textSecondary`.
  */
 
 export const palette = {
   light: {
-    'suru-600': '#1B6FA8',
-    'suru-700': '#155884',
-    'suru-50': '#EAF4FB',
-    'snow-0': '#FFFFFF',
-    'snow-50': '#F6F9FC',
-    'stone-900': '#10202B',
-    'stone-500': '#5B7186',
-    'stone-200': '#DCE6ED',
-    'apricot-500': '#E8823A',
-    'willow-500': '#2E8B62',
-    'saffron-500': '#D99C1C',
-    'garnet-500': '#C33F3F',
+    // Suru Dawn
+    bg: '#F6EFE4', // warm parchment
+    surface: '#FFFFFF',
+    surfaceAlt: '#FBF6EC',
+    ink: '#1A2238', // deep ink-blue
+    inkSoft: '#5B6580',
+    inkFaint: '#9AA2B8',
+    border: '#E7DCC7',
+    borderSoft: '#EFE7D5',
+    primary: '#2B3A6B', // twilight indigo
+    primaryPressed: '#25315B',
+    primarySoft: '#DFE3EE',
+    onPrimary: '#FFFFFF',
+    accent: '#CE8150', // apricot, darkened to clear 3:1
+    accentSoft: '#FCE7D6',
+    success: '#548064',
+    warning: '#9A6300',
+    danger: '#B9543D', // terracotta
+    onDanger: '#FFFFFF',
+    info: '#547C8A', // glacier teal
   },
   dark: {
-    'suru-600': '#4FA3D9',
-    'suru-700': '#3E8CBE',
-    'suru-50': '#12283A',
-    'snow-0': '#0E1720',
-    'snow-50': '#0A1118',
-    'stone-900': '#EAF1F6',
-    'stone-500': '#9DB0C0',
-    'stone-200': '#22323F',
-    'apricot-500': '#F09A5C',
-    'willow-500': '#4CB185',
-    'saffron-500': '#EBB544',
-    'garnet-500': '#E06060',
+    // Twilight
+    bg: '#0F1421',
+    surface: '#1A2238',
+    surfaceAlt: '#222B45',
+    ink: '#EEF0F6',
+    inkSoft: '#A3ACC4',
+    inkFaint: '#6A7494',
+    border: '#2C3654',
+    borderSoft: '#252D48',
+    primary: '#7E9BD9',
+    primaryPressed: '#6B84B8',
+    primarySoft: '#27324E',
+    onPrimary: '#0F1421', // near-black: white on this primary is 2.77:1
+    accent: '#E8915A',
+    accentSoft: '#3A2A1F',
+    success: '#7AB28C',
+    warning: '#D99C1C',
+    danger: '#D76A51',
+    onDanger: '#0F1421', // white on this danger is 3.46:1
+    info: '#7EB0C4',
   },
 } as const;
 
@@ -50,18 +92,30 @@ export type ColorToken = keyof (typeof palette)['light'];
 export const semantic = (scheme: Scheme) => {
   const c = palette[scheme];
   return {
-    primary: c['suru-600'],
-    primaryPressed: c['suru-700'],
-    infoSurface: c['suru-50'],
-    surface: c['snow-0'],
-    background: c['snow-50'],
-    text: c['stone-900'],
-    textSecondary: c['stone-500'],
-    border: c['stone-200'],
-    accent: c['apricot-500'],
-    success: c['willow-500'],
-    warning: c['saffron-500'],
-    danger: c['garnet-500'],
+    primary: c.primary,
+    primaryPressed: c.primaryPressed,
+    /** Label colour for a filled primary button. Never hard-code white. */
+    onPrimary: c.onPrimary,
+    /** Tinted surface for informational banners and selected rows. */
+    infoSurface: c.primarySoft,
+    surface: c.surface,
+    /** A second surface for rows nested on `surface` — spec 08 forbids nested cards. */
+    surfaceAlt: c.surfaceAlt,
+    background: c.bg,
+    text: c.ink,
+    textSecondary: c.inkSoft,
+    /** Decorative and disabled text ONLY — below 4.5:1 by design. */
+    textFaint: c.inkFaint,
+    border: c.border,
+    borderSoft: c.borderSoft,
+    accent: c.accent,
+    accentSoft: c.accentSoft,
+    success: c.success,
+    warning: c.warning,
+    danger: c.danger,
+    /** Label colour for a filled danger button. Never hard-code white. */
+    onDanger: c.onDanger,
+    info: c.info,
   } as const;
 };
 
@@ -89,17 +143,46 @@ export const layout = {
 } as const;
 
 /**
+ * DM Sans, the design's UI face, bundled from `assets/fonts` (OFL — licence kept beside
+ * the files) and registered by `useFonts` in the root layout.
+ *
+ * One family per weight, deliberately. React Native does not synthesise weight for a
+ * custom font: asking for `fontWeight: '600'` on a family that only ships Regular gets
+ * you Regular on Android and a smeared fake-bold on some web engines. Naming the real
+ * face is the only reliable way, so the type scale below pairs each step with its file.
+ */
+export const fontFamily = {
+  regular: 'DMSans-Regular',
+  medium: 'DMSans-Medium',
+  semibold: 'DMSans-SemiBold',
+  bold: 'DMSans-Bold',
+} as const;
+
+/**
  * Type scale (spec 08.2). Urdu renders in Noto Nastaliq with extra vertical room —
  * Nastaliq needs it, and clipping descenders makes the script unreadable rather than
  * merely tight.
+ *
+ * The design sets headings in Instrument Serif; we deliberately do not. Pairing a Latin
+ * serif with Nastaliq headings reads as two unrelated voices, and the app is bilingual in
+ * every screen. Headings stay in the UI sans at a heavier weight.
+ *
+ * `fontWeight` is kept alongside `fontFamily` for react-native-web, which uses it to pick
+ * a face and to fall back sanely before the font has loaded.
  */
 export const type = {
-  display: { fontSize: 28, lineHeight: 34, fontWeight: '600' },
-  h1: { fontSize: 22, lineHeight: 28, fontWeight: '600' },
-  h2: { fontSize: 18, lineHeight: 24, fontWeight: '600' },
-  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
-  bodySmall: { fontSize: 14, lineHeight: 20, fontWeight: '400' },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500', letterSpacing: 0.2 },
+  display: { fontSize: 28, lineHeight: 34, fontWeight: '600', fontFamily: fontFamily.semibold },
+  h1: { fontSize: 22, lineHeight: 28, fontWeight: '600', fontFamily: fontFamily.semibold },
+  h2: { fontSize: 18, lineHeight: 24, fontWeight: '600', fontFamily: fontFamily.semibold },
+  body: { fontSize: 16, lineHeight: 24, fontWeight: '400', fontFamily: fontFamily.regular },
+  bodySmall: { fontSize: 14, lineHeight: 20, fontWeight: '400', fontFamily: fontFamily.regular },
+  caption: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+    fontFamily: fontFamily.medium,
+  },
 } as const;
 
 export const urduAdjust = { fontSizeDelta: 2, lineHeightDelta: 4 } as const;
@@ -109,11 +192,11 @@ export const urduAdjust = { fontSizeDelta: 2, lineHeightDelta: 4 } as const;
  * cheap, washed-out screens in the field (spec 04.2, 08.1).
  */
 export const seatState = {
-  free: { token: 'willow-500', glyph: 'circle-outline', labelKey: 'transport.seat.free' },
-  held: { token: 'saffron-500', glyph: 'clock', labelKey: 'transport.seat.held' },
-  booked: { token: 'garnet-500', glyph: 'lock', labelKey: 'transport.seat.booked' },
-  selected: { token: 'suru-600', glyph: 'check', labelKey: 'transport.seat.selected' },
-} as const;
+  free: { token: 'success', glyph: 'circle-outline', labelKey: 'transport.seat.free' },
+  held: { token: 'warning', glyph: 'clock', labelKey: 'transport.seat.held' },
+  booked: { token: 'danger', glyph: 'lock', labelKey: 'transport.seat.booked' },
+  selected: { token: 'primary', glyph: 'check', labelKey: 'transport.seat.selected' },
+} as const satisfies Record<string, { token: ColorToken; glyph: string; labelKey: string }>;
 
 export const motion = {
   seatSelect: 120,
