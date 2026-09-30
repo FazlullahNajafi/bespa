@@ -119,6 +119,46 @@ export const semantic = (scheme: Scheme) => {
   } as const;
 };
 
+/**
+ * The two extremes text can take when it sits ON a filled colour — an avatar tint, a
+ * badge, a filled button.
+ */
+const PAPER = '#FFFFFF';
+const INK = '#0F1421';
+
+function relativeLuminance(hex: string) {
+  const v = hex.replace('#', '');
+  const channel = (pair: string) => {
+    const c = parseInt(pair, 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return (
+    0.2126 * channel(v.slice(0, 2)) +
+    0.7152 * channel(v.slice(2, 4)) +
+    0.0722 * channel(v.slice(4, 6))
+  );
+}
+
+function contrast(a: string, b: string) {
+  const [x, y] = [relativeLuminance(a), relativeLuminance(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/**
+ * Picks whichever of ink or paper reads better on `background`.
+ *
+ * Needed because the right answer is not a property of the theme but of the individual
+ * colour: in light, white initials clear 4.5:1 on `primary` (10.94) but not on `accent`
+ * (3.05, where ink gives 6.02). A per-theme rule gets that case wrong. Across the five
+ * avatar tints in both themes the worst case this produces is 4.52:1.
+ *
+ * `onPrimary`/`onDanger` in the palette are the same idea pinned to specific tokens; use
+ * those where they exist, and this where the colour is chosen at runtime.
+ */
+export function readableOn(background: string) {
+  return contrast(PAPER, background) >= contrast(INK, background) ? PAPER : INK;
+}
+
 /** 4pt scale. */
 export const space = {
   xs: 4,

@@ -19,6 +19,9 @@ import sys
 
 TOKENS = pathlib.Path(__file__).resolve().parent.parent / "src" / "theme" / "tokens.ts"
 
+PAPER = "#FFFFFF"  # the two extremes text can take when it sits ON a filled colour
+INK = "#0F1421"    # kept in step with `readableOn` in src/theme/tokens.ts
+
 BODY = 4.5   # body text
 LARGE = 3.0  # large text, icons, UI boundaries
 
@@ -106,6 +109,25 @@ def main() -> int:
             r = ratio(colours["inkFaint"], colours["surface"])
             note = "decorative-only, as documented" if r < BODY else "now passes body"
             print(f"  --   inkFaint on card      {r:5.2f} ({note})")
+
+        # Avatar initials sit on one of five semantic tints, with `readableOn` in
+        # tokens.ts choosing ink or paper per tint. Assert that choice clears the body
+        # floor for every tint -- a per-theme rule would not: in light, white reads on
+        # `primary` at 10.94:1 but on `accent` at only 3.05:1.
+        for tint in ("primary", "accent", "success", "info", "danger"):
+            if tint not in colours:
+                continue
+            best = max(ratio(PAPER, colours[tint]), ratio(INK, colours[tint]))
+            ok = best >= BODY
+            print(
+                f"  {'ok  ' if ok else 'FAIL'} avatar initials/{tint:<9}"
+                f" {colours[tint]}          {best:5.2f} (>= {BODY})"
+            )
+            if not ok:
+                failures.append(
+                    f"{scheme}: avatar initials on {tint} ({colours[tint]}) reach only"
+                    f" {best:.2f}:1 with either ink or paper, needs {BODY}:1"
+                )
 
     print()
     if failures:
