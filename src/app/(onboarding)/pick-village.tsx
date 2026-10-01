@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTranslation } from '@/i18n';
+import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
+import { EmptyState } from '@/components/empty-state';
+import { Icon, type IconName } from '@/components/icon';
+import { ListRow } from '@/components/list-row';
 import { Screen } from '@/components/screen';
 import {
   useGeoChildren,
@@ -10,7 +14,7 @@ import {
   isTenancyLevel,
   type GeoNode,
 } from '@/api/geo';
-import { layout, radius, space, type } from '@/theme/tokens';
+import { space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 /**
@@ -23,6 +27,22 @@ import { useColors } from '@/theme/use-scheme';
  * No free-text search and no "add my village": geo units are seeded from LGD codes and a
  * missing village is a support request, which is what keeps the namespace clean.
  */
+
+/**
+ * Each level gets its own glyph. Not decoration: spec 08.6 asks for an icon *and* a word
+ * for every category, so someone who cannot read the level name still sees the shape of
+ * the hierarchy as they descend it.
+ */
+const LEVEL_ICON: Record<GeoNode['type'], IconName> = {
+  ut: 'mountain',
+  district: 'pin',
+  block: 'locate',
+  village: 'home',
+  town: 'home',
+  panchayat: 'people',
+  municipality: 'home',
+};
+
 export default function PickVillageScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -89,85 +109,74 @@ export default function PickVillageScreen() {
       {trail.length > 0 ? (
         <View style={styles.trail}>
           {trail.map((node, index) => (
-            <Pressable
-              key={node.id}
-              onPress={() => setTrail(trail.slice(0, index + 1))}
-              accessibilityRole="button"
-              accessibilityLabel={t('onboarding.backTo', { name: node.name_en })}
-            >
-              <Text style={[type.bodySmall, { color: colors.primary }]}>
-                {index > 0 ? '  ›  ' : ''}
-                {node.name_en}
-              </Text>
-            </Pressable>
+            <View key={node.id} style={styles.crumb}>
+              {index > 0 ? (
+                <Icon name="chevron" size={14} color={colors.textFaint} />
+              ) : null}
+              <Pressable
+                onPress={() => setTrail(trail.slice(0, index + 1))}
+                accessibilityRole="button"
+                accessibilityLabel={t('onboarding.backTo', { name: node.name_en })}
+                style={styles.crumbTap}
+              >
+                <Text
+                  style={[
+                    type.bodySmall,
+                    { color: index === trail.length - 1 ? colors.text : colors.primary },
+                  ]}
+                >
+                  {node.name_en}
+                </Text>
+              </Pressable>
+            </View>
           ))}
         </View>
       ) : null}
 
       {children.isPending ? (
-        <ActivityIndicator accessibilityLabel={t('common.loading')} />
+        <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
       ) : children.isError ? (
-        <View style={[styles.banner, { backgroundColor: colors.infoSurface }]}>
-          <Text style={[type.bodySmall, { color: colors.danger }]}>
-            {t('errors.unknown')}
-          </Text>
-          <Button
-            label={t('common.retry')}
-            variant="ghost"
-            onPress={() => void children.refetch()}
-          />
-        </View>
+        <Banner
+          message={t('errors.unknown')}
+          action={
+            <Button
+              label={t('common.retry')}
+              variant="secondary"
+              onPress={() => void children.refetch()}
+            />
+          }
+        />
       ) : children.data && children.data.length > 0 ? (
         <View style={styles.list}>
           {children.data.map((node) => (
-            <Pressable
+            <ListRow
               key={node.id}
+              title={node.name_en}
+              // The Urdu name is the same place, not a description — showing it under the
+              // English one is what makes the picker usable in either script.
+              subtitle={node.name_ur ?? undefined}
+              leading={<Icon name={LEVEL_ICON[node.type]} size={20} color={colors.primary} />}
+              drills={node.has_children}
               onPress={() => onPick(node)}
-              accessibilityRole="button"
-              accessibilityLabel={node.name_en}
               accessibilityHint={
                 node.has_children ? t('onboarding.hasChildren') : t('onboarding.selectable')
               }
-              style={({ pressed }) => [
-                styles.row,
-                {
-                  backgroundColor: pressed ? colors.infoSurface : colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <View style={styles.rowText}>
-                <Text style={[type.body, { color: colors.text }]}>{node.name_en}</Text>
-                {node.name_ur ? (
-                  <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
-                    {node.name_ur}
-                  </Text>
-                ) : null}
-              </View>
-              {node.has_children ? (
-                <Text style={[type.body, { color: colors.textSecondary }]}>›</Text>
-              ) : null}
-            </Pressable>
+            />
           ))}
         </View>
       ) : (
         // Reached a leaf. If it is a village, the footer's confirm is the next action.
-        <Text style={[type.body, { color: colors.textSecondary }]}>
-          {selectedVillage ? t('onboarding.leafReady') : t('onboarding.leafEmpty')}
-        </Text>
+        <EmptyState
+          icon={selectedVillage ? 'check' : 'search'}
+          message={selectedVillage ? t('onboarding.leafReady') : t('onboarding.leafEmpty')}
+        />
       )}
 
       {trail.length > 0 ? (
         <Button label={t('common.back')} variant="ghost" onPress={onBack} />
       ) : null}
 
-      {error ? (
-        <View style={[styles.banner, { backgroundColor: colors.infoSurface }]}>
-          <Text accessibilityLiveRegion="polite" style={[type.bodySmall, { color: colors.danger }]}>
-            {t(error)}
-          </Text>
-        </View>
-      ) : null}
+      {error ? <Banner message={t(error)} /> : null}
     </Screen>
   );
 }
@@ -175,17 +184,7 @@ export default function PickVillageScreen() {
 const styles = StyleSheet.create({
   header: { gap: space.xs },
   trail: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  crumb: { flexDirection: 'row', alignItems: 'center' },
+  crumbTap: { paddingVertical: space.xs, paddingHorizontal: space.xs },
   list: { gap: space.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: layout.tap,
-    borderWidth: 1,
-    borderRadius: radius.card,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-  },
-  rowText: { flex: 1, gap: 2 },
-  banner: { padding: space.md, borderRadius: radius.card, gap: space.sm },
 });

@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from '@/i18n';
 
+import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
@@ -122,13 +123,7 @@ export default function SignUpScreen() {
           abandon the form expecting to be blocked (spec 10.0 #1). */}
       <Text style={[type.caption, { color: colors.textSecondary }]}>{t('auth.phoneLater')}</Text>
 
-      {formError ? (
-        <View style={[styles.banner, { backgroundColor: colors.infoSurface }]}>
-          <Text accessibilityLiveRegion="polite" style={[type.bodySmall, { color: colors.danger }]}>
-            {t(formError)}
-          </Text>
-        </View>
-      ) : null}
+      {formError ? <Banner message={t(formError)} /> : null}
     </Screen>
   );
 }
@@ -136,5 +131,4 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   header: { gap: space.xs },
   link: { paddingVertical: space.sm, textAlign: 'center' },
-  banner: { padding: space.md, borderRadius: 12 },
 });

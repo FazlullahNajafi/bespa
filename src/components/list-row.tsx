@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { fontFamily, layout, radius, space, type } from '@/theme/tokens';
@@ -46,6 +46,11 @@ export function ListRow({
 }: Props) {
   const colors = useColors();
 
+  // Align to the LAYOUT's direction, not the text's. Left to itself, React Native aligns a
+  // run of Arabic script to the right even inside an LTR screen, which strands a village's
+  // Urdu name against the far edge while its English name sits at the left.
+  const align = I18nManager.isRTL ? ('right' as const) : ('left' as const);
+
   return (
     <Pressable
       onPress={onPress}
@@ -66,11 +71,17 @@ export function ListRow({
       {leading}
 
       <View style={styles.text}>
-        <Text style={[type.bodySmall, styles.title, { color: colors.text }]} numberOfLines={2}>
+        <Text
+          style={[type.bodySmall, styles.title, { color: colors.text, textAlign: align }]}
+          numberOfLines={2}
+        >
           {title}
         </Text>
         {subtitle ? (
-          <Text style={[type.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[type.caption, { color: colors.textSecondary, textAlign: align }]}
+            numberOfLines={1}
+          >
             {subtitle}
           </Text>
         ) : null}
