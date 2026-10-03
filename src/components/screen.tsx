@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { layout, space } from '@/theme/tokens';
@@ -25,11 +25,20 @@ export function Screen({ children, scroll = true, footer }: Props) {
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // `padding` on Android too, not just iOS. Expo SDK 54+ draws edge-to-edge by
+      // default and Android 15 enforces it, so the window no longer resizes when the
+      // keyboard opens — without this the keyboard covers the footer outright, and the
+      // footer is where the primary action lives by design.
+      behavior="padding"
     >
       <Body
         style={styles.flex}
-        contentContainerStyle={scroll ? styles.content : undefined}
+        contentContainerStyle={[
+          scroll ? styles.content : undefined,
+          // Edge-to-edge means the status bar sits ON the content, not above it. Without
+          // this inset the first heading of every screen is clipped by the clock.
+          { paddingTop: insets.top + layout.gutter },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         {children}

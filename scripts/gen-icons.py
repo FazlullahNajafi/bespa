@@ -31,7 +31,7 @@ EXTRA = {
 }
 
 HEADER = '''import type { ComponentProps } from 'react';
-import { View } from 'react-native';
+import { View, type ColorValue } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 /**
@@ -51,8 +51,13 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 type IconProps = {
   name: IconName;
   size?: number;
-  /** Required: there is no `currentColor` in React Native. */
-  color: string;
+  /**
+   * Required: there is no `currentColor` in React Native.
+   *
+   * `ColorValue` rather than `string` so a caller can pass React Navigation's tab tint or
+   * a `PlatformColor` straight through; both are opaque objects, not strings.
+   */
+  color: ColorValue;
   strokeWidth?: number;
   /**
    * Leave unset for the common case. Spec 08.6 pairs every category icon with a word, so
