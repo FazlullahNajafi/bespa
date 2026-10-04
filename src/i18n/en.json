@@ -66,5 +66,14 @@
     "selectable": "Selects this place",
     "leafReady": "That's the last level. Confirm below.",
     "leafEmpty": "Nothing is listed under this yet. Go back and pick another."
+  },
+  "home": {
+    "yourVillage": "Your village",
+    "greeting": "Hello",
+    "greetingNamed": "Hello, {{name}}",
+    "openProfile": "Open your profile and settings",
+    "quickAccess": "Quick access",
+    "todayInValley": "Today in the valley",
+    "noActivity": "Nothing from your village yet. Notices and events will appear here."
   }
 }

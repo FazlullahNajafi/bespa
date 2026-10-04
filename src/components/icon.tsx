@@ -44,7 +44,7 @@ const paths = (p: Stroke) => ({
   mountain: (<><Path d="M3 19l5-9 4 6 3-4 6 7H3z" {...p}/><Circle cx="17" cy="6" r="2" {...p}/></>),
   bell: (<><Path d="M6 16h12l-1.5-2v-4a4.5 4.5 0 0 0-9 0v4L6 16z" {...p}/><Path d="M10 19a2 2 0 0 0 4 0" {...p}/></>),
   people: (<><Circle cx="9" cy="8" r="3" {...p}/><Circle cx="17" cy="9" r="2.2" {...p}/><Path d="M4 19c0-3 2-5 5-5s5 2 5 5" {...p}/><Path d="M14 19c0-2 1.4-3.6 3-3.6S20 17 20 19" {...p}/></>),
-  car: (<><Path d="M4 14h16l-2-5H6l-2 5z" {...p}/><Path d="M4 14v3M20 14v3" {...p}/><Circle cx="8" cy="16.5" r="1.6" {...p}/><Circle cx="16" cy="16.5" r="1.6" {...p}/></>),
+  car: (<><Path d="M4 16.5v-4l2-4.5h12l2 4.5v4" {...p}/><Path d="M4 12.5h16" {...p}/><Circle cx="7.8" cy="16.5" r="1.7" {...p}/><Circle cx="16.2" cy="16.5" r="1.7" {...p}/></>),
   spark: (<><Path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6L12 4z" {...p}/><Path d="M19 16l.6 1.4L21 18l-1.4.6L19 20l-.6-1.4L17 18l1.4-.6L19 16z" {...p}/></>),
   chat: (<><Path d="M4 6h16v10H9l-4 3v-3H4z" {...p}/></>),
   image: (<><Rect x="3.5" y="5" width="17" height="14" rx="2" {...p}/><Circle cx="9" cy="10" r="1.6" {...p}/><Path d="M5 17l4-4 3 3 3-4 4 5" {...p}/></>),

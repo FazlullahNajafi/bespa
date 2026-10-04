@@ -23,6 +23,18 @@ TARGET = ROOT / "src" / "components" / "icon.tsx"
 
 # Spec 08's `seatState` names three glyphs the design set does not carry. Drawn to match:
 # same 24x24 box, same 1.7 stroke, same round caps.
+# Redraws of imported glyphs. The design's own `car` is a closed trapezoid with two short
+# verticals and two wheels -- a cabin roof floating above the wheels, with no lower body,
+# which reads as half a vehicle at tab-bar size. Replaced with a full silhouette: roofline,
+# beltline, body sides, wheels on the ground. Shape matters more here than elsewhere,
+# because Transport is a tab icon seen at 22px.
+OVERRIDE = {
+    "car": '<><Path d="M4 16.5v-4l2-4.5h12l2 4.5v4" {...p}/>'
+           '<Path d="M4 12.5h16" {...p}/>'
+           '<Circle cx="7.8" cy="16.5" r="1.7" {...p}/>'
+           '<Circle cx="16.2" cy="16.5" r="1.7" {...p}/></>',
+}
+
 EXTRA = {
     "circle-outline": '<><Circle cx="12" cy="12" r="7.5" {...p}/></>',
     "check": '<><Path d="M5 12.5l4.5 4.5L19 7.5" {...p}/></>',
@@ -131,14 +143,22 @@ def main() -> int:
         sys.exit(f"unsupported SVG elements in the source: {sorted(unsupported)}")
 
     lines = []
+    overridden = 0
     for name, jsx in entries:
         key = name if re.fullmatch(r"[A-Za-z_$][\w$]*", name) else f"'{name}'"
-        lines.append(f"  {key}: ({to_rn(jsx.strip())}),")
+        if name in OVERRIDE:
+            lines.append(f"  {key}: ({OVERRIDE[name]}),")
+            overridden += 1
+        else:
+            lines.append(f"  {key}: ({to_rn(jsx.strip())}),")
     for name, jsx in EXTRA.items():
         lines.append(f"  '{name}': ({jsx}),")
 
     TARGET.write_text(HEADER + "\n".join(lines) + "\n" + FOOTER, encoding="utf-8", newline="\n")
-    print(f"wrote {TARGET.relative_to(ROOT)}: {len(entries)} imported + {len(EXTRA)} added")
+    print(
+        f"wrote {TARGET.relative_to(ROOT)}: {len(entries)} imported "
+        f"({overridden} redrawn) + {len(EXTRA)} added"
+    )
     return 0
 
 

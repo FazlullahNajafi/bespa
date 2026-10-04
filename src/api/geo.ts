@@ -45,6 +45,32 @@ export function useGeoChildren(parentId: string | null, enabled = true) {
   });
 }
 
+/**
+ * One geo unit by id — the signed-in user's own village, for the Home greeting.
+ *
+ * Separate from the profile query rather than joined into it: the profile is read on every
+ * cold start to decide routing, and it has no business waiting on a name only one screen
+ * shows. Geography is also reference data, so this caches for a day while the profile
+ * stays at five minutes.
+ */
+export function useGeoUnit(id: string | null | undefined) {
+  return useQuery({
+    queryKey: keys.geo.unit(id ?? ''),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60 * 60 * 24,
+    queryFn: async (): Promise<GeoNode | null> => {
+      const { data, error } = await supabase
+        .from('geo_units')
+        .select('id, type, name_en, name_ur, name_bft, slug')
+        .eq('id', id!)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data ? ({ ...data, has_children: false } as GeoNode) : null;
+    },
+  });
+}
+
 export type SetVillageResult = { ok: true } | { ok: false; code: ErrorCode };
 
 export function useSetMyVillage() {

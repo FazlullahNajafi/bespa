@@ -51,6 +51,17 @@ export default function PickVillageScreen() {
   const [trail, setTrail] = useState<GeoNode[]>([]);
   const parent = trail.at(-1) ?? null;
 
+  /**
+   * How many leading levels were skipped because they offered no actual choice.
+   * Today that is Ladakh — the only UT — and Kargil while it is the only district: a
+   * screen with one option is not a question. Those levels are hidden from the
+   * breadcrumb and from Back, so the walk cannot return to a dead end.
+   *
+   * Driven by the data rather than hard-coded, so the step reappears by itself the day a
+   * second district is seeded.
+   */
+  const [skipped, setSkipped] = useState(0);
+
   const [error, setError] = useState<string | null>(null);
 
   const children = useGeoChildren(parent?.id ?? null);
@@ -59,6 +70,19 @@ export default function PickVillageScreen() {
   const selectedVillage = trail.find((n) => isTenancyLevel(n.type)) ?? null;
   const selectedPanchayat =
     selectedVillage && parent && parent.id !== selectedVillage.id ? parent : null;
+
+  // A level with exactly one option is descended automatically — but never a selectable
+  // one. Pashkum block has a single village, and auto-picking it would choose the user's
+  // village for them, which is the one decision this screen exists to ask.
+  //
+  // Adjusted during render rather than in an effect. React re-runs this component before
+  // committing, so the intermediate level never reaches the screen; an effect would paint
+  // the one-option list first and then replace it, which reads as a flicker.
+  const onlyChild = children.data?.length === 1 ? children.data[0] : null;
+  if (onlyChild && !isTenancyLevel(onlyChild.type) && trail.length === skipped) {
+    setTrail((current) => [...current, onlyChild]);
+    setSkipped((n) => n + 1);
+  }
 
   function onPick(node: GeoNode) {
     setError(null);
@@ -106,11 +130,13 @@ export default function PickVillageScreen() {
       </View>
 
       {/* Breadcrumb of the walk so far, tappable to go back up. */}
-      {trail.length > 0 ? (
+      {trail.length > skipped ? (
         <View style={styles.trail}>
-          {trail.map((node, index) => (
+          {trail.slice(skipped).map((node, i) => {
+            const index = i + skipped;
+            return (
             <View key={node.id} style={styles.crumb}>
-              {index > 0 ? (
+              {index > skipped ? (
                 <Icon name="chevron" size={14} color={colors.textFaint} />
               ) : null}
               <Pressable
@@ -129,7 +155,8 @@ export default function PickVillageScreen() {
                 </Text>
               </Pressable>
             </View>
-          ))}
+            );
+          })}
         </View>
       ) : null}
 
@@ -172,7 +199,7 @@ export default function PickVillageScreen() {
         />
       )}
 
-      {trail.length > 0 ? (
+      {trail.length > skipped ? (
         <Button label={t('common.back')} variant="ghost" onPress={onBack} />
       ) : null}
 

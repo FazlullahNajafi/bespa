@@ -12,6 +12,7 @@ export const keys = {
   geo: {
     all: ['geo'] as const,
     children: (parentId: string | null) => ['geo', 'children', parentId] as const,
+    unit: (id: string) => ['geo', 'unit', id] as const,
   },
   me: {
     all: ['me'] as const,
