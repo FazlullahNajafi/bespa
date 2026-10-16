@@ -374,6 +374,15 @@ export type Database = {
       }
       is_phone_verified: { Args: never; Returns: boolean }
       my_village: { Args: never; Returns: string }
+      my_weather_point: {
+        Args: never
+        Returns: {
+          exact: boolean
+          lat: number
+          lon: number
+          place: string
+        }[]
+      }
       set_my_village: {
         Args: { panchayat?: string; village: string }
         Returns: undefined

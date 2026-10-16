@@ -75,5 +75,18 @@
     "quickAccess": "Quick access",
     "todayInValley": "Today in the valley",
     "noActivity": "Nothing from your village yet. Notices and events will appear here."
+  },
+  "weather": {
+    "clear": "Clear",
+    "cloudy": "Cloudy",
+    "fog": "Fog",
+    "rain": "Rain",
+    "showers": "Showers",
+    "snow": "Snow",
+    "storm": "Storm",
+    "feelsLike": "Feels like",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "label": "{{condition}}, {{temp}} degrees in {{village}}"
   }
 }

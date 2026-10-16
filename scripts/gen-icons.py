@@ -36,6 +36,14 @@ OVERRIDE = {
 }
 
 EXTRA = {
+    # Weather conditions (spec 03.1). The design set has `sun` and `cloud` but nothing for
+    # precipitation, which will not do for a district where snow decides whether the road
+    # to Drass is open.
+    "rain": '<><Path d="M7 15.5a3.6 3.6 0 0 1 .5-7.2 5 5 0 0 1 9.6 1 3 3 0 0 1 .4 6" {...p}/>'
+            '<Path d="M9 18.5l-1 2M13 18.5l-1 2M17 18.5l-1 2" {...p}/></>',
+    "snow": '<><Path d="M7 14.5a3.6 3.6 0 0 1 .5-7.2 5 5 0 0 1 9.6 1 3 3 0 0 1 .4 6" {...p}/>'
+            '<Path d="M9 18v2.5M7.8 18.7l2.4 1.1M10.2 18.7l-2.4 1.1" {...p}/>'
+            '<Path d="M15 18v2.5M13.8 18.7l2.4 1.1M16.2 18.7l-2.4 1.1" {...p}/></>',
     "circle-outline": '<><Circle cx="12" cy="12" r="7.5" {...p}/></>',
     "check": '<><Path d="M5 12.5l4.5 4.5L19 7.5" {...p}/></>',
     "lock": '<><Rect x="5.5" y="10.5" width="13" height="9" rx="2" {...p}/>'

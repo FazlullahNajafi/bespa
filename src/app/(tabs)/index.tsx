@@ -7,7 +7,9 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
+import { WeatherCard } from '@/components/weather-card';
 import { useGeoUnit } from '@/api/geo';
+import { useMyWeatherPoint } from '@/api/weather';
 import { useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
 import { fontFamily, layout, radius, space, type } from '@/theme/tokens';
@@ -16,11 +18,10 @@ import { useColors } from '@/theme/use-scheme';
 /**
  * Home (spec 09.1), following the design's dashboard.
  *
- * The design's version also carries a weather card, unread badges on the tiles, and a
- * "Today in the valley" feed with two entries. None of those are built here, because none
- * of them have a source: the schema is still Phase 0 — geo_units, profiles,
- * profile_private, privacy_settings and two logs. There is no notices table, no events
- * table and no weather provider.
+ * The weather card is real (spec 03.1, Open-Meteo). The design's unread badges and its
+ * "Today in the valley" feed are not: the schema is still Phase 0 — geo_units, profiles,
+ * profile_private, privacy_settings and two logs — so there is no notices table and no
+ * events table behind either of them.
  *
  * Inventing that content is the one thing spec 01.8 #4 rules out, so the feed is an empty
  * state that says what is missing, and the weather card waits for a provider. The
@@ -56,6 +57,7 @@ export default function HomeScreen() {
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
   const village = useGeoUnit(profile.data?.village_id);
+  const point = useMyWeatherPoint(Boolean(profile.data?.village_id));
 
   const name = profile.data?.full_name?.trim() || '';
   const tint = {
@@ -88,6 +90,13 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
       </View>
+
+      {/* Absent, not empty, when there is no reading — spec 03.1 hides the section on
+          failure rather than showing an error. */}
+      <WeatherCard
+        coords={point.data ? { lat: point.data.lat, lon: point.data.lon } : null}
+        placeName={point.data?.place}
+      />
 
       <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
         {t('home.quickAccess')}

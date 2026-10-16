@@ -14,6 +14,12 @@ export const keys = {
     children: (parentId: string | null) => ['geo', 'children', parentId] as const,
     unit: (id: string) => ['geo', 'unit', id] as const,
   },
+  weather: {
+    all: ['weather'] as const,
+    /** Keyed by coordinate, not by village: two villages sharing a block share a forecast. */
+    at: (lat: number | null, lon: number | null) => ['weather', lat, lon] as const,
+    point: () => ['weather', 'point'] as const,
+  },
   me: {
     all: ['me'] as const,
     profile: () => ['me', 'profile'] as const,
