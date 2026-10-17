@@ -12,8 +12,8 @@ it. Read the cited section before changing behaviour it governs.
 **The target is Android.** iOS and web are not the audience. `npm run web` exists because
 it is the fast way to iterate here, not because the browser is a target — say "verified on
 web" when that is what happened, because it is evidence, not proof. Three real defects
-(tofu tab icons, the keyboard covering the submit button, content under the status bar)
-were invisible on web and only appeared on a device.
+(tofu tab icons, the keyboard covering the submit button, content drawn under the status
+bar) were invisible on web and appeared immediately on a device.
 
 ## Environment
 
@@ -33,7 +33,7 @@ everything healthy while nothing on the host can reach it. Check with
 Docker's engine on this machine wedges regularly, leaving orphaned AF_UNIX sockets that no
 file API can delete (error 1920). The fix is to rename the directory, not delete the file:
 rename `%LOCALAPPDATA%\Docker\run` and `%LOCALAPPDATA%\docker-secrets-engine`, recreate
-them empty, and restart Docker Desktop (per-user install, at
+them empty, and restart Docker Desktop (a per-user install, at
 `%LOCALAPPDATA%\Programs\DockerDesktop`).
 
 ## Commands
@@ -64,8 +64,8 @@ One pgTAP file directly (`db:test` has no filter):
 docker exec -i supabase_db_bespa psql -U postgres -d postgres -f /dev/stdin < supabase/tests/identity_rls.test.sql
 ```
 
-Generators and checks. The first three write files that are committed; re-run the
-generator rather than editing its output:
+Generators and checks. The first four write files that are committed; re-run the generator
+rather than editing its output:
 
 ```bash
 python scripts/check-contrast.py     # asserts spec 08.6 contrast floors against tokens.ts
@@ -74,10 +74,40 @@ python scripts/gen-geo-seed.py       # supabase/seed/002_*.sql, from the distric
 python scripts/geocode-villages.py   # supabase/seed/003_*.sql, hits two geocoding APIs
 ```
 
+### EAS builds and updates
+
+Project `38b1dd9a-ff70-4697-822c-1031700383b1` on `@y7.hez`; `eas-cli` is installed and
+logged in. `eas.json` has three profiles matching the three app variants in
+`app.config.ts`, each pinned to its own update channel so a preview build cannot receive a
+production update.
+
+```bash
+npx eas-cli build --profile development --platform android   # dev client, APK, internal
+npx eas-cli build:list --limit 3                             # status
+npx eas-cli build:view <id>                                  # detail, including failures
+npx eas-cli update --branch development -m "message"         # ship an OTA update
+```
+
+**EAS builds the committed git state, not the working tree.** A build started before
+`git commit` archives the previous commit — that is how the first attempt failed in 58
+seconds, building a tree whose `package.json` lacked `expo-dev-client` while the profile
+asked for a dev client. Commit first, then build.
+
+`runtimeVersion` uses the **fingerprint** policy, so the runtime version changes whenever
+anything touching the native runtime changes. With `appVersion` it is possible to add a
+native module, forget to bump the version, and publish an update to a build that cannot
+run it.
+
+The EAS project id is hard-coded in `app.config.ts` rather than read only from the
+environment: EAS Build evaluates that file on its own servers, where a local `.env` does
+not exist, so an env-only lookup silently drops the `updates` block from every build while
+still looking correct locally. It is not a secret.
+
 ### Running on the physical Android device
 
-No emulator or system image is installed, so a real phone over USB is the only route. Expo
-Go is already on the device.
+No emulator or system image is installed, so a real phone over USB is the only route.
+Expo Go works for anything in the SDK; **a dev-client build is required for native modules
+outside it**, which is why Google Sign-In is gated behind one.
 
 ```bash
 npx expo start --port 8081          # via preview_start, config "bespa-android"
@@ -94,16 +124,17 @@ Reading the screen without eyes on it: `adb shell uiautomator dump /sdcard/ui.xm
 `cat` it, and `adb shell screencap -p /sdcard/s.png` + `adb pull`. In Git Bash,
 `export MSYS_NO_PATHCONV=1` first or `/sdcard/...` is rewritten to a Windows path, and
 pull screenshots rather than redirecting `exec-out`, which corrupts the PNG.
-`adb shell pm clear host.exp.exponent` is the practical way back to a signed-out state —
-there is no sign-out UI yet.
+`adb shell input text` drops characters on long strings and `@` can jump fields — type in
+short pieces and verify between them. `adb shell pm clear host.exp.exponent` is the
+practical way back to a signed-out state; there is no sign-out UI yet.
 
 ## CI
 
-`.github/workflows/ci.yml`, on push to `main` and on pull requests. The app job runs
-typecheck, lint, jest, the contrast floors, and a check that the committed `icon.tsx`
-still matches what its generator produces. The database job starts Postgres alone (every
-other service excluded) and runs pgTAP, which also proves the migrations apply in order to
-an empty database.
+`.github/workflows/ci.yml`, on push to `main` and on pull requests; green as of the last
+push. The app job runs typecheck, lint, jest, the contrast floors, and a check that the
+committed `icon.tsx` still matches what its generator produces. The database job starts
+Postgres alone (every other service excluded) and runs pgTAP, which also proves the
+migrations apply in order to an empty database.
 
 ## Architecture
 
@@ -216,12 +247,29 @@ values:
 
 ## Open issues
 
+- **The first EAS builds fail in the "Configure expo-updates" phase.** Two attempts,
+  both errored in under a minute with `UNKNOWN_ERROR`. The cause is not yet known: a
+  local `build:inspect --stage pre-build` succeeds, but that stage only copies the
+  project *before* prebuild, so it proves nothing about the failing phase — use
+  `--stage post-build` to actually reproduce it. The build logs need a browser session at
+  `expo.dev/accounts/y7.hez/projects/bespa/builds`. Suspect the interaction between the
+  hard-coded `updates.url`, the fingerprint `runtimeVersion`, and `appVersionSource:
+  "remote"` in eas.json before suspecting the app code.
+- **The outbox has never been exercised offline on a device.** It compiles, its policy is
+  unit-tested and it bundles, but the actual test — queue a village choice in aeroplane
+  mode, force-quit, reopen, reconnect, watch it drain — has not been run.
 - **`set_my_village` validates `panchayat.parent_id = village`, which is backwards.** A
   panchayat contains villages. It is dormant — nothing passes a panchayat and none are
   seeded — but `panchayat_admin` scoping cannot work until a real panchayat→village source
   exists. Do not infer the mapping from row adjacency.
+- **Google sign-in is half-configured.** `supabase/config.toml` has a disabled
+  `[auth.external.google]` block; what is missing is the two OAuth clients. The Android
+  client (package + SHA-1 from the EAS keystore) exists only so Google will issue a token;
+  the **web** client ID is what Supabase checks, because it is the token's audience. Each
+  variant has its own package name, so each needs its own Android client. SDK 57 deprecates
+  the `expo-auth-session` Google path in favour of
+  `@react-native-google-signin/google-signin`, which needs a dev-client build.
 - **Phone-OTP is intended as the primary sign-in** but needs an SMS provider and India DLT
-  registration, which do not exist yet. Email/password is the working path. The flow can be
-  built and tested locally with `[auth.sms.test_otp]`, a fixed phone→code map.
-- **No EAS config, no Sentry.** Both are Phase 0 items; EAS also gates Google sign-in,
-  which needs an SHA-1 from a real build.
+  registration, neither of which exists. Email/password is the working path. The flow can
+  be built and tested locally with `[auth.sms.test_otp]`, a fixed phone→code map.
+- **No Sentry.** A Phase 0 item, not started.
