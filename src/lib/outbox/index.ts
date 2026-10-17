@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { toErrorCode, type ErrorCode } from '@/lib/errors';
 import { getConnectivity } from '@/lib/net';
 import { all, count, due, insert, remove, reschedule, type OutboxRow } from './db';
+import { backoffMs, isExhausted, isPermanent } from './policy';
 
 /**
  * The outbox (spec 10.4 step 5, spec 10.3 rule 2).
@@ -41,33 +42,6 @@ export function registerHandler<P, R>(
   handler: (payload: P, mediaPaths: string[]) => Promise<R>,
 ) {
   handlers.set(kind, handler as Handler);
-}
-
-/**
- * Codes that will never succeed on a retry. A rate limit, a permission denial or invalid
- * input is the server's final answer; retrying it for a week in the background only
- * delays telling the user. Everything else — no connection, a 5xx, an unmapped failure —
- * is treated as transient.
- */
-const PERMANENT: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
-  'not_permitted',
-  'rate_limited',
-  'invalid_input',
-  'phone_unverified',
-  'seat_unavailable',
-  'hold_expired',
-  'email_taken',
-  'weak_password',
-  'invalid_credentials',
-  'email_not_confirmed',
-]);
-
-const MAX_ATTEMPTS = 8;
-const BASE_DELAY_MS = 2_000;
-
-/** 2s, 4s, 8s … capped at 5 minutes, so a long outage does not spin the radio. */
-function backoffMs(attempts: number) {
-  return Math.min(BASE_DELAY_MS * 2 ** attempts, 5 * 60_000);
 }
 
 const subscribers = new Set<() => void>();
@@ -151,13 +125,13 @@ async function run(row: OutboxRow): Promise<RunOutcome> {
     return { kind: 'done', value };
   } catch (error) {
     const code = toErrorCode(error);
-    if (PERMANENT.has(code)) {
+    if (isPermanent(code)) {
       await remove(row.id);
       return { kind: 'permanent', code };
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    if (row.attempts + 1 >= MAX_ATTEMPTS) {
+    if (isExhausted(row.attempts + 1)) {
       // Give up on automatic retries but keep the row: it is the user's unsent work, and
       // deleting it silently is worse than showing it as stuck.
       await reschedule(row.id, Number.MAX_SAFE_INTEGER, message);
