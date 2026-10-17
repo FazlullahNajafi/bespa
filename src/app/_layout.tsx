@@ -11,6 +11,8 @@ import '@/i18n';
 import { persistOptions, queryClient } from '@/lib/queryClient';
 import { useSession } from '@/store/session';
 import { useMyProfile } from '@/api/profile';
+import { startConnectivityWatch, useOnReconnect } from '@/lib/net';
+import { drain } from '@/lib/outbox';
 import { useScheme } from '@/theme/use-scheme';
 import { semantic } from '@/theme/tokens';
 
@@ -72,6 +74,15 @@ function RootNavigator() {
   const colors = semantic(scheme);
 
   useAuthRedirect();
+
+  // One connectivity source for the whole app: it drives TanStack's onlineManager (which
+  // makes the already-configured `refetchOnReconnect` actually fire) and wakes the
+  // outbox. Started here rather than at module load so it is torn down with the tree.
+  useEffect(() => startConnectivityWatch(), []);
+
+  // Drains at start and on every reconnect, so work queued offline leaves without the
+  // user having to revisit the screen that created it.
+  useOnReconnect(() => void drain());
 
   return (
     <>

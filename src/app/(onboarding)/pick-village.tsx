@@ -105,7 +105,13 @@ export default function PickVillageScreen() {
 
     // On success the profile query is invalidated and the gate routes onward — this
     // screen does not navigate itself.
-    if (!result.ok) setError(`errors.${result.code}`);
+    //
+    // Queued is not failure: offline, the choice is saved and will send on reconnect.
+    // The gate cannot advance until the server has it, so say so rather than showing a
+    // spinner that never resolves.
+    if (!result.ok) {
+      setError('queued' in result ? 'errors.queued' : `errors.${result.code}`);
+    }
   }
 
   const canConfirm = Boolean(selectedVillage) && !setVillage.isPending;
@@ -203,7 +209,9 @@ export default function PickVillageScreen() {
         <Button label={t('common.back')} variant="ghost" onPress={onBack} />
       ) : null}
 
-      {error ? <Banner message={t(error)} /> : null}
+      {error ? (
+        <Banner message={t(error)} tone={error === 'errors.queued' ? 'info' : 'danger'} />
+      ) : null}
     </Screen>
   );
 }

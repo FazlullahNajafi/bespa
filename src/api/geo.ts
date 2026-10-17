@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
-import { toErrorCode, type ErrorCode } from '@/lib/errors';
+import type { ErrorCode } from '@/lib/errors';
+import { registerHandler, submit } from '@/lib/outbox';
 import { keys } from './keys';
 
 export type GeoType =
@@ -71,7 +72,30 @@ export function useGeoUnit(id: string | null | undefined) {
   });
 }
 
-export type SetVillageResult = { ok: true } | { ok: false; code: ErrorCode };
+/**
+ * Setting a village is a mutation, so it goes through the outbox like every other one
+ * (spec 10.3). It is registered at module load rather than inside the hook, so a row
+ * queued offline can still be drained on a cold start before any screen has mounted.
+ */
+const SET_VILLAGE = 'set_my_village';
+
+registerHandler<{ villageId: string; panchayatId?: string | null }, true>(
+  SET_VILLAGE,
+  async ({ villageId, panchayatId }) => {
+    const { error } = await supabase.rpc('set_my_village', {
+      village: villageId,
+      panchayat: panchayatId ?? undefined,
+    });
+    if (error) throw error;
+    return true;
+  },
+);
+
+export type SetVillageResult =
+  | { ok: true }
+  | { ok: false; code: ErrorCode }
+  /** Offline: accepted locally, will send on reconnect. */
+  | { ok: false; queued: true };
 
 export function useSetMyVillage() {
   const client = useQueryClient();
@@ -81,15 +105,19 @@ export function useSetMyVillage() {
       villageId: string;
       panchayatId?: string | null;
     }): Promise<SetVillageResult> => {
-      const { error } = await supabase.rpc('set_my_village', {
-        village: input.villageId,
-        panchayat: input.panchayatId ?? undefined,
+      // The outbox answers synchronously when there is a connection, so the picker still
+      // renders "you changed village 3 days ago" rather than silently queueing a write
+      // the server was always going to refuse.
+      const result = await submit<true>({
+        kind: SET_VILLAGE,
+        payload: input,
+        // One village choice per user: a double tap must not enqueue twice.
+        idempotencyKey: `${SET_VILLAGE}:${input.villageId}`,
       });
 
-      // Returned rather than thrown: "you changed village 3 days ago" is an answer the
-      // form has to render, not an exception.
-      if (error) return { ok: false, code: toErrorCode(error) };
-      return { ok: true };
+      if (result.status === 'done') return { ok: true };
+      if (result.status === 'queued') return { ok: false, queued: true };
+      return { ok: false, code: result.code };
     },
     onSuccess: (result) => {
       // Changing village changes what every village-scoped query is allowed to see, so

@@ -55,7 +55,8 @@
     "seat_unavailable": "Someone just took that seat. Please pick another.",
     "hold_expired": "Your seat hold expired. Please pick your seats again.",
     "unknown": "Something went wrong. Please try again.",
-    "invalid_input": "That selection is no longer valid. Please pick again."
+    "invalid_input": "That selection is no longer valid. Please pick again.",
+    "queued": "Saved. It will send when you're back online."
   },
   "onboarding": {
     "title": "Which village are you from?",
@@ -88,5 +89,12 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "label": "{{condition}}, {{temp}} degrees in {{village}}"
+  },
+  "outbox": {
+    "sending_one": "Sending 1 change…",
+    "sending_other": "Sending {{count}} changes…",
+    "waiting_one": "1 change waiting to send",
+    "waiting_other": "{{count}} changes waiting to send",
+    "retryHint": "Tap to try sending now"
   }
 }
