@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch makes the first run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: typecheck · lint · unit · contrast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # `ci` not `install`: it installs exactly the lockfile and fails if the two have
+      # drifted, which is the point of running it here.
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx expo lint
+
+      - name: Unit tests
+        run: npx jest --ci --runInBand
+
+      # Contrast is a claim about specific hex values in theme/tokens.ts, so it is
+      # checked rather than trusted. Spec 08.6 requires >=4.5:1 body and >=3:1 large in
+      # BOTH themes -- these screens are read outdoors at 3,000 m in snow glare.
+      - name: Contrast floors
+        run: python scripts/check-contrast.py
+
+      # The icon set and the geo seed are generated from source files. If a generator's
+      # output no longer matches what is committed, the committed copy is stale.
+      - name: Generated files are up to date
+        run: |
+          python scripts/gen-icons.py
+          git diff --exit-code -- src/components/icon.tsx
+
+  database:
+    name: migrations · RLS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # pgTAP needs Postgres and nothing else, so every other service is excluded —
+      # that is the full list the CLI accepts, and it turns a four-minute image pull
+      # into about one.
+      - name: Start Postgres
+        run: >
+          supabase start
+          -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      # Proves the migrations apply to an empty database in order, and that the seeds
+      # load -- which is how a broken migration is caught before it reaches a device.
+      - name: RLS policy tests
+        run: supabase test db
+
+      - name: Stop
+        if: always()
+        run: supabase stop --no-backup
