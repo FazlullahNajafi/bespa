@@ -328,6 +328,22 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+# Google sign-in. Disabled until the OAuth clients exist (see CLAUDE.md "Open issues").
+#
+# The app signs in natively with @react-native-google-signin and hands the resulting ID
+# token to `supabase.auth.signInWithIdToken`, so what matters here is that `client_id`
+# matches the token's audience — which is the **web** client ID, not the Android one. The
+# Android client exists so Google will issue the token at all; it is never sent to
+# Supabase.
+#
+# `skip_nonce_check` stays false: the nonce is what stops a token obtained for another app
+# being replayed here.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+skip_nonce_check = false
+
 [auth.external.apple]
 enabled = false
 client_id = ""

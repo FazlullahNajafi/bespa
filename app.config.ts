@@ -16,6 +16,13 @@ const ids = {
   production: { id: 'com.bespa.app', name: 'Bespa' },
 }[variant];
 
+/**
+ * `eas init` writes the project id here. It is read from the environment rather than
+ * hard-coded so the config still evaluates before EAS is set up — Metro reads this file
+ * on every bundle, and a missing id should not break local development.
+ */
+const easProjectId = process.env.EAS_PROJECT_ID;
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: ids.name,
@@ -30,7 +37,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     variant,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
   },
+
+  /**
+   * `fingerprint`, not `appVersion`: the runtime version then changes whenever anything
+   * touching the native runtime changes — a new native module, a config plugin, an SDK
+   * bump. With `appVersion` it is possible to add native code, forget to bump the
+   * version, and ship an update to a build that cannot run it. The cost is more frequent
+   * builds, which is the right trade for an app that is about to add Google Sign-In.
+   */
+  runtimeVersion: { policy: 'fingerprint' },
+
+  ...(easProjectId
+    ? { updates: { url: `https://u.expo.dev/${easProjectId}` } }
+    : {}),
   ios: {
     bundleIdentifier: ids.id,
     supportsTablet: false,
@@ -39,7 +60,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: ids.id,
     adaptiveIcon: {
-      backgroundColor: '#EAF4FB',
+      backgroundColor: '#DFE3EE', // primarySoft, Suru Dawn
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -60,7 +81,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#1B6FA8',
+        backgroundColor: '#2B3A6B', // primary, Suru Dawn
         image: './assets/images/splash-icon.png',
         imageWidth: 76,
       },
