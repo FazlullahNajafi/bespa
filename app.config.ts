@@ -17,11 +17,14 @@ const ids = {
 }[variant];
 
 /**
- * `eas init` writes the project id here. It is read from the environment rather than
- * hard-coded so the config still evaluates before EAS is set up — Metro reads this file
- * on every bundle, and a missing id should not break local development.
+ * The EAS project id. Hard-coded on purpose: EAS Build evaluates this file on its own
+ * servers, where a local `.env` does not exist, so reading it only from the environment
+ * would silently drop the `updates` block from every build. It is not a secret — it ships
+ * inside the published app.
+ *
+ * `eas init` could not write it here itself: it only edits a static app.json.
  */
-const easProjectId = process.env.EAS_PROJECT_ID;
+const easProjectId = process.env.EAS_PROJECT_ID ?? '38b1dd9a-ff70-4697-822c-1031700383b1';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
