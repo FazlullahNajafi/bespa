@@ -8,19 +8,33 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
-      "env": { "APP_VARIANT": "development" },
-      "android": { "buildType": "apk" }
+      "env": {
+        "APP_VARIANT": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "http://127.0.0.1:55321",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "env": { "APP_VARIANT": "preview" },
-      "android": { "buildType": "apk" }
+      "env": {
+        "APP_VARIANT": "preview"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "channel": "production",
-      "env": { "APP_VARIANT": "production" },
-      "android": { "buildType": "app-bundle" }
+      "env": {
+        "APP_VARIANT": "production"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {

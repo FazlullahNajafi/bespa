@@ -44,13 +44,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   /**
-   * `fingerprint`, not `appVersion`: the runtime version then changes whenever anything
-   * touching the native runtime changes — a new native module, a config plugin, an SDK
-   * bump. With `appVersion` it is possible to add native code, forget to bump the
-   * version, and ship an update to a build that cannot run it. The cost is more frequent
-   * builds, which is the right trade for an app that is about to add Google Sign-In.
+   * `appVersion`, not `fingerprint`.
+   *
+   * Fingerprint is the better policy in principle — it changes whenever anything touching
+   * the native runtime changes, so an update can never reach a build that cannot run it.
+   * It does not work here: EAS runs PREBUILD *before* it calculates the runtime version,
+   * so the server fingerprints a tree that now contains a generated `android/` and counts
+   * the project as bare, while this machine fingerprints the managed tree without it. The
+   * two hashes disagree and the build fails in CONFIGURE_EXPO_UPDATES.
+   *
+   * The cost is that bumping `version` is now what separates incompatible builds, so a
+   * native change must come with a version bump. Worth revisiting on a newer eas-cli.
    */
-  runtimeVersion: { policy: 'fingerprint' },
+  runtimeVersion: { policy: 'appVersion' },
 
   ...(easProjectId
     ? { updates: { url: `https://u.expo.dev/${easProjectId}` } }
