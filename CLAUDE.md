@@ -113,8 +113,18 @@ outside it**, which is why Google Sign-In is gated behind one.
 npx expo start --port 8081          # via preview_start, config "bespa-android"
 adb reverse tcp:55321 tcp:55321     # Supabase: .env's 127.0.0.1 then works unchanged
 adb reverse tcp:8081  tcp:8081      # Metro
+
+# Expo Go:
 adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"
+
+# The dev client (com.bespa.app.dev) — note the different scheme and the url param:
+adb shell am start -a android.intent.action.VIEW   -d "bespa://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081"
 ```
+
+**A dev client opening on a launcher screen is not a fault.** A development build carries
+your native code but no bundled JavaScript, so until it is pointed at a running dev server
+it shows a launcher that resembles Expo Go. The deep link above is what loads the app;
+without the `?url=` parameter it stays on that screen.
 
 `adb reverse` is the trick that matters: without it `127.0.0.1` means the *phone*, and no
 edit to `.env` is needed. **The mappings drop silently** whenever USB hiccups — re-run them
