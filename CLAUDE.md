@@ -272,13 +272,14 @@ values:
   panchayat contains villages. It is dormant — nothing passes a panchayat and none are
   seeded — but `panchayat_admin` scoping cannot work until a real panchayat→village source
   exists. Do not infer the mapping from row adjacency.
-- **Google sign-in is half-configured.** `supabase/config.toml` has a disabled
-  `[auth.external.google]` block; what is missing is the two OAuth clients. The Android
-  client (package + SHA-1 from the EAS keystore) exists only so Google will issue a token;
-  the **web** client ID is what Supabase checks, because it is the token's audience. Each
-  variant has its own package name, so each needs its own Android client. SDK 57 deprecates
-  the `expo-auth-session` Google path in favour of
-  `@react-native-google-signin/google-signin`, which needs a dev-client build.
+- **Google sign-in works** (verified on device 2026-10-19: a `google` identity reaches
+  `auth.identities` and the gate routes the new account to the picker). Firebase project
+  `bespa-b215b` provisioned the clients; Firebase Auth itself is unused. The library is
+  given the **web** client id — that is the ID token's audience and what Supabase
+  verifies — while the Android client only makes Google willing to issue the token. The
+  client secret in `config.toml` is a placeholder: a secret authenticates the web redirect
+  exchange, which this flow never performs. `.preview` and production each need their own
+  Firebase Android app and SHA-1, and production needs the Play App Signing fingerprint.
 - **Phone-OTP is intended as the primary sign-in** but needs an SMS provider and India DLT
   registration, neither of which exists. Email/password is the working path. The flow can
   be built and tested locally with `[auth.sms.test_otp]`, a fixed phone→code map.
