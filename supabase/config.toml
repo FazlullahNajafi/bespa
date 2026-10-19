@@ -339,9 +339,16 @@ max_frequency = "5s"
 # `skip_nonce_check` stays false: the nonce is what stops a token obtained for another app
 # being replayed here.
 [auth.external.google]
-enabled = false
-client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
-secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+enabled = true
+# The WEB client id from the Firebase project (bespa-b215b). Not a secret: it ships inside
+# the app, and the native library sets it as the audience of the ID token Supabase then
+# verifies. The Android client id exists only so Google will issue that token; it is never
+# sent here.
+client_id = "11297837666-uauvgi8ubrf0ph28pnauimhg31iutnrn.apps.googleusercontent.com"
+# Unused by this flow. A client secret authenticates the *web* redirect exchange, and we
+# never do one -- the app signs in natively and hands Supabase a finished ID token. The
+# field has to be present, so it carries a placeholder rather than a real credential.
+secret = "unused-id-token-flow"
 skip_nonce_check = false
 
 [auth.external.apple]

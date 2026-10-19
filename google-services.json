@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "11297837666",
+    "project_id": "bespa-b215b",
+    "storage_bucket": "bespa-b215b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:11297837666:android:34b7513c88346e727ef73b",
+        "android_client_info": {
+          "package_name": "com.bespa.app.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "11297837666-bqsaf6dk9gaer44v27cps3clerg610lk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bespa.app.dev",
+            "certificate_hash": "3caaef3b714f79ae39e52986f4bbf5cc6f0c02f9"
+          }
+        },
+        {
+          "client_id": "11297837666-uauvgi8ubrf0ph28pnauimhg31iutnrn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKhRa7KbM9FwLD1hlO1yg1bja-Oy-9buk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "11297837666-uauvgi8ubrf0ph28pnauimhg31iutnrn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

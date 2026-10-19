@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { signIn } from '@/api/auth';
+import { signInWithGoogle } from '@/api/google';
 import { validateEmail, validatePassword } from '@/features/auth/validate';
 import { space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -21,6 +22,18 @@ export default function SignInScreen() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  async function onGoogle() {
+    setFormError(null);
+    setGoogleBusy(true);
+    const result = await signInWithGoogle();
+    setGoogleBusy(false);
+
+    // Backing out of the account picker is a decision, not a failure — showing an error
+    // for it would be the app arguing with the user.
+    if (!result.ok && !('cancelled' in result)) setFormError(`errors.${result.code}`);
+  }
 
   async function onSubmit() {
     const next = {
@@ -48,7 +61,17 @@ export default function SignInScreen() {
             label={t('auth.signIn.action')}
             onPress={onSubmit}
             loading={busy}
-            disabled={busy}
+            disabled={busy || googleBusy}
+          />
+          <Text style={[type.caption, styles.divider, { color: colors.textFaint }]}>
+            {t('auth.signIn.or')}
+          </Text>
+          <Button
+            label={t('auth.signIn.google')}
+            onPress={onGoogle}
+            variant="secondary"
+            loading={googleBusy}
+            disabled={busy || googleBusy}
           />
           <Link href="/(auth)/sign-up" style={styles.link}>
             <Text style={[type.bodySmall, { color: colors.primary }]}>
@@ -98,4 +121,5 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   header: { gap: space.xs },
   link: { paddingVertical: space.sm, textAlign: 'center' },
+  divider: { textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.6 },
 });

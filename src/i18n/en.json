@@ -18,7 +18,9 @@
       "title": "Welcome back",
       "subtitle": "Sign in to see your village.",
       "action": "Sign in",
-      "toSignUp": "New here? Create an account"
+      "toSignUp": "New here? Create an account",
+      "or": "or",
+      "google": "Continue with Google"
     },
     "signUp": {
       "title": "Create your account",

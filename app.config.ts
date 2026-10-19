@@ -68,6 +68,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: ids.id,
+    // Firebase's Android config. It carries the OAuth client ids Google Sign-In needs;
+    // Expo's guidance is that it holds no sensitive values, so it is committed rather
+    // than injected as an EAS secret. One file per package name — `.preview` and
+    // production will each need their own Firebase app and their own SHA-1.
+    googleServicesFile: './google-services.json',
     adaptiveIcon: {
       backgroundColor: '#DFE3EE', // primarySoft, Suru Dawn
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -87,6 +92,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    // Adds native code, so changing this requires a new development build — the JS
+    // bundle alone cannot carry it.
+    '@react-native-google-signin/google-signin',
     [
       'expo-splash-screen',
       {
