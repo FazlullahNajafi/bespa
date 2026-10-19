@@ -13,10 +13,15 @@ import { useSession } from '@/store/session';
 import { useMyProfile } from '@/api/profile';
 import { startConnectivityWatch, useOnReconnect } from '@/lib/net';
 import { drain } from '@/lib/outbox';
+import { initSentry, wrapRoot } from '@/lib/sentry';
 import { useScheme } from '@/theme/use-scheme';
 import { semantic } from '@/theme/tokens';
 
 void SplashScreen.preventAutoHideAsync();
+
+// Before the tree renders, so a crash in the first paint is still reported. A no-op
+// until EXPO_PUBLIC_SENTRY_DSN is set.
+initSentry();
 
 /**
  * Auth gate. Runs after the persisted session has been read, so a returning user goes
@@ -55,9 +60,26 @@ function useAuthRedirect() {
     // user is set up rather than trapping them in onboarding they cannot complete.
     const needsVillage = profile.data ? profile.data.village_id === null : false;
 
-    if (needsVillage && !inOnboarding) {
-      router.replace('/(onboarding)/pick-village');
-    } else if (!needsVillage && (inAuthGroup || inOnboarding)) {
+    // The second onboarding state, and the reason spec 03.4 asks for a dedicated screen:
+    // the defaults publish a new profile to the whole village, phone number included, so
+    // someone who would not have chosen that has to be asked before it is true of them.
+    // Only after a village exists — every option on that screen is phrased in terms of
+    // one, and until then there is nobody for "my village" to mean.
+    const needsPrivacy =
+      !needsVillage && profile.data ? profile.data.privacy_reviewed_at === null : false;
+
+    // Onboarding now has two screens, so "am I already in the group" is no longer a
+    // precise enough question — without checking which one, the privacy branch would
+    // re-replace itself on every render of the screen it just routed to.
+    const step = segments[1];
+
+    if (needsVillage) {
+      if (!(inOnboarding && step === 'pick-village')) {
+        router.replace('/(onboarding)/pick-village');
+      }
+    } else if (needsPrivacy) {
+      if (!(inOnboarding && step === 'privacy')) router.replace('/(onboarding)/privacy');
+    } else if (inAuthGroup || inOnboarding) {
       router.replace('/(tabs)');
     }
 
@@ -96,6 +118,8 @@ function RootNavigator() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
+        {/* Pushed over the tabs rather than living inside them — see profile/_layout. */}
+        <Stack.Screen name="profile" />
       </Stack>
     </>
   );
@@ -108,7 +132,7 @@ function RootNavigator() {
  * `DMSans-SemiBold` on one platform is `DM Sans` on the other. Loading at runtime makes
  * the key here the family name everywhere, which is what `theme/tokens` relies on.
  */
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     'DMSans-Regular': require('../../assets/fonts/DMSans-Regular.ttf'),
     'DMSans-Medium': require('../../assets/fonts/DMSans-Medium.ttf'),
@@ -129,3 +153,10 @@ export default function RootLayout() {
     </PersistQueryClientProvider>
   );
 }
+
+/**
+ * `Sentry.wrap` is what attaches the error boundary and the navigation instrumentation to
+ * the root. Without it the SDK reports native crashes but not a React render error, which
+ * is the kind this app is most likely to produce.
+ */
+export default wrapRoot(RootLayout);

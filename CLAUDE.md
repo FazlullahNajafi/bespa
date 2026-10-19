@@ -186,6 +186,18 @@ alongside its policies — read where a `select` policy exists, write where an `
 does. No table grants `insert`: rows are created by security-definer functions. A new
 table with policies but no grant is invisible to the app, and pgTAP is what catches it.
 
+**A policy constrains the row; only a GRANT constrains the column.** `grant update on
+profiles` behind a `using (id = auth.uid())` policy reads as "a user may edit their own
+profile" and in fact permits `update profiles set roles = '{super_admin}'` — the row is
+still their own. That was live until migration `20261019120000`, together with
+self-writable `village_id` (walking past `set_my_village`'s 30-day limit and its audit
+log) and `phone_verified` (which `is_phone_verified()` gates posting on). UPDATE is now
+granted per column on the three identity tables, and `supabase/tests/profile_privacy.test.sql`
+asserts each refusal. SELECT stays table-wide deliberately: a column-level SELECT grant
+makes `select *` fail outright, which through PostgREST is a trap. **Any new user-writable
+table needs the same treatment** — grant the columns a user may write and put the rest
+behind a definer function.
+
 **Errors never surface raw.** `src/lib/errors.ts` maps every Postgres/GoTrue failure to a
 stable `ErrorCode` resolving to an `errors.*` i18n key. PostgREST reads the digits after
 `PT` in a SQLSTATE as an HTTP status, which is how `PT429` becomes a 429 — a plain
@@ -202,6 +214,23 @@ week-old temperature shown as current is worse than none. Coordinates come from
 `my_weather_point()`, which falls back to the block when a village has no centroid — only
 79 of 129 resolved, because geocoders cover small Ladakhi hamlets badly and anything
 outside a Kargil bounding box is rejected rather than trusted.
+
+**Onboarding is two gated steps, not one.** `profiles.village_id` routes to the picker;
+`profiles.privacy_reviewed_at` then routes to `(onboarding)/privacy`, because spec 03.4
+requires the privacy settings on a dedicated screen rather than buried in Settings — the
+defaults publish a new profile to the whole village, phone number included. The flag
+lives on `profiles` rather than on `privacy_settings` so the gate still costs one query
+at cold start, and only `set_my_privacy` can stamp it. Offline, the privacy step marks
+itself reviewed in the cache so a user is not held behind a screen they have already
+answered; that is safe only because the row's current values are already in force and the
+user's deltas are more restrictive, not less.
+
+**Your own phone number is never persisted to disk.** `useMyPrivate` sets
+`meta: { persist: false }`, so it is absent on an offline cold start while the rest of the
+profile renders from cache. The query cache is AsyncStorage — unencrypted — and phones
+are shared here, which is the same reason the session is in SecureStore. Spec 10.5's
+Phase 0 exit criterion reads "reopens offline and still sees their profile"; the name,
+occupation, village and member-since satisfy that, and the number deliberately does not.
 
 **The design system is `src/theme/tokens.ts`** — the palette is the Claude Design export's
 Suru Dawn (light) and Twilight (dark), in `design/` (reference only; web React, never
@@ -257,17 +286,6 @@ values:
 
 ## Open issues
 
-- **The first EAS builds fail in the "Configure expo-updates" phase.** Two attempts,
-  both errored in under a minute with `UNKNOWN_ERROR`. The cause is not yet known: a
-  local `build:inspect --stage pre-build` succeeds, but that stage only copies the
-  project *before* prebuild, so it proves nothing about the failing phase — use
-  `--stage post-build` to actually reproduce it. The build logs need a browser session at
-  `expo.dev/accounts/y7.hez/projects/bespa/builds`. Suspect the interaction between the
-  hard-coded `updates.url`, the fingerprint `runtimeVersion`, and `appVersionSource:
-  "remote"` in eas.json before suspecting the app code.
-- **The outbox has never been exercised offline on a device.** It compiles, its policy is
-  unit-tested and it bundles, but the actual test — queue a village choice in aeroplane
-  mode, force-quit, reopen, reconnect, watch it drain — has not been run.
 - **`set_my_village` validates `panchayat.parent_id = village`, which is backwards.** A
   panchayat contains villages. It is dormant — nothing passes a panchayat and none are
   seeded — but `panchayat_admin` scoping cannot work until a real panchayat→village source
@@ -283,4 +301,17 @@ values:
 - **Phone-OTP is intended as the primary sign-in** but needs an SMS provider and India DLT
   registration, neither of which exists. Email/password is the working path. The flow can
   be built and tested locally with `[auth.sms.test_otp]`, a fixed phone→code map.
-- **No Sentry.** A Phase 0 item, not started.
+  Meanwhile profile edit **saves a number unverified**, against spec 03.6 — it is what the
+  privacy step's phone setting is about, and half the Phase 0 exit criterion. It is
+  labelled "Not verified" everywhere it appears, a trigger clears the flag on any change,
+  and `is_phone_verified()` still refuses everything it gates.
+- **Sentry is wired but dark.** The SDK, the Metro wrapper, `Sentry.init` and
+  `Sentry.wrap` are all in place, and `src/lib/sentry.ts` is a deliberate no-op until
+  `EXPO_PUBLIC_SENTRY_DSN` is set — so nothing is being reported yet. Source-map upload
+  needs `SENTRY_ORG` and `SENTRY_PROJECT` too (they gate the config plugin) plus
+  `SENTRY_AUTH_TOKEN`, which is already in `.env.local` and must be added to EAS as an
+  environment variable with sensitive visibility before a build will symbolicate.
+  `npx expo install --check` reports `@sentry/react-native@8.31.0` as wrong and wants
+  `~7.11.0`. **Do not downgrade.** Expo's `bundledNativeModules.json` lags; 8.25 is the
+  release that fixed silently dropped spans on React Native >= 0.86, which is this
+  project.

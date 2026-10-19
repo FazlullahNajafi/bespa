@@ -40,6 +40,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     variant,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    // Not a secret: it ships in the bundle and only permits writing events. Mirrored here
+    // so `Constants.expoConfig.extra` can serve it when the env var is absent at runtime,
+    // the same arrangement as the Supabase pair above.
+    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
   },
 
@@ -92,6 +96,30 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    /**
+     * Sentry's config plugin exists for one job: uploading source maps during the native
+     * build, so a stack trace reads as `outbox/index.ts:93` instead of
+     * `index.android.bundle:1:284513`. A minified trace from a Kargil phone is not
+     * actionable, which is most of the reason to run Sentry at all.
+     *
+     * Conditional on the org and project being known, because the plugin fails the build
+     * when they are not — and the app itself must still build for anyone who has cloned
+     * the repo without a Sentry account. The upload also needs SENTRY_AUTH_TOKEN in the
+     * build environment (`.env.local` here, an EAS environment variable with sensitive
+     * visibility there); without it the build succeeds and the upload is skipped.
+     */
+    ...(process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
+      ? [
+          [
+            '@sentry/react-native/expo',
+            {
+              url: 'https://sentry.io/',
+              organization: process.env.SENTRY_ORG,
+              project: process.env.SENTRY_PROJECT,
+            },
+          ] as [string, Record<string, unknown>],
+        ]
+      : []),
     // Adds native code, so changing this requires a new development build — the JS
     // bundle alone cannot carry it.
     '@react-native-google-signin/google-signin',

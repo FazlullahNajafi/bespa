@@ -4,7 +4,11 @@
     "cancel": "Cancel",
     "back": "Back",
     "retry": "Try again",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "save": "Save",
+    "done": "Done",
+    "edit": "Edit",
+    "saved": "Saved"
   },
   "tabs": {
     "home": "Home",
@@ -98,5 +102,91 @@
     "waiting_one": "1 change waiting to send",
     "waiting_other": "{{count}} changes waiting to send",
     "retryHint": "Tap to try sending now"
+  },
+  "privacy": {
+    "title": "Who can see you",
+    "subtitle": "You decide what the rest of your village sees. You can change this any time from your profile.",
+    "assurance": "Only people from your village can see this.",
+    "listed": "Listed",
+    "unlisted": "Not listed",
+    "unlistedNote": "You won't appear in the village directory at all, and the settings above stop applying.",
+    "levels": {
+      "villagers": "My village",
+      "officials": "Officials only",
+      "nobody": "Nobody",
+      "hint": {
+        "villagers": "Everyone registered in your village",
+        "officials": "Only the sarpanch and panchayat members",
+        "nobody": "Nobody but you"
+      }
+    },
+    "fields": {
+      "name": {
+        "label": "Your name",
+        "always": "Always shown to your village. A directory of unnamed people is no directory."
+      },
+      "show_avatar": {
+        "label": "Your photo",
+        "help": "Hidden means your initials are shown instead."
+      },
+      "show_occupation": {
+        "label": "Your occupation",
+        "help": "What you do, shown under your name in the directory."
+      },
+      "show_phone": {
+        "label": "Your phone number",
+        "help": "Your number is never shown in a list. It is looked up one person at a time, and you can see who looked."
+      },
+      "in_directory": {
+        "label": "Listing in the village directory",
+        "help": "The list of registered villagers. Only registered users appear in it."
+      }
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "memberSince": "Member since {{date}}",
+    "noOccupation": "No occupation set",
+    "edit": {
+      "title": "Edit your profile",
+      "subtitle": "This is what your village sees, subject to your privacy settings.",
+      "name": "Full name",
+      "occupation": "Occupation",
+      "occupationOther": "Your occupation",
+      "occupationOtherHint": "Type it in your own words.",
+      "bio": "About you",
+      "bioHint": "A line or two. Optional.",
+      "phone": "Phone number",
+      "phoneHint": "With the country code, e.g. +919419000000.",
+      "phoneInvalid": "Enter the number with its country code, e.g. +919419000000.",
+      "nameRequired": "Please enter your name.",
+      "unverified": "Not verified",
+      "unverifiedNote": "We cannot send a verification code yet. Your number is saved but stays unverified until SMS is set up."
+    },
+    "sections": {
+      "editProfile": "Edit profile",
+      "editProfileHint": "Name, occupation, phone, bio",
+      "privacy": "Privacy",
+      "privacyHint": "Who can see your details",
+      "village": "Your village",
+      "signOut": "Sign out"
+    },
+    "occupations": {
+      "student": "Student",
+      "farmer": "Farmer",
+      "teacher": "Teacher",
+      "shopkeeper": "Shopkeeper",
+      "local_trader": "Local trader",
+      "hotel_owner": "Hotel owner",
+      "driver": "Driver",
+      "islamic_scholar": "Islamic scholar",
+      "transport_operator": "Transport operator",
+      "government_employee": "Government employee",
+      "health_worker": "Health worker",
+      "engineer": "Engineer",
+      "contractor": "Contractor",
+      "digital_creator": "Digital creator",
+      "other": "Other"
+    }
   }
 }

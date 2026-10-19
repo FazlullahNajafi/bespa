@@ -219,6 +219,7 @@ export type Database = {
           is_active: boolean
           occupation: string | null
           panchayat_id: string | null
+          privacy_reviewed_at: string | null
           roles: Database["public"]["Enums"]["user_role"][]
           updated_at: string
           village_changed_at: string | null
@@ -233,6 +234,7 @@ export type Database = {
           is_active?: boolean
           occupation?: string | null
           panchayat_id?: string | null
+          privacy_reviewed_at?: string | null
           roles?: Database["public"]["Enums"]["user_role"][]
           updated_at?: string
           village_changed_at?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           is_active?: boolean
           occupation?: string | null
           panchayat_id?: string | null
+          privacy_reviewed_at?: string | null
           roles?: Database["public"]["Enums"]["user_role"][]
           updated_at?: string
           village_changed_at?: string | null
@@ -382,6 +385,15 @@ export type Database = {
           lon: number
           place: string
         }[]
+      }
+      set_my_privacy: {
+        Args: {
+          in_directory: boolean
+          show_avatar: Database["public"]["Enums"]["visibility"]
+          show_occupation: Database["public"]["Enums"]["visibility"]
+          show_phone: Database["public"]["Enums"]["visibility"]
+        }
+        Returns: undefined
       }
       set_my_village: {
         Args: { panchayat?: string; village: string }
