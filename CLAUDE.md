@@ -305,12 +305,19 @@ values:
   privacy step's phone setting is about, and half the Phase 0 exit criterion. It is
   labelled "Not verified" everywhere it appears, a trigger clears the flag on any change,
   and `is_phone_verified()` still refuses everything it gates.
-- **Sentry is wired but dark.** The SDK, the Metro wrapper, `Sentry.init` and
-  `Sentry.wrap` are all in place, and `src/lib/sentry.ts` is a deliberate no-op until
-  `EXPO_PUBLIC_SENTRY_DSN` is set — so nothing is being reported yet. Source-map upload
-  needs `SENTRY_ORG` and `SENTRY_PROJECT` too (they gate the config plugin) plus
-  `SENTRY_AUTH_TOKEN`, which is already in `.env.local` and must be added to EAS as an
-  environment variable with sensitive visibility before a build will symbolicate.
+- **Sentry reports JS errors but not native crashes yet.** Verified on device
+  2026-10-19: with `EXPO_PUBLIC_SENTRY_DEBUG=1` the SDK initialises, installs its
+  integrations and logs `Captured error event` with no transport error. It also logs
+  `RNSentry module not found` / `Native Sentry SDK is disabled` — the installed dev
+  client was built before Sentry was in the project, so the native module is absent.
+  **A new development build is required before a Java/Kotlin crash or an ANR is
+  reported**; JS and unhandled-promise errors already are. `tracesSampleRate: 0` is
+  confirmed working from the discard lines.
+- **Sentry's remaining setup.** DSN, `SENTRY_ORG=najafi-cm` and `SENTRY_PROJECT=bespa`
+  are in `.env`, so the config plugin is active locally. `SENTRY_AUTH_TOKEN` is in
+  `.env.local` and still has to be added to EAS as an environment variable with
+  sensitive visibility, or a build will succeed and skip symbolication — leaving traces
+  minified, which is most of the reason to run Sentry at all.
   `npx expo install --check` reports `@sentry/react-native@8.31.0` as wrong and wants
   `~7.11.0`. **Do not downgrade.** Expo's `bundledNativeModules.json` lags; 8.25 is the
   release that fixed silently dropped spans on React Native >= 0.86, which is this

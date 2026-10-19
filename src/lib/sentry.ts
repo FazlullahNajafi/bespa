@@ -25,6 +25,9 @@ const dsn =
 
 export const sentryEnabled = Boolean(dsn);
 
+/** Forces reporting on in a dev build, where it is off by default. See `enabled` below. */
+const debug = process.env.EXPO_PUBLIC_SENTRY_DEBUG === '1';
+
 export function initSentry() {
   if (!dsn) return;
 
@@ -53,8 +56,31 @@ export function initSentry() {
 
     // A crash in a dev build is already on the console in front of whoever caused it, and
     // sending it burns the free tier's 5,000 events on noise.
-    enabled: !__DEV__,
+    //
+    // The override exists because without it there is no way to prove the pipeline works:
+    // a DSN typo, a blocked egress or a misconfigured project all look exactly like "no
+    // crashes yet". Set EXPO_PUBLIC_SENTRY_DEBUG=1, run `captureTestEvent()`, and look for
+    // it in the dashboard.
+    enabled: !__DEV__ || debug,
+
+    // The SDK's own verbose logging, under the same flag. Without it `captureMessage`
+    // is silent on success and on failure alike, which is the opposite of what a
+    // "prove it works" switch is for.
+    debug,
   });
+
+  // One event per launch while debugging, so "did it arrive" has an answer within
+  // seconds rather than waiting for a real crash.
+  if (debug) captureTestEvent('startup');
+}
+
+/**
+ * Sends one event on purpose, to prove the DSN and the network path work end to end.
+ * Returns the event id Sentry assigned, which is what to search the dashboard for.
+ */
+export function captureTestEvent(note: string): string | undefined {
+  if (!dsn) return undefined;
+  return Sentry.captureMessage(`Bespa test event: ${note}`, 'info');
 }
 
 /**
