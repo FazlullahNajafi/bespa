@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { ListRow } from '@/components/list-row';
+import { PendingChip } from '@/components/pending-chip';
 import { Screen } from '@/components/screen';
 import {
   useGeoChildren,
@@ -128,6 +129,10 @@ export default function PickVillageScreen() {
         ) : undefined
       }
     >
+      {/* Unsent work. Renders nothing unless something is queued, which is the normal
+          case — it appears when a choice was made without a connection. */}
+      <PendingChip />
+
       <View style={styles.header}>
         <Text style={[type.display, { color: colors.text }]}>{t('onboarding.title')}</Text>
         <Text style={[type.body, { color: colors.textSecondary }]}>
