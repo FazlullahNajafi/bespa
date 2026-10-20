@@ -132,6 +132,23 @@ fail outright when stdin is not a terminal (`Input is required, but stdin is not
 readable`). Pass `--environment development|preview|production` explicitly, and
 `--non-interactive` on builds.
 
+**A new app variant needs its Firebase client BEFORE its first build, not after.**
+`google-services.json` currently carries one client, `com.bespa.app.dev`, and the Google
+Services Gradle plugin fails the build outright on any package it cannot find:
+`:app:processReleaseGoogleServices` → `No matching client found for package name
+'com.bespa.app.preview'`. That is a compile failure after eight minutes, not a runtime
+one — the natural assumption is that a missing Firebase app only breaks sign-in later.
+Register the package in Firebase project `bespa-b215b`, re-download the file (it then
+carries every registered package as separate `client` entries, and one file serves all
+three variants), and commit it.
+
+The SHA-1 is a separate question from the build. A client entry with no fingerprint is
+enough to compile; Google then refuses to issue an ID token at runtime. EAS generates the
+keystore in `PREPARE_CREDENTIALS`, which runs *before* Gradle — so after any attempted
+build the fingerprint already exists and can be read with `eas credentials -p android`
+(interactive only; there is no flag that prints it). Get it first and register the app
+with it, or the sequence costs two builds.
+
 **EAS builds the committed git state, not the working tree.** A build started before
 `git commit` archives the previous commit — that is how the first attempt failed in 58
 seconds, building a tree whose `package.json` lacked `expo-dev-client` while the profile
