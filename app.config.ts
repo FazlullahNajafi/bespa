@@ -102,24 +102,26 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * `index.android.bundle:1:284513`. A minified trace from a Kargil phone is not
      * actionable, which is most of the reason to run Sentry at all.
      *
-     * Conditional on the org and project being known, because the plugin fails the build
-     * when they are not — and the app itself must still build for anyone who has cloned
-     * the repo without a Sentry account. The upload also needs SENTRY_AUTH_TOKEN in the
-     * build environment (`.env.local` here, an EAS environment variable with sensitive
-     * visibility there); without it the build succeeds and the upload is skipped.
+     * The slugs are hard-coded for the same reason as `easProjectId` above, and the first
+     * version of this got it wrong: it read them from the environment only, and gated the
+     * whole plugin on their presence. They live in `.env`, which EAS does not have — so
+     * on the server the condition was false, the plugin was dropped from prebuild
+     * entirely, and preview build `a29955ed` finished green while logging "Sentry native
+     * configuration is missing from your prebuilt Android project" three times and
+     * uploading nothing. Locally it looked perfect.
+     *
+     * Neither slug is a secret. The token that is — SENTRY_AUTH_TOKEN — stays in the
+     * environment (`.env.local` here, an EAS environment variable with sensitive
+     * visibility there); without it the build still succeeds and simply skips the upload.
      */
-    ...(process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
-      ? [
-          [
-            '@sentry/react-native/expo',
-            {
-              url: 'https://sentry.io/',
-              organization: process.env.SENTRY_ORG,
-              project: process.env.SENTRY_PROJECT,
-            },
-          ] as [string, Record<string, unknown>],
-        ]
-      : []),
+    [
+      '@sentry/react-native/expo',
+      {
+        url: 'https://sentry.io/',
+        organization: process.env.SENTRY_ORG || 'najafi-cm',
+        project: process.env.SENTRY_PROJECT || 'bespa',
+      },
+    ] as [string, Record<string, unknown>],
     // Adds native code, so changing this requires a new development build — the JS
     // bundle alone cannot carry it.
     '@react-native-google-signin/google-signin',

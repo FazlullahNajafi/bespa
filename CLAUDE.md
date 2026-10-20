@@ -159,10 +159,21 @@ anything touching the native runtime changes. With `appVersion` it is possible t
 native module, forget to bump the version, and publish an update to a build that cannot
 run it.
 
-The EAS project id is hard-coded in `app.config.ts` rather than read only from the
-environment: EAS Build evaluates that file on its own servers, where a local `.env` does
-not exist, so an env-only lookup silently drops the `updates` block from every build while
-still looking correct locally. It is not a secret.
+The EAS project id and the Sentry org/project slugs are hard-coded in `app.config.ts`
+rather than read only from the environment: EAS Build evaluates that file on its own
+servers, where a local `.env` does not exist, so an env-only lookup silently drops part of
+the config from every build while still looking correct locally. None of the three is a
+secret.
+
+**This trap has now been walked into twice.** The second time, the Sentry config plugin
+was gated on `process.env.SENTRY_ORG && process.env.SENTRY_PROJECT`; those live in `.env`,
+so on EAS the condition was false, the plugin was dropped from prebuild, and preview build
+`a29955ed` finished **green** while logging "Sentry native configuration is missing from
+your prebuilt Android project" three times and uploading no source maps. Anything
+`app.config.ts` reads from `process.env` must either be in `eas.json`'s profile `env` or
+carry a hard-coded fallback — and a missing one fails silently, so check the build log's
+env dump rather than the exit status. Only the genuinely secret values (SENTRY_AUTH_TOKEN)
+belong in EAS environment variables alone.
 
 ### Running on the physical Android device
 
