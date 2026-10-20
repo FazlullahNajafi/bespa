@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @AGENTS.md
 
 Bespa is a community app for Kargil district, Ladakh — an Expo (SDK 57) React Native app
-on a local Supabase stack. `spec/` holds the written specification; it is the authority
+on Supabase. `spec/` holds the written specification; it is the authority
 for product decisions, and files cite it (`spec 08.6`, `spec 02.2`) rather than restating
 it. Read the cited section before changing behaviour it governs.
 
@@ -35,6 +35,28 @@ file API can delete (error 1920). The fix is to rename the directory, not delete
 rename `%LOCALAPPDATA%\Docker\run` and `%LOCALAPPDATA%\docker-secrets-engine`, recreate
 them empty, and restart Docker Desktop (a per-user install, at
 `%LOCALAPPDATA%\Programs\DockerDesktop`).
+
+## Which backend the app talks to
+
+**`.env` points at the hosted project `oibfmuwjzzbqtybwafxa`.** The local Docker stack is
+still fully supported and is what the pgTAP suite and `db:reset` run against; swapping
+back is two commented lines in `.env` plus `adb reverse tcp:55321`.
+
+Use the hosted project when the phone has to work on its own — off the cable, off this
+laptop, in someone else's hands. Use the local stack for schema work: it resets in
+seconds, it costs nothing to destroy, and `supabase db reset` against the hosted project
+would drop real users.
+
+The hosted project issues the newer `sb_publishable_…` key rather than a legacy `anon`
+JWT. Same privileges and the same env var; it simply is not a JWT, so nothing may try to
+decode it. **The `sb_secret_…` key must never enter the repo, `.env`, `eas.json` or the
+bundle** — it maps to `service_role` and bypasses every policy.
+
+**`supabase db push --include-seed` seeds only when it also has migrations to push.** Once
+the migration history is current it reports "Remote database is up to date" and silently
+skips the seeds, so a project can end up with the whole schema and no geography — which
+looks like a working app with an empty village picker. Load `supabase/seed/*.sql` through
+the dashboard SQL editor in that case; the three files are about 350 lines in total.
 
 ## Commands
 
@@ -111,8 +133,8 @@ outside it**, which is why Google Sign-In is gated behind one.
 
 ```bash
 npx expo start --port 8081          # via preview_start, config "bespa-android"
-adb reverse tcp:55321 tcp:55321     # Supabase: .env's 127.0.0.1 then works unchanged
 adb reverse tcp:8081  tcp:8081      # Metro
+adb reverse tcp:55321 tcp:55321     # ONLY for the local stack; not needed when hosted
 
 # Expo Go:
 adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"
@@ -126,9 +148,15 @@ your native code but no bundled JavaScript, so until it is pointed at a running 
 it shows a launcher that resembles Expo Go. The deep link above is what loads the app;
 without the `?url=` parameter it stays on that screen.
 
-`adb reverse` is the trick that matters: without it `127.0.0.1` means the *phone*, and no
-edit to `.env` is needed. **The mappings drop silently** whenever USB hiccups — re-run them
-before blaming the app.
+`adb reverse` is the trick that matters for the local stack: without it `127.0.0.1` means
+the *phone*. **The mappings drop silently** whenever USB hiccups — re-run them before
+blaming the app. Pointed at the hosted project only the Metro mapping is needed.
+
+**`preview_start` opens a browser tab at localhost:8081, which makes Metro bundle for
+web — and the web bundle fails** on `expo-sqlite`'s `wa-sqlite.wasm`. While that is in
+flight the device's request dies with `java.io.IOException: unexpected end of stream`,
+which reads like a broken tunnel and is not. Close the browser tab, then relaunch the
+deep link.
 
 Reading the screen without eyes on it: `adb shell uiautomator dump /sdcard/ui.xml` then
 `cat` it, and `adb shell screencap -p /sdcard/s.png` + `adb pull`. In Git Bash,
