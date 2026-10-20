@@ -416,14 +416,19 @@ values:
   panchayat contains villages. It is dormant — nothing passes a panchayat and none are
   seeded — but `panchayat_admin` scoping cannot work until a real panchayat→village source
   exists. Do not infer the mapping from row adjacency.
-- **Google is enabled locally but NOT on the hosted project.** Verified 2026-10-20:
-  `/auth/v1/settings` reports `google: true` against 127.0.0.1 and `google: false`
-  against `oibfmuwjzzbqtybwafxa`, and sign-in on the device fails with the generic
-  `errors.unknown`. The hosted dashboard's Google form will not save with the toggle on
-  unless a **client secret** is supplied, even though the ID-token flow never uses one —
-  safelisting the client id alone is not enough. That settings endpoint is the fast way
-  to tell a real provider failure from a configuration one; it needs only the
-  publishable key.
+- **Hosted auth settings are verified through `/auth/v1/settings`**, which needs only the
+  publishable key and is the fast way to tell a real provider failure from a
+  configuration one. As of 2026-10-20 it reports `email: true`, `google: true`,
+  `mailer_autoconfirm: true` — email sign-up completes with no confirmation link, which
+  is deliberate (see `config.toml`). Getting there was not obvious: the hosted Google
+  form will not save with the toggle on unless a client secret is supplied, even though
+  the ID-token flow never uses one; and the "Confirm email" switch sits inside the
+  expanded Email provider card, between "Enable email provider" and "Secure email
+  change", where it is easy to miss.
+
+```bash
+curl -s "https://oibfmuwjzzbqtybwafxa.supabase.co/auth/v1/settings" -H "apikey: $EXPO_PUBLIC_SUPABASE_ANON_KEY"
+```
 - **Google sign-in works locally** (verified on device 2026-10-19: a `google` identity reaches
   `auth.identities` and the gate routes the new account to the picker). Firebase project
   `bespa-b215b` provisioned the clients; Firebase Auth itself is unused. The library is
