@@ -22,14 +22,6 @@
           }
         },
         {
-          "client_id": "11297837666-kc688maedakrdiejratbsdaq0bg2iqkm.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.bespa.app.dev",
-            "certificate_hash": "fe018ce64afd2d9dead47f351bd987ac1159f976"
-          }
-        },
-        {
           "client_id": "11297837666-uauvgi8ubrf0ph28pnauimhg31iutnrn.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -58,6 +50,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "11297837666-fjkus74q79c9hbeji5r5m4u4hpg4cc1v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bespa.app.preview",
+            "certificate_hash": "fe018ce64afd2d9dead47f351bd987ac1159f976"
+          }
+        },
         {
           "client_id": "11297837666-uauvgi8ubrf0ph28pnauimhg31iutnrn.apps.googleusercontent.com",
           "client_type": 3

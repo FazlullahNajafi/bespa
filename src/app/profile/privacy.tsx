@@ -33,6 +33,17 @@ export default function PrivacySettingsScreen() {
 
   const value = edited ?? privacy.data ?? null;
 
+  // Four flags, so an exact comparison rather than a "has been touched" flag: tapping a
+  // chip and tapping back is not a change, and Save should not claim otherwise.
+  const dirty =
+    value !== null &&
+    privacy.data !== null &&
+    privacy.data !== undefined &&
+    (value.show_phone !== privacy.data.show_phone ||
+      value.show_avatar !== privacy.data.show_avatar ||
+      value.show_occupation !== privacy.data.show_occupation ||
+      value.in_directory !== privacy.data.in_directory);
+
   async function onSave() {
     if (!value) return;
     setStatus(null);
@@ -57,7 +68,10 @@ export default function PrivacySettingsScreen() {
           label={t('common.save')}
           onPress={onSave}
           loading={save.isPending}
-          disabled={!value}
+          // Unchanged settings are not something to save. The onboarding step's Continue
+          // stays live by contrast — there, accepting the defaults IS the decision.
+          disabled={!dirty}
+          accessibilityHint={dirty ? undefined : t('privacy.nothingToSave')}
         />
       }
     >

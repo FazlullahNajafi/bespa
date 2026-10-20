@@ -79,9 +79,27 @@ export default function EditProfileScreen() {
   const bioValue = bio === undefined ? (profile.data?.bio ?? '') : bio;
   const phoneValue = phone === undefined ? (priv.data?.phone ?? '') : phone;
 
+  /**
+   * What Save would actually write, normalised the same way `onSave` normalises it —
+   * trimmed, and empty collapsed to null. Comparing the raw field values instead would
+   * call a trailing space a change and queue a write that alters nothing.
+   */
+  const edited = {
+    full_name: nameValue.trim(),
+    occupation: isOther ? freeText.trim() || null : currentPick,
+    bio: bioValue.trim() || null,
+    phone: phoneValue.trim() || null,
+  };
+
+  const dirty =
+    edited.full_name !== (profile.data?.full_name ?? '') ||
+    edited.occupation !== stored ||
+    edited.bio !== (profile.data?.bio ?? null) ||
+    edited.phone !== (priv.data?.phone ?? null);
+
   async function onSave() {
-    const trimmedName = nameValue.trim();
-    const trimmedPhone = phoneValue.trim();
+    const trimmedName = edited.full_name;
+    const trimmedPhone = edited.phone ?? '';
     const next: typeof errors = {};
 
     if (!trimmedName) next.name = t('profile.edit.nameRequired');
@@ -96,14 +114,7 @@ export default function EditProfileScreen() {
     setFailure(null);
     setQueued(false);
 
-    const chosen = isOther ? freeText.trim() || null : currentPick;
-
-    const result = await update.mutateAsync({
-      full_name: trimmedName,
-      occupation: chosen,
-      bio: bioValue.trim() || null,
-      phone: trimmedPhone || null,
-    });
+    const result = await update.mutateAsync(edited);
 
     if (result.ok) {
       router.back();
@@ -130,7 +141,16 @@ export default function EditProfileScreen() {
   return (
     <Screen
       footer={
-        <Button label={t('common.save')} onPress={onSave} loading={update.isPending} />
+        <Button
+          label={t('common.save')}
+          onPress={onSave}
+          loading={update.isPending}
+          // Nothing to save is not an action. Leaving it live invites a tap that queues
+          // a write identical to what is already stored — and offline that write sits in
+          // the outbox and shows a pending chip, for no change at all.
+          disabled={!dirty}
+          accessibilityHint={dirty ? undefined : t('profile.edit.nothingToSave')}
+        />
       }
     >
       <BackLink />

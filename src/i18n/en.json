@@ -141,7 +141,8 @@
         "label": "Listing in the village directory",
         "help": "The list of registered villagers. Only registered users appear in it."
       }
-    }
+    },
+    "nothingToSave": "Nothing has changed yet"
   },
   "profile": {
     "title": "Profile",
@@ -161,7 +162,8 @@
       "phoneInvalid": "Enter the number with its country code, e.g. +919419000000.",
       "nameRequired": "Please enter your name.",
       "unverified": "Not verified",
-      "unverifiedNote": "We cannot send a verification code yet. Your number is saved but stays unverified until SMS is set up."
+      "unverifiedNote": "We cannot send a verification code yet. Your number is saved but stays unverified until SMS is set up.",
+      "nothingToSave": "Nothing has changed yet"
     },
     "sections": {
       "editProfile": "Edit profile",
