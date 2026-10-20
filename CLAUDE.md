@@ -30,6 +30,23 @@ start` aborts after creating containers with no published ports, so `docker ps` 
 everything healthy while nothing on the host can reach it. Check with
 `netsh interface ipv4 show excludedportrange protocol=tcp`.
 
+**`supabase start` aborts if `analytics` (Logflare) or `vector` is unhealthy**, and on
+the way out it tears down every other container — including the database — so the symptom
+is "the whole stack vanished" rather than "one optional service failed". Neither is used
+by this app. Start without them:
+
+```bash
+npx supabase start -x logflare,vector,supavisor,imgproxy,realtime,storage-api
+```
+
+**The Supabase CLI exits 0 when it fails.** It reports the error as a JSON object on
+stdout and still returns success, so a backgrounded `supabase start` is announced as
+"completed, exit code 0" with the stack in pieces. Check the output, never the exit code.
+
+A failed start can also leave a container holding the name while the CLI believes it is
+gone, and the next attempt dies with `Conflict. The container name "/supabase_db_bespa"
+is already in use`. `supabase stop --no-backup` clears it.
+
 Docker's engine on this machine wedges regularly, leaving orphaned AF_UNIX sockets that no
 file API can delete (error 1920). The fix is to rename the directory, not delete the file:
 rename `%LOCALAPPDATA%\Docker\run` and `%LOCALAPPDATA%\docker-secrets-engine`, recreate
@@ -318,7 +335,15 @@ values:
   panchayat contains villages. It is dormant — nothing passes a panchayat and none are
   seeded — but `panchayat_admin` scoping cannot work until a real panchayat→village source
   exists. Do not infer the mapping from row adjacency.
-- **Google sign-in works** (verified on device 2026-10-19: a `google` identity reaches
+- **Google is enabled locally but NOT on the hosted project.** Verified 2026-10-20:
+  `/auth/v1/settings` reports `google: true` against 127.0.0.1 and `google: false`
+  against `oibfmuwjzzbqtybwafxa`, and sign-in on the device fails with the generic
+  `errors.unknown`. The hosted dashboard's Google form will not save with the toggle on
+  unless a **client secret** is supplied, even though the ID-token flow never uses one —
+  safelisting the client id alone is not enough. That settings endpoint is the fast way
+  to tell a real provider failure from a configuration one; it needs only the
+  publishable key.
+- **Google sign-in works locally** (verified on device 2026-10-19: a `google` identity reaches
   `auth.identities` and the gate routes the new account to the picker). Firebase project
   `bespa-b215b` provisioned the clients; Firebase Auth itself is unused. The library is
   given the **web** client id — that is the ID token's audience and what Supabase
