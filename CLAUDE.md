@@ -131,8 +131,21 @@ production update.
 npx eas-cli build --profile development --platform android   # dev client, APK, internal
 npx eas-cli build:list --limit 3                             # status
 npx eas-cli build:view <id>                                  # detail, including failures
-npx eas-cli update --branch development -m "message"         # ship an OTA update
+npx eas-cli update --branch preview --environment preview   --platform android -m "message"                            # ship an OTA update
 ```
+
+**An update needs `--platform android` and `--environment`, or it fails twice over.**
+Without `--environment` it refuses outright in non-interactive mode. Without
+`--platform` it exports every platform including web, and the web bundle fails on
+`expo-sqlite`'s `wa-sqlite.wasm` — the same resolution error the browser pane triggers —
+so the whole publish dies after a full export. Web is not a target; always pass the flag.
+
+**An update ships the working tree, not a commit** — the opposite of a build. Check
+`git status` first, or whatever is lying around locally goes to real phones.
+
+The first update was published 2026-10-20 to `preview`, runtime `0.1.0`, group
+`1732aa18`. A device downloads on one launch and applies on the **next**, so a phone has
+to be opened twice before the change is visible.
 
 `eas env:list` and some other eas-cli subcommands **prompt for the environment** and
 fail outright when stdin is not a terminal (`Input is required, but stdin is not
@@ -456,12 +469,15 @@ curl -s "https://oibfmuwjzzbqtybwafxa.supabase.co/auth/v1/settings" -H "apikey: 
   `tracesSampleRate: 0` is confirmed working from the discard lines.
 - **Sentry's remaining setup.** DSN, `SENTRY_ORG=najafi-cm` and `SENTRY_PROJECT=bespa`
   are in `.env`, so the config plugin is active locally. `SENTRY_AUTH_TOKEN` is in
-  `.env.local` and is **not** on EAS — `eas env:list --environment development` returns
-  "No variables found", so build `bd613aba` uploaded no source maps. That costs nothing
-  for a dev build (JS comes from Metro already mapped) and a great deal for preview and
-  production, where the bundle is minified and every frame reads
-  `index.android.bundle:1:284513`. Add it before those builds:
-  `eas env:create --name SENTRY_AUTH_TOKEN --scope project --visibility sensitive`.
+  `.env.local` and on EAS for all three environments. Source-map upload is **verified**:
+  preview build `95bf076f` logged "Uploading sourcemaps for release
+  com.bespa.app.preview@0.1.0+1", "Uploaded files to Sentry", and a Source Map Upload
+  Report naming `index.android.bundle` with its debug id — and the "Sentry native
+  configuration is missing" warning that spoiled `a29955ed` is gone. Note that
+  `env:create` attaches the variable only to the environments picked at the prompt; a
+  variable can be extended to the others afterwards with `eas env:update
+  --variable-name X --variable-environment development --environment development
+  --environment preview --environment production`, which never exposes the value.
   `npx expo install --check` reports `@sentry/react-native@8.31.0` as wrong and wants
   `~7.11.0`. **Do not downgrade.** Expo's `bundledNativeModules.json` lags; 8.25 is the
   release that fixed silently dropped spans on React Native >= 0.86, which is this
