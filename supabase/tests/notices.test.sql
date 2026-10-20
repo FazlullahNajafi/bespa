@@ -98,7 +98,7 @@ select throws_ok(
 
 select throws_ok(
   $$ select import_official_notice('lahdc', 'ref-1', 'https://kargil.nic.in/x.pdf',
-       '00000000-0000-0000-0000-0000000000e0', 'Fake official notice') $$,
+       'ladakh.kargil', 'Fake official notice') $$,
   '42501', null,
   'and cannot reach the importer — only service_role may write an official notice');
 
@@ -125,7 +125,7 @@ reset role;
 select import_official_notice(
   'lahdc', 'https://kargil.nic.in/notice/sangrah.pdf',
   'https://kargil.nic.in/notice/sangrah.pdf',
-  (select id from geo_units where path = 'ladakh.kargil'::ltree),
+  'ladakh.kargil',
   'PRELIMINARY NOTIFICATION - Sangrah village Sankoo Tehsil Kargil');
 
 select tests_become('00000000-0000-0000-0000-0000000000f1');
@@ -142,7 +142,7 @@ reset role;
 select import_official_notice(
   'lahdc', 'https://kargil.nic.in/notice/sangrah.pdf',
   'https://kargil.nic.in/notice/sangrah.pdf',
-  (select id from geo_units where path = 'ladakh.kargil'::ltree),
+  'ladakh.kargil',
   'PRELIMINARY NOTIFICATION - Sangrah village Sankoo Tehsil Kargil (corrected)');
 
 select is(

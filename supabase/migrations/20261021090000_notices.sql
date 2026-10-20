@@ -235,7 +235,12 @@ create or replace function import_official_notice(
   p_source       text,
   p_source_ref   text,
   p_source_url   text,
-  p_geo_unit     uuid,
+  -- An ltree path, not an id, so the importer never has to read `geo_units`.
+  -- `service_role` bypasses RLS but NOT table privileges, so looking the district up
+  -- from the client would have meant granting it SELECT on the geography — widening the
+  -- importer's key from "may call one function" to "may read a table". Resolving it in
+  -- here keeps that key to exactly one capability.
+  p_geo_path     text,
   p_title        text,
   p_category     notice_category default 'general',
   p_published_at timestamptz default now(),
@@ -247,7 +252,8 @@ security definer
 set search_path = public, extensions
 as $$
 declare
-  new_id uuid;
+  new_id  uuid;
+  v_geo   uuid;
 begin
   -- Parameters carry a `p_` prefix for one unavoidable reason: an ON CONFLICT target
   -- cannot be table-qualified, so a parameter named `source` makes
@@ -263,9 +269,15 @@ begin
     raise exception 'an imported notice needs a stable source_ref' using errcode = '22023';
   end if;
 
+  select g.id into v_geo
+    from geo_units g where g.path = p_geo_path::extensions.ltree;
+  if v_geo is null then
+    raise exception 'no geo unit at path %', p_geo_path using errcode = '22023';
+  end if;
+
   insert into notices (geo_unit_id, category, title, body, published_at, expires_at,
                        source, source_url, source_ref, fetched_at)
-  values (p_geo_unit, p_category, btrim(p_title), '',
+  values (v_geo, p_category, btrim(p_title), '',
           p_published_at, p_expires_at,
           p_source, p_source_url, btrim(p_source_ref), now())
   on conflict (source, source_ref) where source_ref is not null do update
@@ -281,9 +293,9 @@ begin
   return new_id;
 end $$;
 
-revoke execute on function import_official_notice(text, text, text, uuid, text, notice_category, timestamptz, timestamptz) from public;
-revoke execute on function import_official_notice(text, text, text, uuid, text, notice_category, timestamptz, timestamptz) from authenticated;
-grant execute on function import_official_notice(text, text, text, uuid, text, notice_category, timestamptz, timestamptz) to service_role;
+revoke execute on function import_official_notice(text, text, text, text, text, notice_category, timestamptz, timestamptz) from public;
+revoke execute on function import_official_notice(text, text, text, text, text, notice_category, timestamptz, timestamptz) from authenticated;
+grant execute on function import_official_notice(text, text, text, text, text, notice_category, timestamptz, timestamptz) to service_role;
 
 comment on function import_official_notice is
   'Upserts a mirrored official notice. service_role only; cannot write source = local.';
