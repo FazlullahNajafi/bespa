@@ -189,9 +189,15 @@ adb reverse tcp:55321 tcp:55321     # ONLY for the local stack; not needed when 
 # Expo Go:
 adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"
 
-# The dev client (com.bespa.app.dev) — note the different scheme and the url param:
-adb shell am start -a android.intent.action.VIEW   -d "bespa://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081"
+# The dev client (com.bespa.app.dev) — note the variant scheme and the url param:
+adb shell am start -a android.intent.action.VIEW   -d "bespa-dev://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081"
 ```
+
+**Each variant has its own URL scheme** — `bespa-dev`, `bespa-preview`, `bespa` — because
+Android lets any number of installed apps claim one scheme and then picks among them
+arbitrarily. While both dev and preview declared `bespa`, the deep link above opened
+preview and the dev client could only be reached with `-p com.bespa.app.dev`. Add `-p`
+anyway when both are installed; it costs nothing and removes the ambiguity.
 
 **A dev client opening on a launcher screen is not a fault.** A development build carries
 your native code but no bundled JavaScript, so until it is pointed at a running dev server

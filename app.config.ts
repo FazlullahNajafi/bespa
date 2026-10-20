@@ -10,10 +10,24 @@ import type { ExpoConfig, ConfigContext } from 'expo/config';
 type Variant = 'development' | 'preview' | 'production';
 const variant = (process.env.APP_VARIANT ?? 'development') as Variant;
 
+/**
+ * `scheme` is per variant for the same reason `id` is: all three can be installed at
+ * once, and Android lets any number of apps claim the same URL scheme, then picks one
+ * arbitrarily. With a shared `bespa://` a dev-client deep link opened whichever build
+ * Android felt like — observed 2026-10-20, where it opened preview and the dev client
+ * could only be reached with `am start -p com.bespa.app.dev`.
+ *
+ * That is a nuisance for the dev loop and a real defect later: spec 03.5 shares notices
+ * to WhatsApp as deep links, and on any phone carrying two variants half of those links
+ * would open the wrong app against the wrong database.
+ *
+ * Production keeps the bare `bespa`, because that is the scheme that will exist in links
+ * out in the world and it must not change under them.
+ */
 const ids = {
-  development: { id: 'com.bespa.app.dev', name: 'Bespa (dev)' },
-  preview: { id: 'com.bespa.app.preview', name: 'Bespa (preview)' },
-  production: { id: 'com.bespa.app', name: 'Bespa' },
+  development: { id: 'com.bespa.app.dev', name: 'Bespa (dev)', scheme: 'bespa-dev' },
+  preview: { id: 'com.bespa.app.preview', name: 'Bespa (preview)', scheme: 'bespa-preview' },
+  production: { id: 'com.bespa.app', name: 'Bespa', scheme: 'bespa' },
 }[variant];
 
 /**
@@ -32,7 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'bespa',
   version: '0.1.0',
   orientation: 'portrait',
-  scheme: 'bespa',
+  scheme: ids.scheme,
   userInterfaceStyle: 'automatic',
   icon: './assets/images/icon.png',
   // Kargil runs on Asia/Kolkata; timestamps are stored UTC and rendered in IST.
