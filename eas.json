@@ -21,7 +21,10 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "APP_VARIANT": "preview"
+        "APP_VARIANT": "preview",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oibfmuwjzzbqtybwafxa.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_08D7rfI9fVwxNm2C_xaR9w_S5t1-Gip",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://557f1f29e9b3fbe33b74df5f1f2fcaea@o4512282894204928.ingest.us.sentry.io/4512282913210368"
       },
       "android": {
         "buildType": "apk"
@@ -30,7 +33,10 @@
     "production": {
       "channel": "production",
       "env": {
-        "APP_VARIANT": "production"
+        "APP_VARIANT": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oibfmuwjzzbqtybwafxa.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_08D7rfI9fVwxNm2C_xaR9w_S5t1-Gip",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://557f1f29e9b3fbe33b74df5f1f2fcaea@o4512282894204928.ingest.us.sentry.io/4512282913210368"
       },
       "android": {
         "buildType": "app-bundle"

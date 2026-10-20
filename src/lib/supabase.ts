@@ -8,6 +8,17 @@ import type { Database } from './database.types';
 
 const extra = Constants.expoConfig?.extra ?? {};
 const supabaseUrl = (extra.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL) as string;
+
+/**
+ * Named `anon` for the legacy key, but the hosted project issues the newer
+ * `sb_publishable_…` format and both go in this variable. They behave the same from here:
+ * low-privilege, mapped to the `anon` Postgres role, and governed entirely by RLS — which
+ * is why the column grants in migration `20261019120000` matter. The difference is that
+ * the new format is not a JWT, so anything that tries to decode it will fail.
+ *
+ * Either is safe in the bundle and in a public repo. The `sb_secret_…` key is not, and
+ * must never reach this file: it maps to `service_role` and bypasses every policy.
+ */
 const supabaseAnonKey = (extra.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) as string;
 
 if (!supabaseUrl || !supabaseAnonKey) {
