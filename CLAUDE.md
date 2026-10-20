@@ -224,8 +224,33 @@ practical way back to a signed-out state; there is no sign-out UI yet.
 
 ## CI
 
-`.github/workflows/ci.yml`, on push to `main` and on pull requests; green as of the last
-push. The app job runs typecheck, lint, jest, the contrast floors, and a check that the
+`.github/workflows/ci.yml`, on push to `main` and on pull requests.
+
+**A local pass does not mean CI passes, and the gap is `.expo/types/router.d.ts`.**
+Typed routes generate that file, the dev server writes it, and it is gitignored — so it
+exists here and never on a fresh checkout. With it, `useSegments()` returns a wide tuple;
+without it, a one-element tuple, and `segments[1]` fails with `TS2493: Tuple type
+'[string]' of length '1' has no element at index '1'`. That turned the app job red for
+six commits while every local check passed. Read segments through
+`(segments as readonly string[])[index]`.
+
+To check a change the way CI will, clone and install from the lockfile rather than
+trusting the working tree:
+
+```bash
+git clone . /tmp/cirepro && cd /tmp/cirepro && npm ci && npx tsc --noEmit
+```
+
+`gh` is not installed on this machine, so CI results are not visible from the shell.
+The runs are readable anonymously through the API, which is the cheap way to avoid
+claiming green without looking:
+
+```bash
+curl -s "https://api.github.com/repos/FazlullahNajafi/bespa/actions/runs?per_page=5"
+```
+
+(Job logs need authentication and return 403; the per-step conclusions in
+`/actions/runs/<id>/jobs` do not, and are usually enough to locate the failure.) The app job runs typecheck, lint, jest, the contrast floors, and a check that the
 committed `icon.tsx` still matches what its generator produces. The database job starts
 Postgres alone (every other service excluded) and runs pgTAP, which also proves the
 migrations apply in order to an empty database.
