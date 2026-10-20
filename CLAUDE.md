@@ -304,9 +304,19 @@ values:
   and fake-bold on web. Each `type` step names its real DM Sans face; a local override must
   set `fontFamily` too.
 - **Expo draws edge-to-edge since SDK 54, and Android 15 enforces it.** The window no
-  longer resizes for the keyboard, and the status bar sits *on* the content. `Screen`
-  handles both (a top safe-area inset, `behavior="padding"` on every platform); anything
-  bypassing it must too.
+  longer resizes for the keyboard, and the system bars sit *on* the content. `Screen`
+  handles three things — a top safe-area inset, `behavior="padding"` on every platform,
+  and an opaque band painted behind the status bar so scrolling content disappears under
+  it instead of colliding with the clock. Android 15 no longer allows a solid status-bar
+  colour, which is why the app draws its own. Anything bypassing `Screen` must do the same.
+- **A navigator's own chrome pays its own insets.** The tab bar is not inside `Screen`,
+  so it got none: its labels ended at y=1544 on the test device and the navigation bar
+  begins at exactly y=1544, leaving them flush against the back/home/recents buttons (and
+  under the pill on a gesture-nav phone). `tabBarStyle` now adds `insets.bottom` to both
+  `height` and `paddingBottom` — height as well, or the padding just squeezes the icon
+  and label instead of growing the bar. Verify with
+  `adb shell dumpsys window windows | grep -A8 NavigationBar0` for the real frame, and
+  `uiautomator dump` for where the labels actually land.
 - **`react-native-svg` and `react-native-web` forward unknown props to the DOM.** Use
   `aria-hidden`, not `accessibilityElementsHidden`/`importantForAccessibility`.
 - **Installing a dependency mid-session needs Metro's cache cleared**, or the next bundle

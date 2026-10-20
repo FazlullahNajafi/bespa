@@ -44,6 +44,18 @@ export function Screen({ children, scroll = true, footer }: Props) {
         {children}
       </Body>
 
+      {/* An opaque band behind the status bar.
+          The inset above keeps the FIRST heading clear of the clock, but nothing stops
+          the rest scrolling underneath it — and a heading sliding behind the time and
+          battery is unreadable exactly where spec 08.1 asks for legibility in glare.
+          Android 15 no longer allows a solid status-bar colour, so the app draws its own.
+          Last child and absolutely positioned, so it paints over the scrolling content
+          without taking part in the layout. */}
+      <View
+        pointerEvents="none"
+        style={[styles.statusBand, { height: insets.top, backgroundColor: colors.background }]}
+      />
+
       {footer ? (
         <View
           style={[
@@ -68,6 +80,12 @@ const styles = StyleSheet.create({
     padding: layout.gutter,
     gap: space.lg,
     flexGrow: 1,
+  },
+  statusBand: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
   footer: {
     padding: layout.gutter,

@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '@/i18n';
 
 import { Icon, type IconName } from '@/components/icon';
@@ -26,6 +27,7 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const scheme = useScheme();
   const colors = semantic(scheme);
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -33,10 +35,19 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
+        // The bar has to pay the bottom inset itself. Expo draws edge-to-edge from SDK
+        // 54 and Android 15 enforces it, so the window extends under the system
+        // navigation bar: without this the labels end exactly where the back/home/recents
+        // buttons begin — measured at y=1544 on both — and on a gesture-nav device the
+        // home pill lands on top of them.
+        //
+        // `height` as well as padding, because padding alone shrinks the room left for
+        // the icon and label rather than growing the bar.
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          minHeight: layout.tap + 12,
+          height: layout.tap + 12 + insets.bottom,
+          paddingBottom: insets.bottom,
         },
         // Without this React Navigation renders its own placeholder, which on Android is
         // an unmapped glyph (tofu) that also leaks into the tab's accessibility label.
