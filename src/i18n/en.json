@@ -32,7 +32,8 @@
       "action": "Create account",
       "toSignIn": "Already have an account? Sign in",
       "checkEmail": "Check your email",
-      "checkEmailBody": "We sent a confirmation link to {{email}}. Open it to finish signing up."
+      "checkEmailBody": "We sent a confirmation link to {{email}}. Open it to finish signing up.",
+      "checkEmailSlow": "It can take a few minutes, and it may land in spam. If it does not arrive, use Google instead — it signs you in straight away."
     },
     "fields": {
       "name": "Full name",
