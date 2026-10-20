@@ -106,6 +106,7 @@ commission. Charging for a ride booking would push drivers back to phone calls i
 | # | Risk | Severity | Mitigation |
 |---|---|---|---|
 | 1 | **Transport cold start** — an empty board kills retention on first open | **High** | One route first; recruit through the stand unions in person; ship a callable driver directory that is useful at zero liveness; never fake supply ([§4.7](04-module-transport.md)) |
+| 1b | **Village cold start** — the sarpanch never posts, so the village module is empty on first open | **High** | The LAHDC mirror is the primary notice source, not the fallback: it is useful at zero local participation, like the driver directory in risk #1. `panchayat_admin` is a role, not an office — grant it to the panchayat secretary or to whoever already runs the village WhatsApp group, on the sarpanch's nomination. Helplines, calendar and weather fill the same gap ([§3.5](03-module-village.md)) |
 | 2 | **Connectivity and shutdowns** | High | Offline-first cache, bundled helplines and calendar, outbox queue, Lite mode ([§2.3](02-architecture.md)) |
 | 3 | **Wrong Hijri date** — a correctness failure that costs religious credibility instantly | High | Local moon-sighting offset set by district admin; "subject to moon sighting" language on unconfirmed months; local scholarly review of all seed events ([§5.1](05-module-civic.md)) |
 | 4 | **Privacy breach — the directory becomes a phone-number harvest** | High | Numbers excluded from the base view, revealed one at a time by RPC, rate-limited, audited; village change rate-limited; clear per-field controls ([§3.4](03-module-village.md)) |
@@ -121,8 +122,17 @@ commission. Charging for a ride booking would push drivers back to phone calls i
 
 1. **Pilot villages** — which three? Baroo is the obvious transport anchor (highest route
    frequency); the other two should differ in size and distance from town.
-2. **Institutional backing** — is there an LAHDC or panchayat sponsor? It changes what geo
-   and department data is obtainable, and how much the issue module can promise.
+2. **Institutional backing — ANSWERED (2026-10-20): none.** Bespa is built on its own
+   initiative, with no LAHDC or panchayat sponsor. Three consequences. Official notices
+   are an **unofficial index**: titles and dates reproduced exactly, always linking to the
+   original on `kargil.nic.in`, never paraphrased, and labelled with their source so the
+   app cannot be mistaken for a government channel. The mirror needs a **kill switch
+   readable at query time** — `notice_sources.enabled` — so it can be turned off in
+   minutes if the administration objects, without a release. And the realistic route to
+   backing is bottom-up: an **LAHDC councillor** covers a constituency of several
+   villages, is elected and so wants reach, and is a far easier first conversation than
+   the council as an institution. The issue module must promise nothing it cannot deliver
+   without a sponsor (risk #6).
 3. **Village stats provenance** — Census 2011 is the only complete source and is now
    badly dated. Publish it labelled `source: Census 2011`, or collect fresh figures per
    village with the panchayat's help?

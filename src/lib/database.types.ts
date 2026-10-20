@@ -179,6 +179,116 @@ export type Database = {
           },
         ]
       }
+      notice_sources: {
+        Row: {
+          disclaimer: string | null
+          enabled: boolean
+          homepage_url: string | null
+          key: string
+          label: string
+        }
+        Insert: {
+          disclaimer?: string | null
+          enabled?: boolean
+          homepage_url?: string | null
+          key: string
+          label: string
+        }
+        Update: {
+          disclaimer?: string | null
+          enabled?: boolean
+          homepage_url?: string | null
+          key?: string
+          label?: string
+        }
+        Relationships: []
+      }
+      notices: {
+        Row: {
+          body: string
+          category: Database["public"]["Enums"]["notice_category"]
+          created_at: string
+          expires_at: string | null
+          fetched_at: string | null
+          geo_path: unknown
+          geo_unit_id: string
+          id: string
+          is_pinned: boolean
+          published_at: string
+          published_by: string | null
+          source: string
+          source_ref: string | null
+          source_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          category?: Database["public"]["Enums"]["notice_category"]
+          created_at?: string
+          expires_at?: string | null
+          fetched_at?: string | null
+          geo_path: unknown
+          geo_unit_id: string
+          id?: string
+          is_pinned?: boolean
+          published_at?: string
+          published_by?: string | null
+          source?: string
+          source_ref?: string | null
+          source_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: Database["public"]["Enums"]["notice_category"]
+          created_at?: string
+          expires_at?: string | null
+          fetched_at?: string | null
+          geo_path?: unknown
+          geo_unit_id?: string
+          id?: string
+          is_pinned?: boolean
+          published_at?: string
+          published_by?: string | null
+          source?: string
+          source_ref?: string | null
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notices_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: false
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notices_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notices_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notices_source_fkey"
+            columns: ["source"]
+            isOneToOne: false
+            referencedRelation: "notice_sources"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -469,8 +579,22 @@ export type Database = {
         Args: { r: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
+      import_official_notice: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["notice_category"]
+          p_expires_at?: string
+          p_geo_unit: string
+          p_published_at?: string
+          p_source: string
+          p_source_ref: string
+          p_source_url: string
+          p_title: string
+        }
+        Returns: string
+      }
       is_phone_verified: { Args: never; Returns: boolean }
       my_village: { Args: never; Returns: string }
+      my_village_path: { Args: never; Returns: unknown }
       my_weather_point: {
         Args: never
         Returns: {
@@ -479,6 +603,17 @@ export type Database = {
           lon: number
           place: string
         }[]
+      }
+      publish_notice: {
+        Args: {
+          body: string
+          category?: Database["public"]["Enums"]["notice_category"]
+          expires_at?: string
+          geo_unit: string
+          is_pinned?: boolean
+          title: string
+        }
+        Returns: string
       }
       register_my_device: {
         Args: { locale?: string; platform?: string; token: string }
