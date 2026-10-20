@@ -13,6 +13,7 @@ import { useSession } from '@/store/session';
 import { useMyProfile } from '@/api/profile';
 import { startConnectivityWatch, useOnReconnect } from '@/lib/net';
 import { drain } from '@/lib/outbox';
+import { registerForPush } from '@/lib/push';
 import { initSentry, wrapRoot } from '@/lib/sentry';
 import { useScheme } from '@/theme/use-scheme';
 import { semantic } from '@/theme/tokens';
@@ -92,6 +93,10 @@ function useAuthRedirect() {
 
     void SplashScreen.hideAsync();
   }, [ready, session, profile.isPending, profile.data, segments, router]);
+
+  // Handed back so the navigator can register for push once a village exists, without
+  // mounting the profile query a second time.
+  return profile.data?.village_id ?? null;
 }
 
 /**
@@ -102,7 +107,7 @@ function RootNavigator() {
   const scheme = useScheme();
   const colors = semantic(scheme);
 
-  useAuthRedirect();
+  const villageId = useAuthRedirect();
 
   // One connectivity source for the whole app: it drives TanStack's onlineManager (which
   // makes the already-configured `refetchOnReconnect` actually fire) and wakes the
@@ -112,6 +117,22 @@ function RootNavigator() {
   // Drains at start and on every reconnect, so work queued offline leaves without the
   // user having to revisit the screen that created it.
   useOnReconnect(() => void drain());
+
+  /**
+   * Register for push once the user is actually a member of a village.
+   *
+   * Not at sign-in: a token is only useful once there is a village to scope notices to,
+   * and asking for the notification permission on the very first screen — before the app
+   * has shown anyone anything — is how an app gets refused and then muted.
+   *
+   * Runs on every launch rather than once, because the token can change (reinstall,
+   * restore, a cleared app) and because `register_my_device` re-points a shared handset
+   * at whoever is signed in now. It is idempotent server-side, and it fails soft.
+   */
+  useEffect(() => {
+    if (!villageId) return;
+    void registerForPush();
+  }, [villageId]);
 
   return (
     <>

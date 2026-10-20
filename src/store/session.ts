@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
 import { queryClient } from '@/lib/queryClient';
+import { unregisterPush } from '@/lib/push';
 
 type SessionState = {
   session: Session | null;
@@ -23,6 +24,11 @@ export const useSession = create<SessionState>(() => ({
    * previous user's name, village and profile until each query revalidates.
    */
   signOut: async () => {
+    // Drop the push token BEFORE the session goes, since forgetting it needs an
+    // authenticated call. Otherwise the next notice for this account lands on a handset
+    // its owner has already handed back — the same shared-phone concern that puts the
+    // session in SecureStore and keeps the query cache from outliving a sign-out.
+    await unregisterPush();
     await supabase.auth.signOut();
     queryClient.clear();
   },

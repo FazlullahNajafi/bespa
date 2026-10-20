@@ -136,6 +136,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         project: process.env.SENTRY_PROJECT || 'bespa',
       },
     ] as [string, Record<string, unknown>],
+    /**
+     * Notices are the reason this is here (spec 03.5): an announcement nobody is told
+     * about only reaches whoever happens to open the app that day.
+     *
+     * No custom icon or sound yet — Android falls back to the app icon, and spec 08
+     * has no notification asset. `defaultChannel` is deliberately omitted: the channels
+     * are created at runtime in `src/lib/push.ts`, where the alert channel can be given
+     * HIGH importance, and a channel's importance cannot be changed once it exists.
+     */
+    [
+      'expo-notifications',
+      {
+        color: '#2B3A6B', // primary, Suru Dawn — the tint behind the tray icon
+      },
+    ] as [string, Record<string, unknown>],
     // Adds native code, so changing this requires a new development build — the JS
     // bundle alone cannot carry it.
     '@react-native-google-signin/google-signin',

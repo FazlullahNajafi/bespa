@@ -232,6 +232,14 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
+#
+# OFF deliberately, and it must stay off on the hosted project too (spec 01.8 #2).
+# A confirmation link assumes a working mail app, a data connection at that exact moment,
+# and the confidence to leave Bespa, find the mail, come back. On a shared handset with a
+# half-remembered Gmail password that is where sign-up ends. Nothing is sent to the
+# address, so a wrong one costs nothing; identity is established by the village pick and,
+# once DLT registration clears, by phone-OTP -- which is what spec 10.5 intends as the
+# real gate. Google sign-in has no confirmation step at all and is the better path.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false

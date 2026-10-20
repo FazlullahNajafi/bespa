@@ -69,6 +69,13 @@ JWT. Same privileges and the same env var; it simply is not a JWT, so nothing ma
 decode it. **The `sb_secret_…` key must never enter the repo, `.env`, `eas.json` or the
 bundle** — it maps to `service_role` and bypasses every policy.
 
+**Do not run `supabase config push`.** It sends the whole of `config.toml` to the linked
+project, including `[auth.external.google]`, whose `secret` here is a deliberate
+placeholder — the native ID-token flow never performs the web redirect exchange that a
+secret authenticates. Pushing would overwrite the real secret on the hosted project and
+break Google sign-in. Change hosted auth settings in the dashboard; `config.toml`
+governs the local stack.
+
 **`supabase db push --include-seed` seeds only when it also has migrations to push.** Once
 the migration history is current it reports "Remote database is up to date" and silently
 skips the seeds, so a project can end up with the whole schema and no geography — which

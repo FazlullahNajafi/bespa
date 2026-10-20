@@ -84,6 +84,51 @@ export type Database = {
           },
         ]
       }
+      devices: {
+        Row: {
+          created_at: string
+          expo_token: string
+          id: string
+          last_seen_at: string
+          locale: string | null
+          platform: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expo_token: string
+          id?: string
+          last_seen_at?: string
+          locale?: string | null
+          platform?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expo_token?: string
+          id?: string
+          last_seen_at?: string
+          locale?: string | null
+          platform?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geo_units: {
         Row: {
           centroid: unknown
@@ -130,6 +175,54 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json | null
+          id: string
+          kind: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          kind: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          kind?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -359,6 +452,7 @@ export type Database = {
     }
     Functions: {
       admins_geo: { Args: { unit: string }; Returns: boolean }
+      forget_my_devices: { Args: { token?: string }; Returns: undefined }
       geo_children: {
         Args: { parent?: string }
         Returns: {
@@ -385,6 +479,10 @@ export type Database = {
           lon: number
           place: string
         }[]
+      }
+      register_my_device: {
+        Args: { locale?: string; platform?: string; token: string }
+        Returns: undefined
       }
       set_my_privacy: {
         Args: {
