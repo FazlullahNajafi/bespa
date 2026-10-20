@@ -127,6 +127,11 @@ npx eas-cli build:view <id>                                  # detail, including
 npx eas-cli update --branch development -m "message"         # ship an OTA update
 ```
 
+`eas env:list` and some other eas-cli subcommands **prompt for the environment** and
+fail outright when stdin is not a terminal (`Input is required, but stdin is not
+readable`). Pass `--environment development|preview|production` explicitly, and
+`--non-interactive` on builds.
+
 **EAS builds the committed git state, not the working tree.** A build started before
 `git commit` archives the previous commit — that is how the first attempt failed in 58
 seconds, building a tree whose `package.json` lacked `expo-dev-client` while the profile
@@ -368,19 +373,24 @@ values:
   privacy step's phone setting is about, and half the Phase 0 exit criterion. It is
   labelled "Not verified" everywhere it appears, a trigger clears the flag on any change,
   and `is_phone_verified()` still refuses everything it gates.
-- **Sentry reports JS errors but not native crashes yet.** Verified on device
-  2026-10-19: with `EXPO_PUBLIC_SENTRY_DEBUG=1` the SDK initialises, installs its
-  integrations and logs `Captured error event` with no transport error. It also logs
-  `RNSentry module not found` / `Native Sentry SDK is disabled` — the installed dev
-  client was built before Sentry was in the project, so the native module is absent.
-  **A new development build is required before a Java/Kotlin crash or an ANR is
-  reported**; JS and unhandled-promise errors already are. `tracesSampleRate: 0` is
-  confirmed working from the discard lines.
+- **Sentry is OFF in a development build**, by `enabled: !__DEV__ || debug` — and
+  `__DEV__` is true whenever the app is attached to Metro. So a dev build reports nothing
+  unless `EXPO_PUBLIC_SENTRY_DEBUG=1` is set, which also turns on the SDK's own logging.
+  That is deliberate (a dev crash is already on the console, and sending it spends the
+  free tier on noise) but it means **the first build that actually reports anything is
+  `preview`**, where `__DEV__` is false.
+  Build `bd613aba` (2026-10-20, commit 78b4841) is the first dev client containing the
+  native SDK; before it, logcat said `RNSentry module not found` / `Native Sentry SDK is
+  disabled`, so Java/Kotlin crashes and ANRs went unreported while JS errors did not.
+  `tracesSampleRate: 0` is confirmed working from the discard lines.
 - **Sentry's remaining setup.** DSN, `SENTRY_ORG=najafi-cm` and `SENTRY_PROJECT=bespa`
   are in `.env`, so the config plugin is active locally. `SENTRY_AUTH_TOKEN` is in
-  `.env.local` and still has to be added to EAS as an environment variable with
-  sensitive visibility, or a build will succeed and skip symbolication — leaving traces
-  minified, which is most of the reason to run Sentry at all.
+  `.env.local` and is **not** on EAS — `eas env:list --environment development` returns
+  "No variables found", so build `bd613aba` uploaded no source maps. That costs nothing
+  for a dev build (JS comes from Metro already mapped) and a great deal for preview and
+  production, where the bundle is minified and every frame reads
+  `index.android.bundle:1:284513`. Add it before those builds:
+  `eas env:create --name SENTRY_AUTH_TOKEN --scope project --visibility sensitive`.
   `npx expo install --check` reports `@sentry/react-native@8.31.0` as wrong and wants
   `~7.11.0`. **Do not downgrade.** Expo's `bundledNativeModules.json` lags; 8.25 is the
   release that fixed silently dropped spans on React Native >= 0.86, which is this
