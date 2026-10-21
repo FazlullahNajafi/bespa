@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Mirror official notices from kargil.nic.in into `notices` (spec 03.5, 09.3 risk 1b).
 
-Bespa has no LAHDC sponsor (spec 09.4 #2), so this is an INDEX, not a republication.
+Bespa has no sponsor at the District Administration (spec 09.4 #2), so this is an INDEX,
+not a republication.
 It copies the title and the dates exactly as printed and links to the original PDF. It
 never paraphrases, never summarises, and never stores the document's contents — several
 of these are land-acquisition notices (FORM VII, PRELIMINARY NOTIFICATION) whose
@@ -98,7 +99,7 @@ class Notice:
 
     def as_rpc_args(self) -> dict:
         args = {
-            "p_source": "lahdc",
+            "p_source": "district_kargil",
             # The PDF URL is the natural key. Unique per notice, stable across re-runs.
             "p_source_ref": self.url,
             "p_source_url": self.url,

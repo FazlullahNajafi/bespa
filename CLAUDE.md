@@ -393,6 +393,15 @@ values:
   and an opaque band painted behind the status bar so scrolling content disappears under
   it instead of colliding with the clock. Android 15 no longer allows a solid status-bar
   colour, which is why the app draws its own. Anything bypassing `Screen` must do the same.
+- **The bottom inset has exactly one payer per screen.** `Screen` pays it on the
+  scrolling content, so the last row of a list is not under the back/home/recents
+  buttons — the village picker's final villages were, unreachable, until
+  2026-10-21. Two things below a screen already pay it and must suppress it: the
+  component's own `footer`, and the tab bar, which announces itself through
+  `BottomChromeProvider` in `(tabs)/_layout.tsx`. Paying twice is not harmless; it leaves
+  a navigation bar's worth of dead space above the tabs. Note also that
+  `contentContainerStyle` is a ScrollView prop — a `View` ignores it silently, which is
+  how `scroll={false}` lost both insets.
 - **A navigator's own chrome pays its own insets.** The tab bar is not inside `Screen`,
   so it got none: its labels ended at y=1544 on the test device and the navigation bar
   begins at exactly y=1544, leaving them flush against the back/home/recents buttons (and

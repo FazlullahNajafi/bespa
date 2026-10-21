@@ -3,6 +3,7 @@ import { I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from '@/i18n';
 import { Icon, type IconName } from '@/components/icon';
 import { isOfficial, type Notice } from '@/api/notices';
+import { openNoticeDocument, shareNotice } from '@/lib/notice-actions';
 import { relativeDate } from '@/lib/relative-date';
 import { fontFamily, layout, radius, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -10,16 +11,26 @@ import { useColors } from '@/theme/use-scheme';
 /**
  * One notice in a list (spec 03.1 section 6, 03.5).
  *
- * Two things this has to get right, both about trust rather than looks.
+ * The card is the whole interface for a mirrored notice. There is no screen between it
+ * and the document: tapping it — or its PDF button — opens the original, because a page
+ * whose only content was the source's name and a disclaimer was a step that told the
+ * reader nothing they could not already see here. A *village* notice still has its own
+ * screen, because it has words to read.
+ *
+ * Three things this has to get right, all about trust rather than looks.
  *
  * An **official** notice must be unmistakably official, and unmistakably not ours: Bespa
- * has no LAHDC sponsor (spec 09.4 #2), so a mirrored notice carries its source's name
- * and says it opens the original document. Anything less and the app reads as a
- * government channel, which it is not.
+ * has no sponsor at the District Administration (spec 09.4 #2). It carries a shield and
+ * the word, while the administration's full name and the disclaimer are stated once at
+ * the top of the list rather than repeated under every row.
  *
  * An **alert** must not rely on colour (spec 08.1). It gets the warning hue, a glyph,
  * and the word — the categories are shown as icon *and* word throughout, for the
  * low-literacy requirement in spec 08.6.
+ *
+ * **Share** is a first-class action, not a detail-screen afterthought. A notice reaches
+ * most people here because a neighbour forwarded it on WhatsApp, so forwarding is one
+ * tap from the list.
  */
 
 const CATEGORY_ICON: Record<Notice['category'], IconName> = {
@@ -32,10 +43,39 @@ const CATEGORY_ICON: Record<Notice['category'], IconName> = {
 
 type Props = {
   notice: Notice;
-  onPress: () => void;
+  /** Where a village notice's own screen lives; a mirrored one opens its PDF instead. */
+  onOpenDetail: () => void;
 };
 
-export function NoticeCard({ notice, onPress }: Props) {
+/** An action inside the card. Its own 44pt target (spec 08.6), icon *and* word. */
+function CardAction({
+  icon,
+  label,
+  hint,
+  onPress,
+  tint,
+}: {
+  icon: IconName;
+  label: string;
+  hint: string;
+  onPress: () => void;
+  tint: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      style={({ pressed }) => [styles.action, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Icon name={icon} size={16} color={tint} />
+      <Text style={[type.caption, styles.actionText, { color: tint }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function NoticeCard({ notice, onOpenDetail }: Props) {
   const { t } = useTranslation();
   const colors = useColors();
 
@@ -43,20 +83,43 @@ export function NoticeCard({ notice, onPress }: Props) {
   const urgent = notice.category === 'alert';
   const when = relativeDate(notice.published_at);
   const align = I18nManager.isRTL ? ('right' as const) : ('left' as const);
+  const document = official ? notice.source_url : null;
+
+  function open() {
+    if (document) void openNoticeDocument(document);
+    else onOpenDetail();
+  }
+
+  function share() {
+    // The document's own link for a mirrored notice, the words themselves for a village
+    // one — a notice forwarded without either is not worth forwarding.
+    const lines = [notice.title];
+    if (document) lines.push(document);
+    else if (notice.body) lines.push('', notice.body);
+    lines.push(
+      '',
+      official
+        ? t('notices.shareFooterOfficial', {
+            source: notice.notice_sources?.label ?? t('notices.official'),
+          })
+        : t('notices.shareFooter'),
+    );
+    void shareNotice(lines.join('\n'));
+  }
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={open}
       accessibilityRole="button"
       accessibilityLabel={
         official
           ? t('notices.a11yOfficial', {
               title: notice.title,
-              source: notice.notice_sources?.label ?? '',
+              source: notice.notice_sources?.label ?? t('notices.official'),
             })
           : notice.title
       }
-      accessibilityHint={t(official ? 'notices.opensOriginal' : 'notices.opensNotice')}
+      accessibilityHint={t(document ? 'notices.opensPdf' : 'notices.opensNotice')}
       style={({ pressed }) => [
         styles.base,
         {
@@ -105,19 +168,36 @@ export function NoticeCard({ notice, onPress }: Props) {
         {notice.title}
       </Text>
 
-      {/* Attribution, not decoration. A reader has to be able to tell at a glance
-          whether these are the district's words or a neighbour's. */}
-      {official ? (
-        <View style={styles.source}>
-          <Icon name="shield" size={13} color={colors.info} />
-          <Text style={[type.caption, { color: colors.info }]} numberOfLines={1}>
-            {notice.notice_sources?.label ?? t('notices.official')}
-          </Text>
-          <Text style={[type.caption, { color: colors.textSecondary }]}>
-            {t('notices.pdf')}
-          </Text>
-        </View>
-      ) : null}
+      <View style={[styles.actions, { borderTopColor: colors.borderSoft }]}>
+        {/* Whose notice this is, in two words' worth of room. The body's name and the
+            disclaimer are stated once per list, not once per card. */}
+        {official ? (
+          <View style={styles.badge}>
+            <Icon name="shield" size={13} color={colors.info} />
+            <Text style={[type.caption, { color: colors.info }]}>{t('notices.official')}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.spacer} />
+
+        {document ? (
+          <CardAction
+            icon="file"
+            label={t('notices.pdf')}
+            hint={t('notices.opensPdf')}
+            onPress={() => void openNoticeDocument(document)}
+            tint={colors.primary}
+          />
+        ) : null}
+
+        <CardAction
+          icon="send"
+          label={t('notices.share')}
+          hint={t('notices.sharesNotice')}
+          onPress={share}
+          tint={colors.primary}
+        />
+      </View>
     </Pressable>
   );
 }
@@ -141,5 +221,22 @@ const styles = StyleSheet.create({
   },
   chipText: { fontFamily: fontFamily.semibold },
   title: { fontFamily: fontFamily.semibold, fontWeight: '600' },
-  source: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: space.xs,
+  },
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    minHeight: layout.tap,
+    minWidth: layout.tap,
+    paddingHorizontal: space.sm,
+  },
+  actionText: { fontFamily: fontFamily.semibold },
 });

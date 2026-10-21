@@ -97,7 +97,7 @@ select throws_ok(
   'an ordinary member cannot publish at all');
 
 select throws_ok(
-  $$ select import_official_notice('lahdc', 'ref-1', 'https://kargil.nic.in/x.pdf',
+  $$ select import_official_notice('district_kargil', 'ref-1', 'https://kargil.nic.in/x.pdf',
        'ladakh.kargil', 'Fake official notice') $$,
   '42501', null,
   'and cannot reach the importer — only service_role may write an official notice');
@@ -123,49 +123,49 @@ select is(
 -- ---------------------------------------------------------------------------
 reset role;
 select import_official_notice(
-  'lahdc', 'https://kargil.nic.in/notice/sangrah.pdf',
+  'district_kargil', 'https://kargil.nic.in/notice/sangrah.pdf',
   'https://kargil.nic.in/notice/sangrah.pdf',
   'ladakh.kargil',
   'PRELIMINARY NOTIFICATION - Sangrah village Sankoo Tehsil Kargil');
 
 select tests_become('00000000-0000-0000-0000-0000000000f1');
 select is(
-  (select count(*)::int from notices where source = 'lahdc'),
+  (select count(*)::int from notices where source = 'district_kargil'),
   1, 'a district notice reaches a village several levels beneath it');
 
 select is(
-  (select body from notices where source = 'lahdc'),
+  (select body from notices where source = 'district_kargil'),
   '', 'a mirrored notice carries no body — the words stay in the linked original');
 
 -- Re-running the scraper must refresh, never duplicate.
 reset role;
 select import_official_notice(
-  'lahdc', 'https://kargil.nic.in/notice/sangrah.pdf',
+  'district_kargil', 'https://kargil.nic.in/notice/sangrah.pdf',
   'https://kargil.nic.in/notice/sangrah.pdf',
   'ladakh.kargil',
   'PRELIMINARY NOTIFICATION - Sangrah village Sankoo Tehsil Kargil (corrected)');
 
 select is(
-  (select count(*)::int from notices where source = 'lahdc'),
+  (select count(*)::int from notices where source = 'district_kargil'),
   1, 'importing the same notice again updates it in place rather than duplicating');
 
 select is(
-  (select title from notices where source = 'lahdc'),
+  (select title from notices where source = 'district_kargil'),
   'PRELIMINARY NOTIFICATION - Sangrah village Sankoo Tehsil Kargil (corrected)',
   'and the refreshed title wins');
 
 -- ---------------------------------------------------------------------------
 -- The kill switch (spec 09.4 #2)
 -- ---------------------------------------------------------------------------
-update notice_sources set enabled = false where key = 'lahdc';
+update notice_sources set enabled = false where key = 'district_kargil';
 
 select tests_become('00000000-0000-0000-0000-0000000000f1');
 select is(
-  (select count(*)::int from notices where source = 'lahdc'),
+  (select count(*)::int from notices where source = 'district_kargil'),
   0, 'disabling a source hides its notices at once, with no release');
 
 reset role;
-update notice_sources set enabled = true where key = 'lahdc';
+update notice_sources set enabled = true where key = 'district_kargil';
 
 -- ---------------------------------------------------------------------------
 -- An admin may correct their own notice, and may not forge an official one
@@ -178,7 +178,7 @@ select lives_ok(
   'the publishing office can correct its own notice');
 
 select throws_ok(
-  $$ update notices set source = 'lahdc'
+  $$ update notices set source = 'district_kargil'
       where title = 'Water supply cut on Friday' $$,
   '42501', null,
   'but CANNOT restamp it as official — a column grant, not a policy, is what stops this');

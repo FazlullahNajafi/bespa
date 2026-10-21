@@ -6,9 +6,10 @@ import { BackLink } from '@/components/back-link';
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
+import { Icon } from '@/components/icon';
 import { NoticeCard } from '@/components/notice-card';
 import { Screen } from '@/components/screen';
-import { useNotices } from '@/api/notices';
+import { isOfficial, useNotices } from '@/api/notices';
 import { useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
 import { fontFamily, space, type } from '@/theme/tokens';
@@ -22,6 +23,12 @@ import { useColors } from '@/theme/use-scheme';
  * original PDF. A second, possibly stale copy of a land-acquisition notice is a
  * liability rather than a feature. Expired rows are kept in the database, so this stays
  * a filter rather than a deletion and an Archive remains cheap to add.
+ *
+ * The source is named once, here, rather than under every card. Spec 09.4 #2 requires
+ * that Bespa never read as a government channel, and one legible sentence at the top of
+ * the list does that better than the same body's name repeated nine times down it. Both
+ * the name and the disclaimer come from `notice_sources`, so correcting either is a row
+ * and not a release.
  */
 
 function monthKey(iso: string) {
@@ -37,6 +44,11 @@ export default function NoticesScreen() {
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
   const notices = useNotices(Boolean(profile.data?.village_id));
+
+  // Taken from the data rather than hard-coded: if the mirror is switched off, or a
+  // second source is added later, the line at the top follows without a change here.
+  const source =
+    (notices.data ?? []).find((n) => isOfficial(n) && n.notice_sources)?.notice_sources ?? null;
 
   // Grouping is done here rather than in SQL: the order is already correct from the
   // query, and a month heading is a presentation decision that should not cost a
@@ -67,6 +79,22 @@ export default function NoticesScreen() {
 
       <Text style={[type.display, { color: colors.text }]}>{t('notices.title')}</Text>
 
+      {source ? (
+        <View style={styles.attribution}>
+          <Icon name="shield" size={16} color={colors.info} />
+          <View style={styles.attributionText}>
+            <Text style={[type.caption, styles.sourceName, { color: colors.text }]}>
+              {t('notices.sourceIntro', { source: source.label })}
+            </Text>
+            {source.disclaimer ? (
+              <Text style={[type.caption, { color: colors.textSecondary }]}>
+                {source.disclaimer}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
       {notices.isPending ? (
         <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
       ) : notices.isError ? (
@@ -92,7 +120,7 @@ export default function NoticesScreen() {
               <NoticeCard
                 key={notice.id}
                 notice={notice}
-                onPress={() => router.push(`/notices/${notice.id}`)}
+                onOpenDetail={() => router.push(`/notices/${notice.id}`)}
               />
             ))}
           </View>
@@ -104,5 +132,8 @@ export default function NoticesScreen() {
 
 const styles = StyleSheet.create({
   group: { gap: space.sm },
+  attribution: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
+  attributionText: { flex: 1, gap: 2 },
+  sourceName: { fontFamily: fontFamily.semibold },
   month: { textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fontFamily.semibold },
 });

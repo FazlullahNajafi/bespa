@@ -8,25 +8,25 @@ import { BackLink } from '@/components/back-link';
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
-import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { StatusPill } from '@/components/status-pill';
 import { isOfficial, useNotice } from '@/api/notices';
 import { relativeDate } from '@/lib/relative-date';
-import { fontFamily, space, type } from '@/theme/tokens';
+import { space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 /**
  * One notice (spec 03.5).
  *
- * The two kinds read very differently, and should. A village notice is words, so it
- * shows them. An official notice has no body by construction — Bespa indexes the
- * district's notices and never reproduces them (spec 09.4 #2) — so the screen's job is
- * to attribute it, state its dates, and hand the reader the original document.
+ * This screen exists for a **village** notice, which is words and so has something to
+ * show. A mirrored one has no body by construction — Bespa indexes the district's
+ * notices and never reproduces them (spec 09.4 #2) — so its card opens the original
+ * document directly and never comes here. The page this used to show in between held
+ * only the source's name and a disclaimer, both of which the list already states once.
  *
- * That restraint is the point rather than a limitation. Several of these are land
- * acquisition notices whose objection windows are legally meaningful; a summary of ours
- * sitting where the document should be is how someone ends up relying on our paraphrase.
+ * The mirrored branch below is kept as a destination, not as a route anyone taps: a
+ * push notification or a shared link can name any notice id, and landing on a screen
+ * with no way to reach the document would be worse than landing on one button.
  */
 /**
  * The month is spelled out, and the locale is the app's rather than the handset's.
@@ -86,16 +86,17 @@ export default function NoticeScreen() {
 
   const item = notice.data;
   const official = isOfficial(item);
+  const document = official ? item.source_url : null;
   const when = relativeDate(item.published_at);
   const expires = item.expires_at ? new Date(item.expires_at) : null;
 
   return (
     <Screen
       footer={
-        official && item.source_url ? (
+        document ? (
           <Button
             label={t('notices.openOriginal')}
-            onPress={() => void openOriginal(item.source_url!)}
+            onPress={() => void openOriginal(document)}
             loading={opening}
             accessibilityHint={t('notices.opensPdf')}
           />
@@ -123,23 +124,7 @@ export default function NoticeScreen() {
         </Text>
       </View>
 
-      {official ? (
-        <Card>
-          <View style={styles.sourceRow}>
-            <Icon name="shield" size={18} color={colors.info} />
-            <Text style={[type.bodySmall, styles.sourceLabel, { color: colors.text }]}>
-              {item.notice_sources?.label ?? t('notices.official')}
-            </Text>
-          </View>
-          {/* The disclaimer lives on the source row in the database, so it travels with
-              the source rather than being restated on every screen that shows one. */}
-          {item.notice_sources?.disclaimer ? (
-            <Text style={[type.caption, { color: colors.textSecondary }]}>
-              {item.notice_sources.disclaimer}
-            </Text>
-          ) : null}
-        </Card>
-      ) : item.body ? (
+      {item.body ? (
         <Card>
           <Text style={[type.body, { color: colors.text }]}>{item.body}</Text>
         </Card>
@@ -151,6 +136,4 @@ export default function NoticeScreen() {
 const styles = StyleSheet.create({
   header: { gap: space.sm },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
-  sourceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  sourceLabel: { fontFamily: fontFamily.semibold, fontWeight: '600', flex: 1 },
 });

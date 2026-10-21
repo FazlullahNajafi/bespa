@@ -226,6 +226,11 @@
       "event": "Event",
       "vacation": "Holiday",
       "general": "Notice"
-    }
+    },
+    "share": "Share",
+    "sharesNotice": "Opens the share sheet, for WhatsApp and anything else on the phone",
+    "shareFooter": "Shared from Bespa",
+    "shareFooterOfficial": "{{source}} — shared from Bespa",
+    "sourceIntro": "Official notices from {{source}}"
   }
 }

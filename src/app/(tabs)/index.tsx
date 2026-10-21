@@ -147,7 +147,7 @@ export default function HomeScreen() {
             <NoticeCard
               key={notice.id}
               notice={notice}
-              onPress={() => router.push(`/notices/${notice.id}`)}
+              onOpenDetail={() => router.push(`/notices/${notice.id}`)}
             />
           ))}
           <Pressable

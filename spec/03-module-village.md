@@ -120,10 +120,26 @@ Announcements from the panchayat: vacations, orders, events, alerts.
 - **Scope:** a notice targets a geo unit. A `district_admin` may publish to a block or the
   whole district; the notice then appears for every descendant village
   (`path <@ notice.geo_path`).
-- Notice detail supports share-to-WhatsApp with a deep link — the realistic distribution
-  channel in this region, and the main organic growth loop.
-- List is grouped by month; expired notices move to an "Archive" section rather than
-  disappearing.
+- **Mirror (district):** official notices are indexed from `kargil.nic.in`, the portal of
+  the District Administration of Kargil, UT Ladakh. The source is named once at the top of
+  the list, with its disclaimer, rather than under every notice — see
+  [§9.4 #2](09-roadmap-and-risks.md).
+- **A mirrored notice has no screen of its own.** Its card opens the original PDF
+  directly, through a PDF action and through the card itself. The intermediate screen that
+  existed was removed (2026-10-21): it held only the source's name and the disclaimer, so
+  it cost a tap to say what the list already says. A *village* notice keeps its screen,
+  because it has words to read.
+- **Share sits on the card**, not on a detail screen — forwarding on WhatsApp is the
+  realistic distribution channel in this region and the main organic growth loop, so it is
+  one tap from the list. It opens the **system share sheet** rather than a `whatsapp://`
+  link: a direct link fails silently on a phone without WhatsApp, and forecloses the SMS
+  and Bluetooth routes that matter on a handset with no data left. A mirrored notice shares
+  its title and the document's URL; a village notice shares its words.
+- List is grouped by month. **No "Archive" section** (decided 2026-10-21): the
+  authoritative archive is the district's own, 138 pages of it, and every mirrored notice
+  links to its original — a second, possibly stale copy of a land-acquisition notice is a
+  liability rather than a feature. Expired rows are kept in the database, so this is a
+  filter and not a deletion, and an Archive stays cheap to add if it earns its place.
 
 ## 3.6 Profile
 
