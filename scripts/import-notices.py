@@ -233,6 +233,10 @@ def parse_listing(page_html: str, category: str) -> list[Notice]:
     return notices
 
 
+class ImportError_(RuntimeError):
+    """A failure worth reading, rather than a stack trace through urllib."""
+
+
 def call_rpc(base_url: str, key: str, name: str, args: dict) -> None:
     body = json.dumps(args).encode()
     request = urllib.request.Request(
@@ -246,8 +250,34 @@ def call_rpc(base_url: str, key: str, name: str, args: dict) -> None:
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        response.read()
+    try:
+        with urllib.request.urlopen(request, timeout=45) as response:
+            response.read()
+    except urllib.error.HTTPError as error:
+        # PostgREST explains itself in the response body, and that explanation is the
+        # whole diagnosis — a 404 here means the function is missing from THIS project,
+        # which is what an unpushed migration looks like from the client side. Thrown
+        # away by a bare traceback, which is what this used to print.
+        detail = ""
+        try:
+            payload = json.loads(error.read().decode())
+            detail = payload.get("message") or payload.get("hint") or ""
+        except Exception:
+            pass
+
+        hint = ""
+        if error.code == 404:
+            hint = ("\n  The function is not on this project. Apply the migrations:"
+                    "\n      npx supabase db push")
+        elif error.code in (401, 403):
+            # ASCII only: this prints to a cp1252 console, where an en-dash arrives as a
+            # replacement character and makes a clear message look like a second fault.
+            hint = ("\n  SUPABASE_SERVICE_KEY must be the secret (service_role) key, not"
+                    "\n  the publishable one: the importer is closed to it by design.")
+
+        raise ImportError_(
+            f"{name} -> HTTP {error.code}" + (f": {detail}" if detail else "") + hint
+        ) from None
 
 
 def main() -> int:
@@ -320,8 +350,16 @@ def main() -> int:
                          f"{notice.title[:72]}")
                     safe(f"               {notice.url}")
                 else:
-                    call_rpc(base_url, key, "import_official_notice",
-                             notice.as_rpc_args())
+                    try:
+                        call_rpc(base_url, key, "import_official_notice",
+                                 notice.as_rpc_args())
+                    except ImportError_ as failure:
+                        # Stop at the first failure rather than hammering a broken
+                        # endpoint once per notice. Nothing is rolled back, because
+                        # every write so far was an idempotent upsert — re-running after
+                        # the fix simply carries on.
+                        print(f"\n  ! {failure}", file=sys.stderr)
+                        return 1
 
             time.sleep(DELAY_SECONDS)
 
