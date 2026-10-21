@@ -7,8 +7,10 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
+import { NoticeCard } from '@/components/notice-card';
 import { WeatherCard } from '@/components/weather-card';
 import { useGeoUnit } from '@/api/geo';
+import { useNotices } from '@/api/notices';
 import { useMyWeatherPoint } from '@/api/weather';
 import { useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
@@ -58,6 +60,9 @@ export default function HomeScreen() {
   const profile = useMyProfile(session?.user.id);
   const village = useGeoUnit(profile.data?.village_id);
   const point = useMyWeatherPoint(Boolean(profile.data?.village_id));
+  // Spec 03.1 section 6: the latest three, pinned first. The query already orders
+  // that way, so the limit is the whole of the rule.
+  const notices = useNotices(Boolean(profile.data?.village_id), 3);
 
   const name = profile.data?.full_name?.trim() || '';
   const tint = {
@@ -129,12 +134,37 @@ export default function HomeScreen() {
       </View>
 
       <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
-        {t('home.todayInValley')}
+        {t('home.notices')}
       </Text>
 
-      <Card>
-        <EmptyState icon="bell" message={t('home.noActivity')} />
-      </Card>
+      {/* Spec 03.1 makes every section independently empty-able, and this one carries
+          the district mirror as well as the village's own notices — so it has content
+          on day one even in a village whose sarpanch has never posted (spec 09.3
+          risk 1b). */}
+      {notices.data && notices.data.length > 0 ? (
+        <View style={styles.notices}>
+          {notices.data.map((notice) => (
+            <NoticeCard
+              key={notice.id}
+              notice={notice}
+              onPress={() => router.push(`/notices/${notice.id}`)}
+            />
+          ))}
+          <Pressable
+            onPress={() => router.push('/notices')}
+            accessibilityRole="button"
+            style={styles.seeAll}
+          >
+            <Text style={[type.bodySmall, styles.seeAllText, { color: colors.primary }]}>
+              {t('notices.seeAll')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Card>
+          <EmptyState icon="bell" message={t('notices.empty')} />
+        </Card>
+      )}
     </Screen>
   );
 }
@@ -163,4 +193,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileLabel: { fontFamily: fontFamily.semibold },
+  notices: { gap: space.sm },
+  seeAll: { minHeight: layout.tap, justifyContent: 'center' },
+  seeAllText: { fontFamily: fontFamily.semibold, fontWeight: '600' },
 });

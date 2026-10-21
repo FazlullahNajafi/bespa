@@ -32,6 +32,7 @@ export const keys = {
     profile: (villageId: string) => ['village', villageId, 'profile'] as const,
     stats: (villageId: string) => ['village', villageId, 'stats'] as const,
     notices: (villageId: string) => ['village', villageId, 'notices'] as const,
+    notice: (villageId: string, id: string) => ['village', villageId, 'notices', id] as const,
     directory: (villageId: string) => ['village', villageId, 'directory'] as const,
   },
 } as const;

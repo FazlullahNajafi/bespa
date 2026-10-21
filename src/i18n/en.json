@@ -82,7 +82,8 @@
     "openProfile": "Open your profile and settings",
     "quickAccess": "Quick access",
     "todayInValley": "Today in the valley",
-    "noActivity": "Nothing from your village yet. Notices and events will appear here."
+    "noActivity": "Nothing from your village yet. Notices and events will appear here.",
+    "notices": "Notices"
   },
   "weather": {
     "clear": "Clear",
@@ -190,6 +191,41 @@
       "contractor": "Contractor",
       "digital_creator": "Digital creator",
       "other": "Other"
+    }
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "weeksAgo_one": "{{count}} week ago",
+    "weeksAgo_other": "{{count}} weeks ago",
+    "monthsAgo_one": "{{count}} month ago",
+    "monthsAgo_other": "{{count}} months ago",
+    "yearsAgo_one": "{{count}} year ago",
+    "yearsAgo_other": "{{count}} years ago",
+    "upcoming": "Coming up",
+    "unknown": ""
+  },
+  "notices": {
+    "title": "Notices",
+    "empty": "No notices right now.",
+    "seeAll": "See all notices",
+    "pinned": "Pinned",
+    "official": "Official",
+    "pdf": "PDF",
+    "openOriginal": "Open the original document",
+    "opensPdf": "Opens the PDF published by the district",
+    "opensOriginal": "Opens the original document from the district",
+    "opensNotice": "Opens the full notice",
+    "until": "until {{date}}",
+    "a11yOfficial": "{{title}} — official notice from {{source}}",
+    "category": {
+      "alert": "Alert",
+      "order": "Order",
+      "event": "Event",
+      "vacation": "Holiday",
+      "general": "Notice"
     }
   }
 }
