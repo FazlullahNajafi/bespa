@@ -17,6 +17,8 @@ export type MyProfile = {
   created_at: string;
   /** Null until the user has been through the onboarding privacy step (spec 03.4). */
   privacy_reviewed_at: string | null;
+  /** Null until the occupation step has been put to them, answered or skipped (03.6). */
+  occupation_asked_at: string | null;
 };
 
 /**
@@ -26,8 +28,9 @@ export type MyProfile = {
  * village cannot see any village-scoped content, because every RLS policy compares
  * against it. The auth gate reads this to decide whether to route to the picker.
  *
- * `privacy_reviewed_at` rides along for the same reason — it is the second gate state,
- * and the gate must not pay a second round trip before first paint to learn it.
+ * `privacy_reviewed_at` and `occupation_asked_at` ride along for the same reason — they
+ * are the other two gate states, and the gate must not pay a round trip each before
+ * first paint to learn them.
  */
 export function useMyProfile(userId: string | undefined) {
   return useQuery({
@@ -38,7 +41,8 @@ export function useMyProfile(userId: string | undefined) {
       const { data, error } = await supabase
         .from('profiles')
         .select(
-          'id, full_name, avatar_path, occupation, bio, village_id, panchayat_id, roles, created_at, privacy_reviewed_at',
+          'id, full_name, avatar_path, occupation, bio, village_id, panchayat_id, roles, ' +
+          'created_at, privacy_reviewed_at, occupation_asked_at',
         )
         .eq('id', userId!)
         .maybeSingle();
@@ -227,6 +231,48 @@ export function useSetMyPrivacy() {
   return useMutation({
     mutationFn: async (settings: MyPrivacy): Promise<WriteResult> => {
       const result = await submit<true>({ kind: SET_PRIVACY, payload: settings });
+      return toWriteResult(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: keys.me.all });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Occupation (the onboarding step)
+// ---------------------------------------------------------------------------
+
+const SET_OCCUPATION = 'set_my_occupation';
+
+/**
+ * One RPC rather than a column write, although `occupation` *is* a user-writable column
+ * (migration `20261019120000` grants it). The reason is the same as `set_my_privacy`'s:
+ * "answered" and "step complete" must not be able to disagree, and only a definer
+ * function may stamp `occupation_asked_at`. A flag the client can write is a flag that
+ * drifts from what happened.
+ */
+registerHandler<{ occupation: string | null }, true>(SET_OCCUPATION, async ({ occupation }) => {
+  const { error } = await supabase.rpc('set_my_occupation', {
+    // `undefined` omits the argument so the function's own `default null` applies, which
+    // is "skip": stamp the flag, leave any existing occupation alone.
+    p_occupation: occupation ?? undefined,
+  });
+  if (error) throw error;
+  return true;
+});
+
+export function useSetMyOccupation() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (occupation: string | null): Promise<WriteResult> => {
+      const result = await submit<true>({
+        kind: SET_OCCUPATION,
+        payload: { occupation },
+        // Asked once, answered once: a double tap on Continue must not enqueue twice.
+        idempotencyKey: SET_OCCUPATION,
+      });
       return toWriteResult(result);
     },
     onSuccess: (result) => {

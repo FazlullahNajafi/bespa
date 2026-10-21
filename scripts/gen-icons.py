@@ -48,6 +48,17 @@ EXTRA = {
     "check": '<><Path d="M5 12.5l4.5 4.5L19 7.5" {...p}/></>',
     "lock": '<><Rect x="5.5" y="10.5" width="13" height="9" rx="2" {...p}/>'
             '<Path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" {...p}/></>',
+    # Two glyphs for the occupation grid (spec 03.6, design `screens-profile.jsx`). The
+    # design's own grid reused existing icons because its list was eleven generic roles;
+    # the spec's list is fourteen specific ones, and an Islamic scholar drawn as a
+    # crescent or a contractor drawn as a cog is the kind of near-miss that makes a
+    # low-literacy grid harder to read than no icons at all (spec 08.6 asks for icon AND
+    # word, which only helps when the icon is right).
+    "book": '<><Path d="M12 7v12" {...p}/>'
+            '<Path d="M12 7c-1.8-1.4-4.1-2.1-6.6-2.1v12c2.5 0 4.8.7 6.6 2.1" {...p}/>'
+            '<Path d="M12 7c1.8-1.4 4.1-2.1 6.6-2.1v12c-2.5 0-4.8.7-6.6 2.1" {...p}/></>',
+    "bricks": '<><Rect x="4" y="7.5" width="16" height="9.5" rx="1.6" {...p}/>'
+              '<Path d="M4 12.25h16M9.3 7.5v4.75M14.7 12.25V17" {...p}/></>',
     # Android's share glyph -- three dots joined by two lines. The design set has `send`
     # (a paper plane), which was used first and read as "send a message to someone"
     # rather than "pass this on". The platform's own shape is the one people recognise,

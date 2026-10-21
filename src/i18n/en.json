@@ -73,7 +73,33 @@
     "hasChildren": "Opens the next level",
     "selectable": "Selects this place",
     "leafReady": "That's the last level. Confirm below.",
-    "leafEmpty": "Nothing is listed under this yet. Go back and pick another."
+    "leafEmpty": "Nothing is listed under this yet. Go back and pick another.",
+    "pickLevel": {
+      "ut": "Which state do you live in?",
+      "district": "Pick your district",
+      "block": "Pick your block",
+      "village": "Pick your village",
+      "town": "Pick your town",
+      "panchayat": "Pick your panchayat",
+      "municipality": "Pick your municipality"
+    },
+    "step": {
+      "ut": "State",
+      "district": "District",
+      "block": "Block",
+      "village": "Village"
+    },
+    "detect": {
+      "title": "Use my location",
+      "body": "If you are in your village now, Bespa can find it for you.",
+      "action": "Detect my location",
+      "hint": "Asks for location permission, then suggests your village",
+      "or": "or pick it below",
+      "denied": "No problem — pick your village from the list below.",
+      "unsupported": "Location is not available on this phone. Pick your village below.",
+      "failed": "Could not get a location just now. Pick your village below.",
+      "notFound": "No village found near you. Pick yours from the list below."
+    }
   },
   "home": {
     "yourVillage": "Your village",
@@ -232,5 +258,10 @@
     "shareFooter": "Shared from Bespa — notices, transport and services for Kargil district.",
     "sourceIntro": "Official notices from {{source}}",
     "sharePublished": "Published {{date}}"
+  },
+  "occupationStep": {
+    "title": "What do you do?",
+    "subtitle": "Pick the closest one. It helps neighbours find the right person — you can change it any time.",
+    "skip": "Skip for now"
   }
 }

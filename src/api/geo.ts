@@ -129,3 +129,46 @@ export function useSetMyVillage() {
     },
   });
 }
+
+/**
+ * The "use my location" shortcut (spec 02.2, design `screens-location.jsx`).
+ *
+ * A mutation rather than a query: it is something the user *does*, once, by tapping a
+ * button — there is no key worth caching it under, and a cached coordinate is a stale
+ * one.
+ *
+ * `geo_nearest` answers with the whole chain from the root down to the match, so the
+ * picker can jump a four-level cascade in one round trip. It deliberately refuses to
+ * name a village when the nearest one it has a centroid for is too far to believe, and
+ * returns the block instead — 50 of 129 villages have no centroid, and a wrong village
+ * is a wrong tenancy. See the migration for that reasoning.
+ */
+export type GeoMatch = {
+  /** Root-first, the way the picker walks: UT, district, block, then the match. */
+  chain: GeoNode[];
+  /** Metres from the caller to the matched unit. */
+  distanceM: number | null;
+  /** The deepest node — a village or town when it could be named, else a block. */
+  match: GeoNode | null;
+};
+
+export function useGeoNearest() {
+  return useMutation({
+    mutationFn: async (fix: { lat: number; lon: number }): Promise<GeoMatch> => {
+      const { data, error } = await supabase.rpc('geo_nearest', {
+        lat: fix.lat,
+        lon: fix.lon,
+      });
+      if (error) throw error;
+
+      const rows = (data ?? []) as (GeoNode & { distance_m: number | null })[];
+      const chain = rows.map(({ distance_m: _distance, ...node }) => node);
+
+      return {
+        chain,
+        distanceM: rows.find((r) => r.distance_m !== null)?.distance_m ?? null,
+        match: chain.at(-1) ?? null,
+      };
+    },
+  });
+}

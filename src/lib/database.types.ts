@@ -421,6 +421,7 @@ export type Database = {
           id: string
           is_active: boolean
           occupation: string | null
+          occupation_asked_at: string | null
           panchayat_id: string | null
           privacy_reviewed_at: string | null
           roles: Database["public"]["Enums"]["user_role"][]
@@ -436,6 +437,7 @@ export type Database = {
           id: string
           is_active?: boolean
           occupation?: string | null
+          occupation_asked_at?: string | null
           panchayat_id?: string | null
           privacy_reviewed_at?: string | null
           roles?: Database["public"]["Enums"]["user_role"][]
@@ -451,6 +453,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           occupation?: string | null
+          occupation_asked_at?: string | null
           panchayat_id?: string | null
           privacy_reviewed_at?: string | null
           roles?: Database["public"]["Enums"]["user_role"][]
@@ -575,6 +578,19 @@ export type Database = {
           type: Database["public"]["Enums"]["geo_type"]
         }[]
       }
+      geo_nearest: {
+        Args: { lat: number; lon: number; max_km?: number; village_km?: number }
+        Returns: {
+          distance_m: number
+          has_children: boolean
+          id: string
+          name_bft: string
+          name_en: string
+          name_ur: string
+          slug: string
+          type: Database["public"]["Enums"]["geo_type"]
+        }[]
+      }
       has_role: {
         Args: { r: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
@@ -583,7 +599,7 @@ export type Database = {
         Args: {
           p_category?: Database["public"]["Enums"]["notice_category"]
           p_expires_at?: string
-          p_geo_unit: string
+          p_geo_path: string
           p_published_at?: string
           p_source: string
           p_source_ref: string
@@ -619,6 +635,7 @@ export type Database = {
         Args: { locale?: string; platform?: string; token: string }
         Returns: undefined
       }
+      set_my_occupation: { Args: { p_occupation?: string }; Returns: undefined }
       set_my_privacy: {
         Args: {
           in_directory: boolean

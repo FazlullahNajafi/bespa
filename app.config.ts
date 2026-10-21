@@ -151,6 +151,24 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         color: '#2B3A6B', // primary, Suru Dawn — the tint behind the tray icon
       },
     ] as [string, Record<string, unknown>],
+    /**
+     * The village picker's "use my location" shortcut (spec 02.2, design
+     * `screens-location.jsx`): four taps of a cascade become one, for someone standing
+     * in the village they are about to name.
+     *
+     * Foreground only, and the permission string says why rather than that it is needed
+     * — a request with no reason is a request that gets denied, and the picker still
+     * works entirely without it. Background location is never asked for: nothing here
+     * tracks anyone.
+     */
+    [
+      'expo-location',
+      {
+        locationAlwaysAndWhenInUsePermission: false,
+        locationWhenInUsePermission:
+          'Bespa uses your location once, to find which village you are in.',
+      },
+    ] as [string, Record<string, unknown>],
     // Adds native code, so changing this requires a new development build — the JS
     // bundle alone cannot carry it.
     '@react-native-google-signin/google-signin',

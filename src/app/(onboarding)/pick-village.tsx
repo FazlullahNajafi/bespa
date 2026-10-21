@@ -12,18 +12,24 @@ import { useFocusEffect } from 'expo-router';
 import { useTranslation } from '@/i18n';
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
+import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { ListRow } from '@/components/list-row';
 import { PendingChip } from '@/components/pending-chip';
 import { Screen } from '@/components/screen';
+import { Stepper } from '@/components/stepper';
 import {
   useGeoChildren,
+  useGeoNearest,
   useSetMyVillage,
   isTenancyLevel,
+  PICKER_LEVELS,
   type GeoNode,
+  type GeoType,
 } from '@/api/geo';
-import { space, type } from '@/theme/tokens';
+import { canLocate, getFix } from '@/lib/location';
+import { fontFamily, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 /**
@@ -75,6 +81,7 @@ export default function PickVillageScreen() {
 
   const children = useGeoChildren(parent?.id ?? null);
   const setVillage = useSetMyVillage();
+  const nearest = useGeoNearest();
 
   const selectedVillage = trail.find((n) => isTenancyLevel(n.type)) ?? null;
   const selectedPanchayat =
@@ -149,7 +156,50 @@ export default function PickVillageScreen() {
     }
   }
 
+  /**
+   * The level being asked right now, taken from the rows on screen rather than from the
+   * trail's depth — the walk can end in an optional panchayat step, which is below
+   * `village` and not one of `PICKER_LEVELS`.
+   */
+  const level: GeoType | undefined = children.data?.[0]?.type;
+  const atStart = trail.length === skipped;
+
+  // Only the levels this user will actually be asked about. Ladakh and Kargil are
+  // auto-descended today, so the walk is Block then Village; seed a second district and
+  // this grows a step without a change here.
+  const steps = PICKER_LEVELS.slice(skipped).map((l) => t(`onboarding.step.${l}`));
+  const stepIndex = Math.min(Math.max(trail.length - skipped, 0), Math.max(steps.length - 1, 0));
+
   const canConfirm = Boolean(selectedVillage) && !setVillage.isPending;
+
+  /**
+   * "Use my location" (design `screens-location.jsx`, the auto-detect card).
+   *
+   * It proposes, it never saves: the chain comes back, the trail jumps to it, and the
+   * footer still asks for a confirmation by name. Someone standing in Gongma Minjee sees
+   * "Confirm Gongma Minjee" and can disagree — which matters, because the server is
+   * matching against centroids and 50 of 129 villages have none.
+   */
+  async function onDetect() {
+    setError(null);
+
+    const fix = await getFix();
+    if (fix.status !== 'ok') {
+      setError(`onboarding.detect.${fix.status}`);
+      return;
+    }
+
+    try {
+      const match = await nearest.mutateAsync(fix.fix);
+      if (!match.match) {
+        setError('onboarding.detect.notFound');
+        return;
+      }
+      setTrail(match.chain);
+    } catch {
+      setError('errors.unknown');
+    }
+  }
 
   return (
     <Screen
@@ -167,12 +217,23 @@ export default function PickVillageScreen() {
           case — it appears when a choice was made without a connection. */}
       <PendingChip />
 
+      {/* A title per level, as the design has it ("Pick your district", "Pick your
+          block", "Pick your village") rather than one question standing over the whole
+          walk. The "why this matters" line belongs to the first screen only: by the
+          third level it is a wall of text above the thing being chosen, and it has
+          already been read or already been ignored. */}
       <View style={styles.header}>
-        <Text style={[type.display, { color: colors.text }]}>{t('onboarding.title')}</Text>
-        <Text style={[type.body, { color: colors.textSecondary }]}>
-          {t('onboarding.subtitle')}
+        <Text style={[type.display, { color: colors.text }]}>
+          {level ? t(`onboarding.pickLevel.${level}`) : t('onboarding.title')}
         </Text>
+        {atStart ? (
+          <Text style={[type.body, { color: colors.textSecondary }]}>
+            {t('onboarding.subtitle')}
+          </Text>
+        ) : null}
       </View>
+
+      <Stepper steps={steps} current={stepIndex} />
 
       {/* Breadcrumb of the walk so far, tappable to go back up. */}
       {trail.length > skipped ? (
@@ -203,6 +264,39 @@ export default function PickVillageScreen() {
             );
           })}
         </View>
+      ) : null}
+
+      {/* The shortcut through the cascade, offered where the design offers it: at the
+          top, above the manual list, on the first screen only. Hidden outright on a
+          build without the native location module — a button that cannot work is worse
+          than no button. */}
+      {atStart && canLocate() ? (
+        <>
+          <Card>
+            <View style={styles.detect}>
+              <Icon name="locate" size={22} color={colors.primary} />
+              <View style={styles.detectText}>
+                <Text style={[type.bodySmall, styles.detectTitle, { color: colors.text }]}>
+                  {t('onboarding.detect.title')}
+                </Text>
+                <Text style={[type.caption, { color: colors.textSecondary }]}>
+                  {t('onboarding.detect.body')}
+                </Text>
+              </View>
+            </View>
+            <Button
+              label={t('onboarding.detect.action')}
+              variant="secondary"
+              onPress={() => void onDetect()}
+              loading={nearest.isPending}
+              accessibilityHint={t('onboarding.detect.hint')}
+            />
+          </Card>
+
+          <Text style={[type.caption, styles.divider, { color: colors.textFaint }]}>
+            {t('onboarding.detect.or')}
+          </Text>
+        </>
       ) : null}
 
       {children.isPending ? (
@@ -248,8 +342,17 @@ export default function PickVillageScreen() {
         <Button label={t('common.back')} variant="ghost" onPress={onBack} />
       ) : null}
 
+      {/* A refused permission or a fix that did not land is not a failure — the list
+          below was always the way through, and the banner says so in that tone. */}
       {error ? (
-        <Banner message={t(error)} tone={error === 'errors.queued' ? 'info' : 'danger'} />
+        <Banner
+          message={t(error)}
+          tone={
+            error === 'errors.queued' || error.startsWith('onboarding.detect.')
+              ? 'info'
+              : 'danger'
+          }
+        />
       ) : null}
     </Screen>
   );
@@ -257,6 +360,10 @@ export default function PickVillageScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: space.xs },
+  detect: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  detectText: { flex: 1, gap: 2 },
+  detectTitle: { fontFamily: fontFamily.semibold, fontWeight: '600' },
+  divider: { textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.6 },
   trail: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   crumb: { flexDirection: 'row', alignItems: 'center' },
   crumbTap: { paddingVertical: space.xs, paddingHorizontal: space.xs },

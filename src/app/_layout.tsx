@@ -61,13 +61,21 @@ function useAuthRedirect() {
     // user is set up rather than trapping them in onboarding they cannot complete.
     const needsVillage = profile.data ? profile.data.village_id === null : false;
 
+    // The first step, where the design puts it: before the location flow, because it
+    // asks nothing about where anyone lives (spec 03.6, design `screens-profile.jsx`).
+    // An occupation is what makes the village directory worth opening, and asking for it
+    // from profile edit alone was asking nobody.
+    const needsOccupation = profile.data ? profile.data.occupation_asked_at === null : false;
+
     // The second onboarding state, and the reason spec 03.4 asks for a dedicated screen:
     // the defaults publish a new profile to the whole village, phone number included, so
     // someone who would not have chosen that has to be asked before it is true of them.
     // Only after a village exists — every option on that screen is phrased in terms of
     // one, and until then there is nobody for "my village" to mean.
     const needsPrivacy =
-      !needsVillage && profile.data ? profile.data.privacy_reviewed_at === null : false;
+      !needsVillage && !needsOccupation && profile.data
+        ? profile.data.privacy_reviewed_at === null
+        : false;
 
     // Onboarding now has two screens, so "am I already in the group" is no longer a
     // precise enough question — without checking which one, the privacy branch would
@@ -81,7 +89,11 @@ function useAuthRedirect() {
     // element at index '1'", which is what turned the app job red for six commits.
     const step: string | undefined = (segments as readonly string[])[1];
 
-    if (needsVillage) {
+    if (needsOccupation) {
+      if (!(inOnboarding && step === 'occupation')) {
+        router.replace('/(onboarding)/occupation');
+      }
+    } else if (needsVillage) {
       if (!(inOnboarding && step === 'pick-village')) {
         router.replace('/(onboarding)/pick-village');
       }
