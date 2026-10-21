@@ -11,7 +11,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(15);
 
 set search_path = public, extensions;
 
@@ -70,17 +70,36 @@ select is(
   0,
   'a coordinate outside the district resolves to nothing');
 
--- A point in the middle of Kargil block, with village matching forced to a radius no
--- village can satisfy: the block is still a useful answer, because it narrows the list.
+-- A point near Kargil with the locality radius forced to a metre, so nothing can
+-- satisfy it: the nearest block is still a useful answer, because it narrows the walk to
+-- a handful of villages instead of naming one.
 select is(
   (select (array_agg(type::text))[array_length(array_agg(type::text), 1)]
-     from geo_nearest(34.5539, 76.1349, 0.001)),
+     from geo_nearest(34.5600, 76.1400, 0.001)),
   'block',
   'with no village close enough, the nearest block is returned instead of a wrong village');
 
+-- The point of the fallback. Akchamal is 2.2 km from here and Kargil town is 0.8 km, and
+-- neither may be proposed once they are outside the believable radius: the picker
+-- pre-selects whatever comes back, so a far-off match is a confident wrong answer.
 select ok(
-  (select bool_and(type <> 'village') from geo_nearest(34.5539, 76.1349, 0.001)),
-  'and no village is proposed in that case, so nobody is given the wrong tenancy');
+  (select bool_and(type not in ('village', 'town')) from geo_nearest(34.5600, 76.1400, 0.001)),
+  'and no village or town is proposed in that case, so nobody is given a wrong tenancy');
+
+-- Kargil town. It was missing from the geography until migration 20261021200000, and
+-- the symptom was this: standing in the district headquarters, the shortcut proposed
+-- Akchamal, a village 2.2 km away in another block, because that was the nearest thing
+-- the table held. A regression here is a user given the wrong tenancy on their first
+-- screen.
+select is(
+  (select name_en from geo_nearest(34.5539, 76.1349) where type = 'town'),
+  'Kargil',
+  'standing in Kargil town resolves to Kargil town, not to the nearest village');
+
+select is(
+  (select count(*)::int from geo_nearest(34.5539, 76.1349) where type = 'village'),
+  0,
+  'and no village is proposed over it');
 
 -- ---------------------------------------------------------------------------
 -- set_my_occupation

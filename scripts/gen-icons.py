@@ -48,6 +48,16 @@ EXTRA = {
     "check": '<><Path d="M5 12.5l4.5 4.5L19 7.5" {...p}/></>',
     "lock": '<><Rect x="5.5" y="10.5" width="13" height="9" rx="2" {...p}/>'
             '<Path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" {...p}/></>',
+    # A town, which the design set has no glyph for: it draws rural places and the app
+    # drew both with `home`. A village and the district headquarters cannot share a
+    # picture in a list that holds both (spec 08.6 — the icon has to do work, not sit
+    # beside the word). Two blocks of different heights with windows, against `home`'s
+    # single pitched roof.
+    "town": '<><Path d="M4 20V11l5-3v12" {...p}/>'
+            '<Path d="M9 20V7.5l6.5-3.5V20" {...p}/>'
+            '<Path d="M15.5 20v-7l4.5 2v5" {...p}/>'
+            '<Path d="M3 20h18" {...p}/>'
+            '<Path d="M12 9.5v1.5M12 14v1.5" {...p}/></>',
     # Two glyphs for the occupation grid (spec 03.6, design `screens-profile.jsx`). The
     # design's own grid reused existing icons because its list was eleven generic roles;
     # the spec's list is fourteen specific ones, and an Islamic scholar drawn as a

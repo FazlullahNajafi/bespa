@@ -81,7 +81,8 @@
       "village": "Pick your village",
       "town": "Pick your town",
       "panchayat": "Pick your panchayat",
-      "municipality": "Pick your municipality"
+      "municipality": "Pick your municipality",
+      "localityMixed": "Pick your village or town"
     },
     "step": {
       "ut": "State",

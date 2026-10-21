@@ -53,7 +53,7 @@ const LEVEL_ICON: Record<GeoNode['type'], IconName> = {
   district: 'pin',
   block: 'locate',
   village: 'home',
-  town: 'home',
+  town: 'town',
   panchayat: 'people',
   municipality: 'home',
 };
@@ -161,7 +161,12 @@ export default function PickVillageScreen() {
    * trail's depth — the walk can end in an optional panchayat step, which is below
    * `village` and not one of `PICKER_LEVELS`.
    */
-  const level: GeoType | undefined = children.data?.[0]?.type;
+  const rows = children.data ?? [];
+  const level: GeoType | undefined = rows[0]?.type;
+  // Kargil block holds both villages and the town (spec 02.2 draws Town as a sibling of
+  // Village), so one level can be two kinds of place. Naming only the first one's kind
+  // would put "Pick your village" over a list that contains the district headquarters.
+  const mixed = rows.length > 0 && rows.some((node) => node.type !== level);
   const atStart = trail.length === skipped;
 
   // Only the levels this user will actually be asked about. Ladakh and Kargil are
@@ -224,7 +229,11 @@ export default function PickVillageScreen() {
           already been read or already been ignored. */}
       <View style={styles.header}>
         <Text style={[type.display, { color: colors.text }]}>
-          {level ? t(`onboarding.pickLevel.${level}`) : t('onboarding.title')}
+          {mixed
+            ? t('onboarding.pickLevel.localityMixed')
+            : level
+              ? t(`onboarding.pickLevel.${level}`)
+              : t('onboarding.title')}
         </Text>
         {atStart ? (
           <Text style={[type.body, { color: colors.textSecondary }]}>
