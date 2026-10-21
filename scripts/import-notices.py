@@ -32,6 +32,7 @@ Environment:
 from __future__ import annotations
 
 import argparse
+import datetime
 import html
 import json
 import os
@@ -56,9 +57,23 @@ DISTRICT_PATH = "ladakh.kargil"
 SECTIONS = [
     ("/notice_category/announcements/", "general"),
     ("/notice_category/recruitment/", "general"),
-    ("/notice_category/tenders/", "general"),
-    ("/document-category/office-order/", "order"),
 ]
+
+# Deliberately NOT mirrored:
+#   /notice_category/tenders/        — procurement, addressed to contractors bidding for
+#                                      district work, not to a villager opening Bespa.
+#   /document-category/office-order/ — departmental orders, and in practice a standing
+#                                      archive: every item on page one dates from 2018
+#                                      or 2019. A feed opening with a seven-year-old
+#                                      compassionate-appointment order teaches people
+#                                      the section is not worth checking.
+# Both are a line away if they ever earn their place.
+
+# A notice whose own end date has passed is history, not news. The site keeps 138 pages
+# of it, so without this any widening of `--pages` would bury the current notices under
+# years of closed ones. Expiry AFTER import is a different matter and is left alone —
+# spec 03.5 archives those rather than hiding them.
+STALE_AFTER_DAYS = 365
 
 # Identify the bot honestly. A district IT team that wants to block this should be able
 # to, and should be able to tell who to contact.
@@ -188,6 +203,22 @@ def pick_title(cells: list[str]) -> str | None:
     return None
 
 
+def is_current(notice: "Notice", today: datetime.date) -> bool:
+    """Is this notice still live, at the moment we are fetching it?
+
+    Two cases, because the site prints an end date for some notices and not others:
+    an explicit window that has closed, and an undated item so old it is plainly an
+    archive entry. Anything we cannot date at all is kept — dropping a notice because
+    the page did not print a date would be the worse mistake of the two.
+    """
+    if notice.ends:
+        return notice.ends >= today.isoformat()
+    if notice.starts:
+        started = datetime.date.fromisoformat(notice.starts)
+        return (today - started).days <= STALE_AFTER_DAYS
+    return True
+
+
 def safe(line: str) -> None:
     """Print a line that may contain an en-dash on a cp1252 console."""
     try:
@@ -314,6 +345,7 @@ def main() -> int:
         )
         return 2
 
+    today = datetime.date.today()
     total = 0
     for path, category in SECTIONS:
         for page in range(1, args.pages + 1):
@@ -342,8 +374,15 @@ def main() -> int:
                 )
                 return 1
 
-            print(f"{url}  ({len(found)} notices)")
-            for notice in found:
+            # Filtered AFTER the parse check above, never before it: a page where every
+            # notice has simply expired is a legitimate outcome, and conflating it with
+            # "nothing parsed" would turn an old page into a false alarm.
+            current = [n for n in found if is_current(n, today)]
+            dropped = len(found) - len(current)
+
+            print(f"{url}  ({len(current)} current"
+                  + (f", {dropped} expired skipped)" if dropped else ")"))
+            for notice in current:
                 total += 1
                 if args.dry_run:
                     safe(f"    {notice.starts or '?':10} .. {notice.ends or '?':10}  "
