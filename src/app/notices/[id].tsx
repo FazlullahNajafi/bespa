@@ -11,6 +11,7 @@ import { Card } from '@/components/card';
 import { Screen } from '@/components/screen';
 import { StatusPill } from '@/components/status-pill';
 import { isOfficial, useNotice } from '@/api/notices';
+import { formatDay } from '@/lib/format-date';
 import { relativeDate } from '@/lib/relative-date';
 import { space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -28,22 +29,6 @@ import { useColors } from '@/theme/use-scheme';
  * push notification or a shared link can name any notice id, and landing on a screen
  * with no way to reach the document would be worse than landing on one button.
  */
-/**
- * The month is spelled out, and the locale is the app's rather than the handset's.
- *
- * `7/12/2026` is 7 December on a phone set to en-IN and 12 July on one set to en-US, and
- * several of these are land acquisition notices whose objection window closes on that
- * date. A numeric date is the one thing on this screen a reader could act on and be
- * wrong about.
- */
-function formatDate(date: Date) {
-  return date.toLocaleDateString(i18n.language, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 export default function NoticeScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -119,7 +104,7 @@ export default function NoticeScreen() {
         <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
           {t(when.key, when.values)}
           {expires
-            ? ` · ${t('notices.until', { date: formatDate(expires) })}`
+            ? ` · ${t('notices.until', { date: formatDay(expires, i18n.language) })}`
             : ''}
         </Text>
       </View>

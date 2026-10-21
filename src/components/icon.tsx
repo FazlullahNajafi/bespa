@@ -79,6 +79,7 @@ const paths = (p: Stroke) => ({
   'circle-outline': (<><Circle cx="12" cy="12" r="7.5" {...p}/></>),
   'check': (<><Path d="M5 12.5l4.5 4.5L19 7.5" {...p}/></>),
   'lock': (<><Rect x="5.5" y="10.5" width="13" height="9" rx="2" {...p}/><Path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" {...p}/></>),
+  'share': (<><Circle cx="6" cy="12" r="2.4" {...p}/><Circle cx="17" cy="6" r="2.4" {...p}/><Circle cx="17" cy="18" r="2.4" {...p}/><Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" {...p}/></>),
 });
 
 export type IconName = keyof ReturnType<typeof paths>;

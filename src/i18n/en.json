@@ -19,7 +19,7 @@
   },
   "auth": {
     "signIn": {
-      "title": "Welcome back",
+      "title": "Welcome to Bespa",
       "subtitle": "Sign in to see your village.",
       "action": "Sign in",
       "toSignUp": "New here? Create an account",
@@ -229,8 +229,8 @@
     },
     "share": "Share",
     "sharesNotice": "Opens the share sheet, for WhatsApp and anything else on the phone",
-    "shareFooter": "Shared from Bespa",
-    "shareFooterOfficial": "{{source}} — shared from Bespa",
-    "sourceIntro": "Official notices from {{source}}"
+    "shareFooter": "Shared from Bespa — notices, transport and services for Kargil district.",
+    "sourceIntro": "Official notices from {{source}}",
+    "sharePublished": "Published {{date}}"
   }
 }

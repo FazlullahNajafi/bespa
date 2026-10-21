@@ -135,6 +135,17 @@ Announcements from the panchayat: vacations, orders, events, alerts.
   link: a direct link fails silently on a phone without WhatsApp, and forecloses the SMS
   and Bluetooth routes that matter on a handset with no data left. A mirrored notice shares
   its title and the document's URL; a village notice shares its words.
+- **The shared message is the app's front door**, so its wording is a product decision and
+  lives in `src/lib/notice-share.ts` under test: bold title first, because WhatsApp shows
+  two lines in a group list; then publisher and dates, because a notice without a date is
+  a rumour; then the document; then one line naming Bespa.
+- **PENDING: the share should carry a Bespa link, not only the document.** A forwarded
+  notice is the main growth loop, and the receiver should be able to install the app and
+  land on *that* notice. That needs a Play Store listing and a universal link — `https`
+  with an Android App Link and a Play fallback, not the `bespa://` scheme, which does
+  nothing on a phone without the app. Until the listing exists the message carries the
+  document URL alone (decided 2026-10-21), which is useful on its own and never a dead
+  link.
 - List is grouped by month. **No "Archive" section** (decided 2026-10-21): the
   authoritative archive is the district's own, 138 pages of it, and every mirrored notice
   links to its original — a second, possibly stale copy of a land-acquisition notice is a

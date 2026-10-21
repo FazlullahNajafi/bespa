@@ -1,9 +1,11 @@
 import { I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useTranslation } from '@/i18n';
+import i18n, { useTranslation } from '@/i18n';
 import { Icon, type IconName } from '@/components/icon';
 import { isOfficial, type Notice } from '@/api/notices';
+import { formatDay } from '@/lib/format-date';
 import { openNoticeDocument, shareNotice } from '@/lib/notice-actions';
+import { noticeShareText } from '@/lib/notice-share';
 import { relativeDate } from '@/lib/relative-date';
 import { fontFamily, layout, radius, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -91,20 +93,28 @@ export function NoticeCard({ notice, onOpenDetail }: Props) {
   }
 
   function share() {
-    // The document's own link for a mirrored notice, the words themselves for a village
-    // one — a notice forwarded without either is not worth forwarding.
-    const lines = [notice.title];
-    if (document) lines.push(document);
-    else if (notice.body) lines.push('', notice.body);
-    lines.push(
-      '',
-      official
-        ? t('notices.shareFooterOfficial', {
-            source: notice.notice_sources?.label ?? t('notices.official'),
-          })
-        : t('notices.shareFooter'),
+    const expires = notice.expires_at ? new Date(notice.expires_at) : null;
+
+    // The wording lives in `notice-share`, where it can be tested: a forwarded notice is
+    // the first thing most people here will ever see of Bespa.
+    void shareNotice(
+      noticeShareText({
+        title: notice.title,
+        // The document's own link for a mirrored notice, the words themselves for a
+        // village one — a notice forwarded without either is not worth forwarding.
+        body: official ? '' : notice.body,
+        categoryLabel: t(`notices.category.${notice.category}`),
+        publishedLabel: t('notices.sharePublished', {
+          date: formatDay(new Date(notice.published_at), i18n.language),
+        }),
+        expiresLabel: expires
+          ? t('notices.until', { date: formatDay(expires, i18n.language) })
+          : null,
+        sourceLabel: official ? (notice.notice_sources?.label ?? null) : null,
+        documentUrl: document,
+        footer: t('notices.shareFooter'),
+      }),
     );
-    void shareNotice(lines.join('\n'));
   }
 
   return (
@@ -191,7 +201,7 @@ export function NoticeCard({ notice, onOpenDetail }: Props) {
         ) : null}
 
         <CardAction
-          icon="send"
+          icon="share"
           label={t('notices.share')}
           hint={t('notices.sharesNotice')}
           onPress={share}

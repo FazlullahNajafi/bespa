@@ -1,5 +1,13 @@
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  BackHandler,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useFocusEffect } from 'expo-router';
 
 import { useTranslation } from '@/i18n';
 import { Banner } from '@/components/banner';
@@ -90,10 +98,36 @@ export default function PickVillageScreen() {
     setTrail((current) => [...current, node]);
   }
 
+  const canGoBack = trail.length > skipped;
+
   function onBack() {
     setError(null);
     setTrail((current) => current.slice(0, -1));
   }
+
+  /**
+   * Android's own Back button walks the trail back up, one level at a time.
+   *
+   * It has to be wired by hand because the walk is *state*, not navigation: the whole
+   * cascade is one route, so Android's Back had nothing to pop and closed the app
+   * instead — from Kargil into Gongma Minjee and then Back, and Bespa was gone. That is
+   * a bad first minute for someone who mis-tapped a village.
+   *
+   * Returning `false` once the trail is back at the top hands Back to the system again,
+   * so the gesture still leaves the app from the first screen rather than trapping
+   * someone in onboarding.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (!canGoBack) return false;
+        setError(null);
+        setTrail((current) => current.slice(0, -1));
+        return true;
+      });
+      return () => subscription.remove();
+    }, [canGoBack]),
+  );
 
   async function onConfirm() {
     if (!selectedVillage) return;
@@ -210,7 +244,7 @@ export default function PickVillageScreen() {
         />
       )}
 
-      {trail.length > skipped ? (
+      {canGoBack ? (
         <Button label={t('common.back')} variant="ghost" onPress={onBack} />
       ) : null}
 
