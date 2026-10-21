@@ -259,8 +259,30 @@ def main() -> int:
     base_url = os.environ.get("SUPABASE_URL", "")
     key = os.environ.get("SUPABASE_SERVICE_KEY", "")
     if not args.dry_run and not (base_url and key):
-        return int(bool(sys.stderr.write(
-            "SUPABASE_URL and SUPABASE_SERVICE_KEY are required unless --dry-run\n")) or 2)
+        # Spelling both shells out on purpose: this project is developed on Windows with
+        # both PowerShell and Git Bash in play, and `VAR=value cmd` is bash-only — in
+        # PowerShell it is not a syntax error, it simply never sets the variable, so the
+        # script fails complaining about config the caller believes they supplied.
+        missing = " and ".join(
+            n for n, v in (("SUPABASE_URL", base_url), ("SUPABASE_SERVICE_KEY", key)) if not v
+        )
+        print(
+            f"{missing} not set.\n"
+            "\n"
+            "  PowerShell:\n"
+            '    $env:SUPABASE_URL = "https://<ref>.supabase.co"\n'
+            '    $env:SUPABASE_SERVICE_KEY = "<your sb_secret_ key>"\n'
+            "    python scripts/import-notices.py\n"
+            "\n"
+            "  Git Bash:\n"
+            '    SUPABASE_URL="https://<ref>.supabase.co" \\\n'
+            '      SUPABASE_SERVICE_KEY="<your sb_secret_ key>" \\\n'
+            "      python scripts/import-notices.py\n"
+            "\n"
+            "Or run with --dry-run to see what would be imported without writing.",
+            file=sys.stderr,
+        )
+        return 2
 
     total = 0
     for path, category in SECTIONS:
