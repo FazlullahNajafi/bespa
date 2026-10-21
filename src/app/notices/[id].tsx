@@ -3,7 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 
-import { useTranslation } from '@/i18n';
+import i18n, { useTranslation } from '@/i18n';
 import { BackLink } from '@/components/back-link';
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
@@ -28,6 +28,22 @@ import { useColors } from '@/theme/use-scheme';
  * acquisition notices whose objection windows are legally meaningful; a summary of ours
  * sitting where the document should be is how someone ends up relying on our paraphrase.
  */
+/**
+ * The month is spelled out, and the locale is the app's rather than the handset's.
+ *
+ * `7/12/2026` is 7 December on a phone set to en-IN and 12 July on one set to en-US, and
+ * several of these are land acquisition notices whose objection window closes on that
+ * date. A numeric date is the one thing on this screen a reader could act on and be
+ * wrong about.
+ */
+function formatDate(date: Date) {
+  return date.toLocaleDateString(i18n.language, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export default function NoticeScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -102,7 +118,7 @@ export default function NoticeScreen() {
         <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
           {t(when.key, when.values)}
           {expires
-            ? ` · ${t('notices.until', { date: expires.toLocaleDateString() })}`
+            ? ` · ${t('notices.until', { date: formatDate(expires) })}`
             : ''}
         </Text>
       </View>

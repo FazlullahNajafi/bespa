@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import { supabase } from '@/lib/supabase';
 
@@ -17,32 +17,61 @@ import { supabase } from '@/lib/supabase';
  * see what is new. Push is an enhancement, never a precondition.
  */
 
-/**
- * How a notification behaves while the app is open. Without a handler the SDK shows
- * nothing at all, which looks like a delivery failure when it is a configuration gap.
- */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    // Silent by default. These phones are carried into mosques, classrooms and shared
-    // rooms; an alert tone for an ordinary notice is the kind of thing that gets an app
-    // muted permanently, and a muted app delivers nothing. `alert` raises its own.
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+type NotificationsModule = typeof import('expo-notifications');
+
+let cached: NotificationsModule | null | undefined;
 
 /**
- * Spec 03.5 renders `alert` notices in the warning colour and pushes them with high
- * priority, so they get their own channel — on Android the channel, not the message,
- * decides whether something may make a sound and bypass Do Not Disturb, and a channel's
- * importance cannot be raised after it is created.
+ * `expo-notifications` is loaded on first use rather than imported at the top, and the
+ * failure is swallowed.
+ *
+ * A static import throws *at module load* when the binary has no `ExpoPushTokenManager`
+ * — and because the root layout imports this file, that killed the whole app with
+ * "Cannot find native module" on a dev client built before the dependency was added.
+ * Rebuilding fixes that particular phone, but the shape of the bug is worse than the
+ * instance: it turns push from an enhancement into a precondition for the app starting,
+ * which is the opposite of what the comment above promises.
+ *
+ * Returning null instead means an older dev client, or any build where the native module
+ * is missing, runs the entire app and simply gets no push.
  */
-const CHANNELS = [
-  { id: 'default', name: 'Village updates', importance: Notifications.AndroidImportance.DEFAULT },
-  { id: 'alert', name: 'Urgent alerts', importance: Notifications.AndroidImportance.HIGH },
-] as const;
+function notifications(): NotificationsModule | null {
+  if (cached !== undefined) return cached;
+
+  // Ask the native side first rather than importing and catching. `expo-notifications`
+  // throws from its own module body, and a throw crossing a module boundary under Metro
+  // did not reliably land in the catch below — the dev client still showed a red
+  // "Cannot find native module 'ExpoPushTokenManager'" screen. This check is also the
+  // API Expo provides for exactly this question.
+  if (!requireOptionalNativeModule('ExpoPushTokenManager')) {
+    cached = null;
+    return cached;
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('expo-notifications') as NotificationsModule;
+
+    // How a notification behaves while the app is open. Without a handler the SDK shows
+    // nothing at all, which looks like a delivery failure when it is a configuration gap.
+    mod.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        // Silent by default. These phones are carried into mosques, classrooms and shared
+        // rooms; an alert tone for an ordinary notice is the kind of thing that gets an
+        // app muted permanently, and a muted app delivers nothing. `alert` raises its own.
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
+    });
+
+    cached = mod;
+  } catch {
+    cached = null;
+  }
+  return cached;
+}
 
 export type PushResult =
   | { status: 'registered'; token: string }
@@ -50,13 +79,20 @@ export type PushResult =
   | { status: 'unsupported' }
   | { status: 'failed'; reason: string };
 
-async function ensureChannels() {
+/**
+ * Spec 03.5 renders `alert` notices in the warning colour and pushes them with high
+ * priority, so they get their own channel — on Android the channel, not the message,
+ * decides whether something may make a sound and bypass Do Not Disturb, and a channel's
+ * importance cannot be raised after it is created.
+ */
+async function ensureChannels(mod: NotificationsModule) {
   if (Platform.OS !== 'android') return;
-  for (const c of CHANNELS) {
-    await Notifications.setNotificationChannelAsync(c.id, {
-      name: c.name,
-      importance: c.importance,
-    });
+  const channels = [
+    { id: 'default', name: 'Village updates', importance: mod.AndroidImportance.DEFAULT },
+    { id: 'alert', name: 'Urgent alerts', importance: mod.AndroidImportance.HIGH },
+  ];
+  for (const c of channels) {
+    await mod.setNotificationChannelAsync(c.id, { name: c.name, importance: c.importance });
   }
 }
 
@@ -70,15 +106,16 @@ export async function registerForPush(): Promise<PushResult> {
   // than a prompt.
   if (!Device.isDevice) return { status: 'unsupported' };
 
+  const mod = notifications();
+  if (!mod) return { status: 'unsupported' };
+
   try {
     // Channels BEFORE the permission request: on Android 13+ the OS prompt does not
     // appear until at least one channel exists.
-    await ensureChannels();
+    await ensureChannels(mod);
 
-    const existing = await Notifications.getPermissionsAsync();
-    const granted =
-      existing.granted ||
-      (await Notifications.requestPermissionsAsync()).granted;
+    const existing = await mod.getPermissionsAsync();
+    const granted = existing.granted || (await mod.requestPermissionsAsync()).granted;
 
     // Not an error. Someone who said no has said no, and the app carries on.
     if (!granted) return { status: 'denied' };
@@ -89,7 +126,7 @@ export async function registerForPush(): Promise<PushResult> {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
     if (!projectId) return { status: 'failed', reason: 'no EAS project id' };
 
-    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+    const { data: token } = await mod.getExpoPushTokenAsync({ projectId });
 
     const { error } = await supabase.rpc('register_my_device', {
       token,
@@ -112,11 +149,11 @@ export async function registerForPush(): Promise<PushResult> {
  * does not arrive on a phone its owner has handed back.
  */
 export async function unregisterPush(): Promise<void> {
+  const mod = notifications();
   try {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
-    const token = projectId
-      ? (await Notifications.getExpoPushTokenAsync({ projectId })).data
-      : null;
+    const token =
+      mod && projectId ? (await mod.getExpoPushTokenAsync({ projectId })).data : null;
     // `undefined` rather than null, so the argument is omitted and the function's own
     // `default null` applies: without a token, clear every device for this user rather
     // than leave a live one behind — err towards no notifications, never towards the

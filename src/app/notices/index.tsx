@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { useTranslation } from '@/i18n';
+import i18n, { useTranslation } from '@/i18n';
 import { BackLink } from '@/components/back-link';
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
@@ -48,7 +48,9 @@ export default function NoticesScreen() {
     if (!group) {
       group = {
         key,
-        label: new Date(notice.published_at).toLocaleDateString(undefined, {
+        // The app's language, not the handset's: someone reading Bespa in Urdu should
+        // not get English month headings because the phone was set up in English.
+        label: new Date(notice.published_at).toLocaleDateString(i18n.language, {
           month: 'long',
           year: 'numeric',
         }),
