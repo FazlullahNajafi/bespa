@@ -197,6 +197,9 @@ belong in EAS environment variables alone.
 
 ### Running on the physical Android device
 
+`docs/running-on-the-phone.md` is the same ground written for the user to follow
+step by step; keep the two in step when either changes.
+
 No emulator or system image is installed, so a real phone over USB is the only route.
 Expo Go works for anything in the SDK; **a dev-client build is required for native modules
 outside it**, which is why Google Sign-In is gated behind one.
