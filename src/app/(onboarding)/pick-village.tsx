@@ -95,10 +95,26 @@ export default function PickVillageScreen() {
   // committing, so the intermediate level never reaches the screen; an effect would paint
   // the one-option list first and then replace it, which reads as a flicker.
   const onlyChild = children.data?.length === 1 ? children.data[0] : null;
-  if (onlyChild && !isTenancyLevel(onlyChild.type) && trail.length === skipped) {
+  const autoDescending = Boolean(onlyChild) && !isTenancyLevel(onlyChild!.type);
+  if (onlyChild && autoDescending && trail.length === skipped) {
     setTrail((current) => [...current, onlyChild]);
     setSkipped((n) => n + 1);
   }
+
+  /**
+   * True while the walk is still falling through levels nobody is asked about.
+   *
+   * Each level is a separate query, so the descent is not instantaneous however little
+   * the user is asked: UT loads, descends, district loads, descends, block loads. The
+   * screen used to render each of those, and the heading flickered through "Which state
+   * do you live in?", "Pick your district", "Pick your block" in under a second — which
+   * reads as a bug even though every frame of it was true.
+   *
+   * It settles the moment a level has something to ask: more than one option, or a
+   * single option that is a village (never auto-picked — Pashkum block has one village,
+   * and choosing it for the user is the one decision this screen exists to put to them).
+   */
+  const settling = trail.length === skipped && (children.isPending || autoDescending);
 
   function onPick(node: GeoNode) {
     setError(null);
@@ -229,11 +245,13 @@ export default function PickVillageScreen() {
           already been read or already been ignored. */}
       <View style={styles.header}>
         <Text style={[type.display, { color: colors.text }]}>
-          {mixed
-            ? t('onboarding.pickLevel.localityMixed')
-            : level
-              ? t(`onboarding.pickLevel.${level}`)
-              : t('onboarding.title')}
+          {/* The general question holds the screen until the walk settles, rather than
+              naming a level the user is about to be dropped through. */}
+          {settling || !level
+            ? t('onboarding.title')
+            : mixed
+              ? t('onboarding.pickLevel.localityMixed')
+              : t(`onboarding.pickLevel.${level}`)}
         </Text>
         {atStart ? (
           <Text style={[type.body, { color: colors.textSecondary }]}>
@@ -242,7 +260,9 @@ export default function PickVillageScreen() {
         ) : null}
       </View>
 
-      <Stepper steps={steps} current={stepIndex} />
+      {/* Hidden while settling: `skipped` is still counting up, so the row would shed a
+          step at a time as the walk falls through the levels. */}
+      {settling ? null : <Stepper steps={steps} current={stepIndex} />}
 
       {/* Breadcrumb of the walk so far, tappable to go back up. */}
       {trail.length > skipped ? (
@@ -279,7 +299,7 @@ export default function PickVillageScreen() {
           top, above the manual list, on the first screen only. Hidden outright on a
           build without the native location module — a button that cannot work is worse
           than no button. */}
-      {atStart && canLocate() ? (
+      {atStart && !settling && canLocate() ? (
         <>
           <Card>
             <View style={styles.detect}>
@@ -308,7 +328,7 @@ export default function PickVillageScreen() {
         </>
       ) : null}
 
-      {children.isPending ? (
+      {settling || children.isPending ? (
         <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
       ) : children.isError ? (
         <Banner

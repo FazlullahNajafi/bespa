@@ -13,6 +13,7 @@ import { StatusPill } from '@/components/status-pill';
 import { TextField } from '@/components/text-field';
 import { useMyPrivate, useMyProfile, useUpdateMyProfile } from '@/api/profile';
 import { OCCUPATIONS, isKnownOccupation, type Occupation } from '@/lib/occupations';
+import { COUNTRY_CODE, fromE164, isValidNational, toE164 } from '@/lib/phone';
 import { useSession } from '@/store/session';
 import { fontFamily, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -36,7 +37,6 @@ import { useColors } from '@/theme/use-scheme';
  * gates.
  */
 
-const E164 = /^\+[1-9][0-9]{7,14}$/;
 
 /** Which occupation chip is lit. `'other'` means the free-text box decides. */
 type Pick = Occupation | 'other' | null;
@@ -77,7 +77,10 @@ export default function EditProfileScreen() {
 
   const nameValue = name === undefined ? (profile.data?.full_name ?? '') : name;
   const bioValue = bio === undefined ? (profile.data?.bio ?? '') : bio;
-  const phoneValue = phone === undefined ? (priv.data?.phone ?? '') : phone;
+  // The box holds the national digits; `+91` is a fixed label beside it, never typed.
+  // See `lib/phone.ts` — the column stays E.164 because that is what an SMS gateway
+  // will want, but nobody should have to know that to fill in a form.
+  const phoneValue = phone === undefined ? fromE164(priv.data?.phone) : phone;
 
   /**
    * What Save would actually write, normalised the same way `onSave` normalises it —
@@ -88,25 +91,32 @@ export default function EditProfileScreen() {
     full_name: nameValue.trim(),
     occupation: isOther ? freeText.trim() || null : currentPick,
     bio: bioValue.trim() || null,
-    phone: phoneValue.trim() || null,
+    phone: toE164(phoneValue),
   };
+
+  // The phone is compared as typed, not as it would be stored. `toE164` returns null for
+  // a half-finished number, so comparing stored values would call "9419" the same as an
+  // empty field — leaving Save disabled on a number that is wrong, with nothing to press
+  // and no error to read.
+  const phoneDirty = phoneValue.trim() !== fromE164(priv.data?.phone);
 
   const dirty =
     edited.full_name !== (profile.data?.full_name ?? '') ||
     edited.occupation !== stored ||
     edited.bio !== (profile.data?.bio ?? null) ||
-    edited.phone !== (priv.data?.phone ?? null);
+    phoneDirty;
 
   async function onSave() {
     const trimmedName = edited.full_name;
-    const trimmedPhone = edited.phone ?? '';
     const next: typeof errors = {};
 
     if (!trimmedName) next.name = t('profile.edit.nameRequired');
     // Checked here as well as by the column's CHECK constraint, because a constraint
     // violation arrives as an unmapped Postgres error — the user would see "something
-    // went wrong" for a missing country code.
-    if (trimmedPhone && !E164.test(trimmedPhone)) next.phone = t('profile.edit.phoneInvalid');
+    // went wrong" for a number one digit short.
+    if (phoneValue.trim() && !isValidNational(phoneValue)) {
+      next.phone = t('profile.edit.phoneInvalid');
+    }
 
     setErrors(next);
     if (next.name || next.phone) return;
@@ -224,9 +234,13 @@ export default function EditProfileScreen() {
           value={phoneValue}
           onChangeText={setPhone}
           error={errors.phone}
+          prefix={COUNTRY_CODE}
           keyboardType="phone-pad"
           autoComplete="tel"
           textContentType="telephoneNumber"
+          // Ten digits plus the slack for a pasted number with spaces, which
+          // `toNational` strips.
+          maxLength={16}
         />
         {phoneValue.trim() ? (
           <View style={styles.verifyRow}>

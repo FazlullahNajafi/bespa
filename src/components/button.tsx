@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { fontFamily, layout, radius, type } from '@/theme/tokens';
@@ -13,6 +14,11 @@ type Props = {
   loading?: boolean;
   /** Emergency actions get the larger target from spec 08.6. */
   emergency?: boolean;
+  /**
+   * Drawn before the label. For a mark that carries meaning the words cannot — a
+   * provider's logo — not for decorating an ordinary button with a glyph.
+   */
+  leading?: ReactNode;
   accessibilityHint?: string;
 };
 
@@ -27,6 +33,7 @@ export function Button({
   disabled = false,
   loading = false,
   emergency = false,
+  leading,
   accessibilityHint,
 }: Props) {
   const colors = useColors();
@@ -71,6 +78,7 @@ export function Button({
         <ActivityIndicator color={foreground} />
       ) : (
         <View style={styles.content}>
+          {leading}
           <Text style={[type.body, styles.label, { color: foreground }]} numberOfLines={2}>
             {label}
           </Text>

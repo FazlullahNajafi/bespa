@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n';
 
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
+import { GoogleMark } from '@/components/google-mark';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { signIn } from '@/api/auth';
@@ -68,6 +69,7 @@ export default function SignInScreen() {
           </Text>
           <Button
             label={t('auth.signIn.google')}
+            leading={<GoogleMark />}
             onPress={onGoogle}
             variant="secondary"
             loading={googleBusy}

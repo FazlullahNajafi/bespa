@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n';
 
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
+import { GoogleMark } from '@/components/google-mark';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { signUp } from '@/api/auth';
@@ -68,6 +69,7 @@ export default function SignUpScreen() {
           <>
             <Button
               label={t('auth.signIn.google')}
+              leading={<GoogleMark />}
               onPress={onGoogle}
               loading={googleBusy}
               disabled={googleBusy}
@@ -106,6 +108,7 @@ export default function SignUpScreen() {
               confirmation link, it is the only one that reliably finishes at all. */}
           <Button
             label={t('auth.signIn.google')}
+            leading={<GoogleMark />}
             onPress={onGoogle}
             loading={googleBusy}
             disabled={busy || googleBusy}
