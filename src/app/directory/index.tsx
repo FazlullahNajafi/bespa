@@ -92,6 +92,27 @@ export default function DirectoryScreen() {
    * app that can call someone by accident, and a misdial in a village of this size is a
    * social event.
    */
+  /**
+   * Opens the dialler, without asking Android first whether it can.
+   *
+   * `canOpenURL('tel:…')` answers **false** on this phone — and on any Android 11 or
+   * later — unless the app declares the scheme in a `<queries>` manifest block, because
+   * package visibility hides the dialler from apps that have not said they want to see
+   * it. The call itself works perfectly; only the question fails. Asking produced "This
+   * phone cannot place calls" on a handset with a SIM and signal, which is the sort of
+   * message that teaches someone the feature is broken.
+   *
+   * So: try, and let the failure be the answer. The `<queries>` entry would also work,
+   * but it costs a native rebuild to ask a question we do not need the answer to.
+   */
+  async function dial(phone: string) {
+    try {
+      await Linking.openURL(`tel:${phone}`);
+    } catch {
+      setError('directory.noDialer');
+    }
+  }
+
   async function call(member: DirectoryMember) {
     setError(null);
     setCalling(member.id);
@@ -109,9 +130,7 @@ export default function DirectoryScreen() {
         return;
       }
 
-      const url = `tel:${result.phone}`;
-      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
-      else setError('directory.noDialer');
+      await dial(result.phone);
     } catch {
       setError('errors.unknown');
     } finally {
@@ -146,7 +165,7 @@ export default function DirectoryScreen() {
                 </View>
                 {contact.phone ? (
                   <Pressable
-                    onPress={() => void Linking.openURL(`tel:${contact.phone}`)}
+                    onPress={() => void dial(contact.phone!)}
                     accessibilityRole="button"
                     accessibilityLabel={t('directory.callName', { name: contact.name })}
                     style={({ pressed }) => [styles.call, { opacity: pressed ? 0.6 : 1 }]}
