@@ -34,5 +34,7 @@ export const keys = {
     notices: (villageId: string) => ['village', villageId, 'notices'] as const,
     notice: (villageId: string, id: string) => ['village', villageId, 'notices', id] as const,
     directory: (villageId: string) => ['village', villageId, 'directory'] as const,
+    /** The panchayat's own contact cards, pinned above the directory (spec 03.4). */
+    contacts: (villageId: string) => ['village', villageId, 'contacts'] as const,
   },
 } as const;

@@ -161,6 +161,7 @@ function RootNavigator() {
         {/* Pushed over the tabs rather than living inside them — see profile/_layout. */}
         <Stack.Screen name="profile" />
         <Stack.Screen name="notices" />
+        <Stack.Screen name="directory" />
       </Stack>
     </>
   );

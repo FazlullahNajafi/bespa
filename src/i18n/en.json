@@ -264,5 +264,18 @@
     "title": "What do you do?",
     "subtitle": "Pick the closest one. It helps neighbours find the right person — you can change it any time.",
     "skip": "Skip for now"
+  },
+  "directory": {
+    "title": "Village directory",
+    "tile": "Directory",
+    "panchayat": "Panchayat",
+    "search": "Search by name",
+    "call": "Call",
+    "callName": "Call {{name}}",
+    "callHint": "Opens the dialler with their number",
+    "empty": "Nobody from your village has joined yet.",
+    "noMatches": "No one matches that.",
+    "noNumber": "They have not added a number yet.",
+    "noDialer": "This phone cannot place calls."
   }
 }

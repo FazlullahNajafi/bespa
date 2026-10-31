@@ -216,6 +216,7 @@ export type Database = {
           is_pinned: boolean
           published_at: string
           published_by: string | null
+          pushed_at: string | null
           source: string
           source_ref: string | null
           source_url: string | null
@@ -234,6 +235,7 @@ export type Database = {
           is_pinned?: boolean
           published_at?: string
           published_by?: string | null
+          pushed_at?: string | null
           source?: string
           source_ref?: string | null
           source_url?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           is_pinned?: boolean
           published_at?: string
           published_by?: string | null
+          pushed_at?: string | null
           source?: string
           source_ref?: string | null
           source_url?: string | null
@@ -531,6 +534,67 @@ export type Database = {
           },
         ]
       }
+      village_contacts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          designation: string
+          geo_path: unknown
+          geo_unit_id: string
+          id: string
+          name: string
+          phone: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          designation: string
+          geo_path: unknown
+          geo_unit_id: string
+          id?: string
+          name: string
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          designation?: string
+          geo_path?: unknown
+          geo_unit_id?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "village_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "village_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "village_contacts_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: false
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       directory_members: {
@@ -565,6 +629,7 @@ export type Database = {
     }
     Functions: {
       admins_geo: { Args: { unit: string }; Returns: boolean }
+      forget_device_token: { Args: { p_token: string }; Returns: undefined }
       forget_my_devices: { Args: { token?: string }; Returns: undefined }
       geo_children: {
         Args: { parent?: string }
@@ -589,6 +654,13 @@ export type Database = {
           name_ur: string
           slug: string
           type: Database["public"]["Enums"]["geo_type"]
+        }[]
+      }
+      get_member_contact: {
+        Args: { member_id: string }
+        Returns: {
+          phone: string
+          phone_verified: boolean
         }[]
       }
       has_role: {
@@ -620,6 +692,17 @@ export type Database = {
           place: string
         }[]
       }
+      notice_push_queue: {
+        Args: { max_age_days?: number }
+        Returns: {
+          category: Database["public"]["Enums"]["notice_category"]
+          expo_token: string
+          locale: string
+          notice_id: string
+          title: string
+          user_id: string
+        }[]
+      }
       publish_notice: {
         Args: {
           body: string
@@ -631,6 +714,17 @@ export type Database = {
         }
         Returns: string
       }
+      publish_village_contact: {
+        Args: {
+          designation: string
+          geo_unit: string
+          name: string
+          phone?: string
+          sort_order?: number
+        }
+        Returns: string
+      }
+      record_notice_push: { Args: { p_notice_id: string }; Returns: number }
       register_my_device: {
         Args: { locale?: string; platform?: string; token: string }
         Returns: undefined
