@@ -249,6 +249,19 @@ practical way back to a signed-out state; there is no sign-out UI yet.
 
 `.github/workflows/ci.yml`, on push to `main` and on pull requests.
 
+`.github/workflows/daily.yml` is the other one: it imports new district notices, pushes
+them to the villages they cover, and touches the project so it does not pause. It needs
+two repository secrets, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` — that key is the
+`sb_secret_` one, which belongs in GitHub's secret store and nowhere in the repo. Run it
+by hand from the Actions tab with the `dry_run` input to see what it would do.
+
+**A free Supabase project pauses after about 7 days of inactivity, and a paused project's
+subdomain stops resolving at all** — so the app reports "you're offline" on a phone with
+full signal and a working cable, and `nslookup` on the host returns NXDOMAIN. Check with
+`npx supabase projects list`, which prints `"status":"INACTIVE"`; restoring is a dashboard
+button, with no CLI equivalent. That is what the daily job prevents. Note GitHub disables
+scheduled workflows in a repository with no commits for 60 days.
+
 **A local pass does not mean CI passes, and the gap is `.expo/types/router.d.ts`.**
 Typed routes generate that file, the dev server writes it, and it is gitignored — so it
 exists here and never on a fresh checkout. With it, `useSegments()` returns a wide tuple;

@@ -1,0 +1,73 @@
+name: Daily notices
+
+# 02:30 UTC is 08:00 in Kargil — the district publishes during office hours, so the job
+# runs before anyone is likely to look, and a notice posted yesterday afternoon is on
+# people's phones by breakfast.
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  # So it can be run by hand from the Actions tab without waiting for tomorrow, which is
+  # also how to test a change to either script.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print what would happen without writing or sending'
+        type: boolean
+        default: false
+
+# Two jobs could race on the same notice if a scheduled run overlapped a manual one.
+concurrency:
+  group: daily-notices
+  cancel-in-progress: false
+
+jobs:
+  notices:
+    runs-on: ubuntu-latest
+    # The scripts use urllib and the standard library only, so there is nothing to
+    # install and no lockfile to drift.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Mirrors anything new from kargil.nic.in. Already idempotent: the PDF URL is the
+      # natural key, so a re-run of the same page writes nothing.
+      - name: Import official notices
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: >
+          python scripts/import-notices.py
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      # Announces whatever the import (or a sarpanch) added since yesterday.
+      - name: Announce new notices
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: >
+          python scripts/send-notice-push.py
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      # Not decoration: a free Supabase project pauses after about seven days with no
+      # activity, and a paused project's subdomain stops resolving entirely — the app
+      # then reports "you're offline" on a phone with perfect signal, which is exactly
+      # what happened on 2026-10-31. The two steps above already touch the database
+      # every day, so this only matters when they are skipped or fail early; it is one
+      # request and it keeps the guarantee from depending on them.
+      - name: Keep the project awake
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # The same key the steps above already hold, rather than a third secret to set
+          # up and keep in step. It never leaves this runner.
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            "$SUPABASE_URL/auth/v1/settings" -H "apikey: $SUPABASE_SERVICE_KEY")
+          echo "auth settings: HTTP $code"
+          # Any answer proves the project is awake. Only a connection failure is a
+          # problem worth failing the job for.
+          test "$code" != "000"
