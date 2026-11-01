@@ -14,7 +14,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(4);
+select plan(6);
 
 set search_path = public, extensions;
 
@@ -48,10 +48,39 @@ select is(
 -- districts under one root is the multiplication starting.
 -- ---------------------------------------------------------------------------
 
+-- Stated directly rather than through a district count, which is what this used to be.
+-- "One district" was a proxy for "the tree has not doubled" and it stopped being true in
+-- 2026, when Kargil was split into four — so the proxy failed while the property it
+-- stood for held perfectly.
+select is(
+  (select count(*)::int from geo_units),
+  (select count(distinct path)::int from geo_units),
+  'every unit has exactly one path, so nothing can be reached through two parents');
+
+-- The concrete tripwire. Four districts cover the area Bespa serves (Kargil, Drass,
+-- Sankoo, Zanskar); a fifth appearing by itself means the seed has doubled something,
+-- and a third means a re-parent half-applied.
 select is(
   (select count(*)::int from geo_units where type = 'district'),
-  1,
-  'one district, so nothing below it can be reached through two parents');
+  4,
+  'the four districts of the Kargil region, and no more');
+
+-- The split itself, as counts rather than as fifteen separate assertions. These are the
+-- numbers the district administration's own village list produces when its blocks are
+-- grouped the way the 2026 notifications group them — so a re-parent that half-applies,
+-- or a block that drifts to the wrong district, shows up here as an arithmetic failure
+-- rather than as a villager being shown someone else's district.
+select is(
+  (select array_agg(d.name_en || ':' || c.blocks || '/' || c.places order by d.name_en)
+     from geo_units d
+     cross join lateral (
+       select count(*) filter (where g.type = 'block') as blocks,
+              count(*) filter (where g.type in ('village', 'town')) as places
+         from geo_units g where g.path operator(extensions.<@) d.path and g.id <> d.id
+     ) c
+    where d.type = 'district'),
+  array['Drass:2/19', 'Kargil:6/50', 'Sankoo:4/36', 'Zanskar:3/25'],
+  'each district holds the blocks and places the source list gives it');
 
 select * from finish();
 rollback;

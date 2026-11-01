@@ -9,6 +9,10 @@ on Supabase. `spec/` holds the written specification; it is the authority
 for product decisions, and files cite it (`spec 08.6`, `spec 02.2`) rather than restating
 it. Read the cited section before changing behaviour it governs.
 
+`docs/architecture.md` is the orientation map: every directory and what each file
+carries, what is built and how we know, and what the next four phases hold. It is for
+someone arriving at the repo; keep it in step when the shape of the repo changes.
+
 **The target is Android.** iOS and web are not the audience. `npm run web` exists because
 it is the fast way to iterate here, not because the browser is a target — say "verified on
 web" when that is what happened, because it is evidence, not proof. Three real defects
@@ -314,7 +318,14 @@ and wakes the outbox. Before it existed, `refetchOnReconnect: true` was configur
 inert — on React Native that manager never changes state unless something feeds it.
 
 **Geography is one `geo_units` table**, self-referencing via `parent_id` with an ltree
-`path` maintained by trigger (`ladakh.kargil.sankoo.sangrah`). Villages hang off the
+`path` maintained by trigger (`ladakh.sankoo.sankoo.sangrah`). **Ladakh's Kargil region is
+four districts since 2026** — Kargil, Drass, Sankoo, Zanskar — so the picker asks for a
+district now; `seed/005` and migration `20261101090000` carry the split and its evidence.
+Re-parenting relies on `geo_units_repath_descendants`, which was declared `after update OF
+path` and so never fired for the one thing it exists for: `UPDATE OF` means the columns
+*named in the statement*, and a re-parent names `parent_id` while the BEFORE trigger
+rewrites `path` underneath it. Blocks moved and every village stayed behind. Fixed in that
+same migration. Villages hang off the
 **block**, not off a panchayat: the Kargil source spreadsheet lists panchayats and revenue
 villages as two independent columns with no mapping between them. Three entries come from
 the panchayat column because residents name them as home (Gongma Minjee, Chanigund,

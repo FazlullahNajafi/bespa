@@ -29,13 +29,25 @@ Everything hangs off one self-referencing table, `geo_units`:
 
 ```
 UT (Ladakh)
-└── District (Kargil)
-    └── Block (Sankoo, Drass, Shakar-Chiktan, Taisuru, Kargil, Zanskar …)
+└── District (Kargil, Drass, Sankoo, Zanskar)
+    └── Block (Kargil, Soudh, Pashkum, Lotchum, Shargole, Shakar-Chiktan …)
         ├── Village (Minjee, Trespone, Baroo …)
         │     └── Panchayat / halqa
         └── Town (Kargil)
               └── Municipality / ward
 ```
+
+**Four districts, not one (updated 2026-11-01).** Ladakh was reorganised twice in 2026 —
+five new districts on 27 April (S.O. 180) and Sankoo on 16 October (S.O. 284), taking the
+UT from two to eight. Four of them cover the area Bespa serves, and the fifteen blocks
+divide as: Kargil keeps Kargil, Soudh, Pashkum, Lotchum, Shargole and Shakar-Chiktan;
+**Drass** takes Drass and Bhimbat; **Sankoo** takes Sankoo, TSG, Barsoo and Tai-Suru;
+**Zanskar** takes Karsha, Zanskar and Lungnak. Leh, Nubra, Sham and Changthang are real
+and deliberately absent — Bespa holds no data for them.
+
+The villages and blocks themselves did not move, only which district each block hangs
+under, so no user's `village_id` changed. The reasoning, and which single assignment rests
+on geography rather than on a notification, is in `supabase/seed/005_geo_district_split.sql`.
 
 Design decisions:
 
