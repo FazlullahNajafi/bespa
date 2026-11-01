@@ -5,9 +5,10 @@
 -- all fifteen blocks hung off Kargil, so a resident of Padum or Drass was shown a district
 -- that stopped being theirs in April.
 --
--- `seed/005_geo_district_split.sql` is the primary copy and carries the full reasoning:
--- where the mapping came from, what is corroborated, and which single assignment (Barsoo)
--- is placed on geography rather than on a notification. Read it before changing either.
+-- `seed/005_geo_district_split.sql` is the primary copy and carries the full reasoning,
+-- including the check against the Ladakh Gazette (Extraordinary, 22 October 2026,
+-- Notification 407-DRD (UTL) of 2026), which confirms all fifteen blocks block for block.
+-- Read it before changing either.
 --
 -- Declared twice for the reason migration 20261021200000 explains: migrations run before
 -- seeds, so on a fresh database the blocks this re-parents do not exist yet and these

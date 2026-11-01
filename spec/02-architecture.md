@@ -46,8 +46,16 @@ divide as: Kargil keeps Kargil, Soudh, Pashkum, Lotchum, Shargole and Shakar-Chi
 and deliberately absent — Bespa holds no data for them.
 
 The villages and blocks themselves did not move, only which district each block hangs
-under, so no user's `village_id` changed. The reasoning, and which single assignment rests
-on geography rather than on a notification, is in `supabase/seed/005_geo_district_split.sql`.
+under, so no user's `village_id` changed. The mapping is confirmed block for block against
+the Ladakh Gazette (Extraordinary, 22 October 2026, Notification 407-DRD (UTL) of 2026),
+whose annexures tabulate every panchayat halqa under its block under its district; the
+working is in `supabase/seed/005_geo_district_split.sql`.
+
+Note the two vocabularies, because they overlap without lining up. The **revenue** side
+counts tehsils and revenue villages; the **panchayat** side counts blocks and halqas.
+"GM Pore" is a Sankoo tehsil and also the G.M.Pora-A/B halqas inside the TSG block, and
+Gundmangal Pore is a revenue village there. `geo_units` is in block/village vocabulary, so
+a tehsil list cannot be matched to it name for name.
 
 Design decisions:
 

@@ -28,14 +28,24 @@
 --     Thasgam (in Bhimbat) is named a Drass tehsil, Phay (in Karsha) a Zanskar one, and
 --     Sankoo, TSG and Taisuru are three of Sankoo district's four.
 --
---   * **Barsoo is the one assignment no source names**, because the notifications speak in
---     TEHSILS and this table speaks in BLOCKS — different units with different names and
---     boundaries. The gazette's fourth Sankoo tehsil is "GM Pore", which in the block
---     vocabulary is Gundmangal Pore, a revenue village inside TSG. So the lists cannot be
---     compared name for name. Barsoo is placed in Sankoo on the strength of its own
---     hand-checked centroid: 9.6 km from Sankoo, 25.8 km from Kargil town, in the Suru
---     valley. If that is wrong it is one UPDATE, and it is wrong for one block instead of
---     the eight that were wrong before.
+--   * **CONFIRMED against the gazette, 2026-11-01.** All fifteen blocks were checked
+--     against the Ladakh Gazette (Extraordinary, 22 October 2026, Notification
+--     407-DRD (UTL) of 2026), whose annexures tabulate every panchayat halqa under its
+--     block under its district for all eight districts. The four districts here match it
+--     block for block: Kargil holds Kargil, Lotchum, Pashkum, Shaker-Chiktan, Shargole
+--     and South; Drass holds Bhimbat and Drass; Sankoo holds Barsoo, Sankoo, Taisuru and
+--     TSG; Zanskar holds Karsha, Lungnak and Zanskar.
+--
+--     **Barsoo included** — it was the one assignment nothing named when this was
+--     written, because the earlier reports speak in TEHSILS while this table speaks in
+--     BLOCKS. The gazette settles both halves: Barsoo is a block of Sankoo district, and
+--     "GM Pore", the fourth Sankoo *tehsil* those reports named, turns out to be the
+--     G.M.Pora-A and G.M.Pora-B *halqas* inside the TSG block. The two vocabularies
+--     overlap without lining up, which is why they could not be compared name for name.
+--
+--     Two names differ in spelling only, and ours are left alone because they come from
+--     the district administration's own list: `Soudh` is the gazette's `South`, and
+--     `Shakar-Chiktan` its `Shaker-Chiktan`.
 --
 -- Not seeded: Leh, Nubra, Sham and Changthang. They are real districts and Bespa holds no
 -- data for them, and the honesty rule in 001 applies — the tenancy spine is the one table
