@@ -162,9 +162,21 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       ) : (
-        <Card>
-          <EmptyState icon="bell" message={t('notices.empty')} />
-        </Card>
+        /* Tappable even with nothing in it, and that is not a detail: the route to the
+           notices screen used to live inside the branch above, so a village with no
+           notices had no way to reach it — and the admin who could write the first one
+           was the person most firmly locked out. The cold-start case is the one that
+           has to work. */
+        <Pressable
+          onPress={() => router.push('/notices')}
+          accessibilityRole="button"
+          accessibilityLabel={t('notices.title')}
+          accessibilityHint={t('notices.opensList')}
+        >
+          <Card>
+            <EmptyState icon="bell" message={t('notices.empty')} />
+          </Card>
+        </Pressable>
       )}
     </Screen>
   );
