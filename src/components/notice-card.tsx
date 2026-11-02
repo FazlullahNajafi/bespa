@@ -47,6 +47,12 @@ type Props = {
   notice: Notice;
   /** Where a village notice's own screen lives; a mirrored one opens its PDF instead. */
   onOpenDetail: () => void;
+  /**
+   * Shows the card as the composer's preview: no actions, and nothing tappable. Sharing
+   * something not yet published, or opening a document that does not exist, are both
+   * worse than a card that simply sits there and shows what is about to be sent.
+   */
+  preview?: boolean;
 };
 
 /** An action inside the card. Its own 44pt target (spec 08.6), icon *and* word. */
@@ -77,7 +83,7 @@ function CardAction({
   );
 }
 
-export function NoticeCard({ notice, onOpenDetail }: Props) {
+export function NoticeCard({ notice, onOpenDetail, preview = false }: Props) {
   const { t } = useTranslation();
   const colors = useColors();
 
@@ -119,8 +125,8 @@ export function NoticeCard({ notice, onOpenDetail }: Props) {
 
   return (
     <Pressable
-      onPress={open}
-      accessibilityRole="button"
+      onPress={preview ? undefined : open}
+      accessibilityRole={preview ? 'summary' : 'button'}
       accessibilityLabel={
         official
           ? t('notices.a11yOfficial', {
@@ -129,7 +135,7 @@ export function NoticeCard({ notice, onOpenDetail }: Props) {
             })
           : notice.title
       }
-      accessibilityHint={t(document ? 'notices.opensPdf' : 'notices.opensNotice')}
+      accessibilityHint={preview ? undefined : t(document ? 'notices.opensPdf' : 'notices.opensNotice')}
       style={({ pressed }) => [
         styles.base,
         {
@@ -178,6 +184,7 @@ export function NoticeCard({ notice, onOpenDetail }: Props) {
         {notice.title}
       </Text>
 
+      {preview ? null : (
       <View style={[styles.actions, { borderTopColor: colors.borderSoft }]}>
         {/* Whose notice this is, in two words' worth of room. The body's name and the
             disclaimer are stated once per list, not once per card. */}
@@ -208,6 +215,7 @@ export function NoticeCard({ notice, onOpenDetail }: Props) {
           tint={colors.primary}
         />
       </View>
+      )}
     </Pressable>
   );
 }

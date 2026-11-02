@@ -36,6 +36,13 @@ function monthKey(iso: string) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/**
+ * Who sees "Write a notice". The server decides whether a publish is allowed —
+ * `admins_geo` inside `publish_notice` — so this list only governs whether the button is
+ * drawn. Getting it wrong shows a button that then refuses; it cannot grant anything.
+ */
+const ADMIN_ROLES = ['panchayat_admin', 'district_admin', 'super_admin'];
+
 export default function NoticesScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -44,6 +51,10 @@ export default function NoticesScreen() {
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
   const notices = useNotices(Boolean(profile.data?.village_id));
+
+  const canPublish =
+    Boolean(profile.data?.village_id) &&
+    (profile.data?.roles ?? []).some((role) => ADMIN_ROLES.includes(role));
 
   // Taken from the data rather than hard-coded: if the mirror is switched off, or a
   // second source is added later, the line at the top follows without a change here.
@@ -74,7 +85,17 @@ export default function NoticesScreen() {
   }
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        canPublish ? (
+          <Button
+            label={t('composer.write')}
+            onPress={() => router.push('/notices/new')}
+            accessibilityHint={t('composer.publishHint')}
+          />
+        ) : undefined
+      }
+    >
       <BackLink />
 
       <Text style={[type.display, { color: colors.text }]}>{t('notices.title')}</Text>

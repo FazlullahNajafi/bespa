@@ -1,0 +1,40 @@
+name: Announce notices
+
+# Every quarter hour, because a village notice is written and then waited on.
+#
+# The daily job imports from kargil.nic.in and announces whatever it finds, which is right
+# for the mirror — the district publishes during office hours and nobody is waiting on a
+# land-acquisition notice to the minute. A notice a sarpanch writes is the opposite: "the
+# water is off tomorrow" is useless the morning after. Without this, the composer would
+# write to a database and the village would hear about it at eight the next morning.
+#
+# Be honest about what this buys: GitHub's scheduler is best-effort and runs are regularly
+# late under load, so this is "usually within the hour", not a guarantee. A notice that
+# genuinely cannot wait is still a phone call, and the app does not pretend otherwise.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+# The same group as the daily job, which is what stops the two of them reading the queue
+# at once and sending a village two copies of one notice. The queue is only marked as
+# announced *after* a send, so overlap is the one way a double push could happen.
+concurrency:
+  group: daily-notices
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Announce new notices
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/send-notice-push.py

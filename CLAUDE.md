@@ -253,8 +253,17 @@ practical way back to a signed-out state; there is no sign-out UI yet.
 
 `.github/workflows/ci.yml`, on push to `main` and on pull requests.
 
-`.github/workflows/daily.yml` is the other one: it imports new district notices, pushes
-them to the villages they cover, and touches the project so it does not pause. It needs
+`.github/workflows/daily.yml` is the second: it imports new district notices, pushes them
+to the villages they cover, and touches the project so it does not pause.
+`.github/workflows/announce.yml` is the third, every 15 minutes, and runs the push step
+alone — a notice a sarpanch writes is useless the morning after, while the mirror can
+wait. Both share one `concurrency` group, which is what stops them reading the push queue
+at the same time and sending a village two copies of one notice.
+
+**Granting `panchayat_admin` is a hand-run SQL statement**, documented for the user in
+`docs/making-someone-an-admin.md`. There is deliberately no screen: `roles` is not
+user-writable, which is the fix for the October privilege escalation, and a grant screen
+would be a new way in needing its own tests. It needs
 two repository secrets, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` — that key is the
 `sb_secret_` one, which belongs in GitHub's secret store and nowhere in the repo. Run it
 by hand from the Actions tab with the `dry_run` input to see what it would do.

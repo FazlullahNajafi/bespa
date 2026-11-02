@@ -277,5 +277,30 @@
     "noMatches": "No one matches that.",
     "noNumber": "They have not added a number yet.",
     "noDialer": "This phone cannot place calls."
+  },
+  "composer": {
+    "title": "Write a notice",
+    "subtitle": "Everyone in {{village}} will see this, and their phones will tell them.",
+    "noticeTitle": "What is it about?",
+    "noticeTitleHint": "One line. This is what people see first.",
+    "titlePlaceholder": "Your notice",
+    "body": "The notice",
+    "bodyHint": "What people need to know: what, when, and where.",
+    "category": "What kind of notice?",
+    "alertNote": "An alert makes a sound on every phone in the village. Use it when it cannot wait.",
+    "until": "Show it until",
+    "duration": {
+      "none": "No end date",
+      "week": "A week",
+      "fortnight": "Two weeks",
+      "month": "A month"
+    },
+    "pin": "Keep it at the top",
+    "pinHint": "Pinned notices stay above the others.",
+    "preview": "How it will look",
+    "publish": "Publish to {{village}}",
+    "publishHint": "Sends the notice and tells the village",
+    "queued": "Saved. It will be sent as soon as you have a connection — it has not reached anyone yet.",
+    "write": "Write a notice"
   }
 }
