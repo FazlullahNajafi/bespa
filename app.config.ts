@@ -174,15 +174,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * than that access is needed — a request with no reason is a request that gets
      * denied, and a villager who denies it once has denied the gallery forever.
      *
-     * No camera permission: the picker reads the library only. Taking a photo inside the
-     * app is a second permission and a second thing to explain, and people here already
-     * have the photo before they open Bespa.
+     * **Camera and microphone are blocked, and saying so is not enough.** The library
+     * declares CAMERA in its own manifest and the plugin adds RECORD_AUDIO by default, so
+     * build `baac58eb` shipped with both — a comment here claiming otherwise changed
+     * nothing. `false` is what makes the plugin block them, and it is checked by reading
+     * the built APK's manifest rather than by trusting this file.
+     *
+     * It matters beyond tidiness: a Play listing has to justify every permission, and
+     * "we never use it" is the worst answer available. The app only ever reads the
+     * library — people here have the photo before they open Bespa.
      */
     [
       'expo-image-picker',
       {
         photosPermission:
           'Bespa needs your photos so you can share one with your village.',
+        cameraPermission: false,
+        microphonePermission: false,
       },
     ] as [string, Record<string, unknown>],
     // Adds native code, so changing this requires a new development build — the JS

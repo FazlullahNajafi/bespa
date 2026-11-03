@@ -177,6 +177,16 @@ build the fingerprint already exists and can be read with `eas credentials -p an
 (interactive only; there is no flag that prints it). Get it first and register the app
 with it, or the sequence costs two builds.
 
+**A config plugin's defaults are part of your manifest.** `expo-image-picker` declares
+CAMERA in its own manifest and its plugin adds RECORD_AUDIO unless told otherwise, so
+build `baac58eb` shipped with both while `app.config.ts` carried a comment saying the app
+asks for neither. Passing `cameraPermission: false` / `microphonePermission: false` is
+what actually blocks them. Check what shipped by reading the APK rather than the config:
+
+```bash
+python -c "import zipfile,re; m=zipfile.ZipFile('app.apk').read('AndroidManifest.xml').decode('utf-16-le','ignore'); print(sorted(set(re.findall(r'android\.permission\.[A-Z_]+', m))))"
+```
+
 **EAS builds the committed git state, not the working tree.** A build started before
 `git commit` archives the previous commit — that is how the first attempt failed in 58
 seconds, building a tree whose `package.json` lacked `expo-dev-client` while the profile
