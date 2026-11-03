@@ -19,7 +19,7 @@ import {
   useVillageContacts,
   type DirectoryMember,
 } from '@/api/directory';
-import { useMyProfile } from '@/api/profile';
+import { useMyAdminUnits, useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
 import { labelFor } from '@/lib/occupations';
 import { fontFamily, layout, space, type } from '@/theme/tokens';
@@ -46,12 +46,6 @@ function initialsName(member: DirectoryMember) {
   return member.full_name.trim() || '?';
 }
 
-/**
- * Who may maintain the panchayat cards. The server re-checks with `admins_geo` inside
- * every one of those functions, so this list only governs whether a button is drawn.
- */
-const ADMIN_ROLES = ['panchayat_admin', 'district_admin', 'super_admin'];
-
 export default function DirectoryScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -61,13 +55,24 @@ export default function DirectoryScreen() {
   const profile = useMyProfile(session?.user.id);
   const villageId = profile.data?.village_id ?? null;
 
+  const adminUnits = useMyAdminUnits(session?.user.id);
   const members = useDirectory(villageId);
   const contacts = useVillageContacts(villageId);
   const reveal = useMemberContact();
 
+/**
+ * Whether to draw the admin affordance. The grant decides, not the role array: since
+ * migration 20261103090000 a `panchayat_admin` with no grant administers nothing, and a
+ * grant names the village rather than following its holder. `super_admin` holds no
+ * scoped grant and is ORed in.
+ *
+ * The server re-checks every write with `admins_geo`, so this governs buttons and never
+ * permission — being wrong here shows a button that then refuses.
+ */
   const canManage =
     Boolean(villageId) &&
-    (profile.data?.roles ?? []).some((role) => ADMIN_ROLES.includes(role));
+    ((adminUnits.data ?? []).length > 0 ||
+      (profile.data?.roles ?? []).includes('super_admin'));
 
   const [search, setSearch] = useState('');
   const [occupation, setOccupation] = useState<string | null>(null);

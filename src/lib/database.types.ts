@@ -34,6 +34,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_grants: {
+        Row: {
+          geo_unit_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          note: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          geo_unit_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          geo_unit_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_grants_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: false
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_access_log: {
         Row: {
           accessed_at: string
@@ -682,6 +748,15 @@ export type Database = {
         Returns: string
       }
       is_phone_verified: { Args: never; Returns: boolean }
+      my_admin_units: {
+        Args: never
+        Returns: {
+          id: string
+          name_en: string
+          role: Database["public"]["Enums"]["user_role"]
+          type: Database["public"]["Enums"]["geo_type"]
+        }[]
+      }
       my_village: { Args: never; Returns: string }
       my_village_path: { Args: never; Returns: unknown }
       my_weather_point: {

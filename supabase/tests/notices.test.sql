@@ -10,7 +10,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(20);
 
 set search_path = public, extensions;
 
@@ -47,6 +47,11 @@ update profiles set village_id = '00000000-0000-0000-0000-0000000000f0'
 update profiles set roles = '{member,panchayat_admin}'::user_role[],
                     panchayat_id = '00000000-0000-0000-0000-0000000000e0'
  where id = '00000000-0000-0000-0000-0000000000e2';
+
+-- Since 20261103090000 the scope is the GRANT, not the profile's village.
+insert into admin_grants (user_id, geo_unit_id, role)
+values ('00000000-0000-0000-0000-0000000000e2',
+        '00000000-0000-0000-0000-0000000000e0', 'panchayat_admin');
 
 create or replace function tests_become(uid uuid) returns void
 language plpgsql as $$
@@ -188,6 +193,38 @@ select throws_ok(
       where title = 'Water supply cut on Friday' $$,
   '42501', null,
   'nor move it up to the district, which would reach every village in Kargil');
+
+-- ---------------------------------------------------------------------------
+-- The grant is pinned to a village, and does not follow its holder
+-- ---------------------------------------------------------------------------
+-- Until 20261103090000 the scope was read from the holder's own profile, so an admin who
+-- changed village arrived in the new one holding its megaphone. The whole point of the
+-- grant naming a unit is this pair of assertions.
+
+reset role;
+-- Straight to the column rather than through `set_my_village`, which is rate limited to
+-- one change per 30 days: the test is about what the move means, not how it is made.
+update profiles set village_id = '00000000-0000-0000-0000-0000000000f0', panchayat_id = null
+ where id = '00000000-0000-0000-0000-0000000000e2';
+
+select tests_become('00000000-0000-0000-0000-0000000000e2');
+
+select throws_ok(
+  $$ select publish_notice('00000000-0000-0000-0000-0000000000f0',
+                           'I live here now', 'And so I speak for it.') $$,
+  '42501',
+  null,
+  'an admin who moves village does NOT become an admin of the village they moved to');
+
+select lives_ok(
+  $$ select publish_notice('00000000-0000-0000-0000-0000000000e0',
+                           'Still the village that granted it', 'Body.') $$,
+  'and still administers the village that actually granted them the role');
+
+select is(
+  (select array_agg(name_en) from my_admin_units()),
+  array['Test Village E'],
+  'and the app is told exactly one unit, the granted one, however they have moved');
 
 select * from finish();
 rollback;

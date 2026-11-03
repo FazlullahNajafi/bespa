@@ -10,7 +10,7 @@ import { Icon } from '@/components/icon';
 import { NoticeCard } from '@/components/notice-card';
 import { Screen } from '@/components/screen';
 import { isOfficial, useNotices } from '@/api/notices';
-import { useMyProfile } from '@/api/profile';
+import { useMyAdminUnits, useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
 import { fontFamily, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -36,13 +36,6 @@ function monthKey(iso: string) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
-/**
- * Who sees "Write a notice". The server decides whether a publish is allowed —
- * `admins_geo` inside `publish_notice` — so this list only governs whether the button is
- * drawn. Getting it wrong shows a button that then refuses; it cannot grant anything.
- */
-const ADMIN_ROLES = ['panchayat_admin', 'district_admin', 'super_admin'];
-
 export default function NoticesScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -50,11 +43,22 @@ export default function NoticesScreen() {
 
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
+  const adminUnits = useMyAdminUnits(session?.user.id);
   const notices = useNotices(Boolean(profile.data?.village_id));
 
+/**
+ * Whether to draw the admin affordance. The grant decides, not the role array: since
+ * migration 20261103090000 a `panchayat_admin` with no grant administers nothing, and a
+ * grant names the village rather than following its holder. `super_admin` holds no
+ * scoped grant and is ORed in.
+ *
+ * The server re-checks every write with `admins_geo`, so this governs buttons and never
+ * permission — being wrong here shows a button that then refuses.
+ */
   const canPublish =
     Boolean(profile.data?.village_id) &&
-    (profile.data?.roles ?? []).some((role) => ADMIN_ROLES.includes(role));
+    ((adminUnits.data ?? []).length > 0 ||
+      (profile.data?.roles ?? []).includes('super_admin'));
 
   // Taken from the data rather than hard-coded: if the mirror is switched off, or a
   // second source is added later, the line at the top follows without a change here.

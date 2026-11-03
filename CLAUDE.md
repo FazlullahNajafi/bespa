@@ -263,7 +263,16 @@ at the same time and sending a village two copies of one notice.
 **Granting `panchayat_admin` is a hand-run SQL statement**, documented for the user in
 `docs/making-someone-an-admin.md`. There is deliberately no screen: `roles` is not
 user-writable, which is the fix for the October privilege escalation, and a grant screen
-would be a new way in needing its own tests. It needs
+would be a new way in needing its own tests.
+
+**The grant names the village; it is not a flag on the profile.** `admin_grants`
+(user, geo unit, role) is the scope, and `admins_geo` reads it. Until 20261103090000 the
+scope came from `coalesce(panchayat_id, village_id)` on the holder's own profile, so an
+admin who changed village arrived in the new one holding its megaphone — and "officials
+only" phone numbers admitted any office holder, of anywhere. `profiles.roles` still
+carries `super_admin`, which is global and deliberately unpinned. The client asks
+`my_admin_units()`, never the role array: a `panchayat_admin` with no grant administers
+nothing. It needs
 two repository secrets, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` — that key is the
 `sb_secret_` one, which belongs in GitHub's secret store and nowhere in the repo. Run it
 by hand from the Actions tab with the `dry_run` input to see what it would do.

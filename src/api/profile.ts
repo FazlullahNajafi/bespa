@@ -280,3 +280,40 @@ export function useSetMyOccupation() {
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// What this user administers (spec 02.1)
+// ---------------------------------------------------------------------------
+
+export type AdminUnit = {
+  id: string;
+  type: string;
+  name_en: string;
+  role: string;
+};
+
+/**
+ * The geo units the signed-in user administers, which is what decides whether an admin
+ * affordance is drawn at all.
+ *
+ * Read from `admin_grants` rather than from `profiles.roles`, because since
+ * 20261103090000 the role is only half the answer — the grant names the village, and a
+ * grant does not follow someone who moves. A role array could say `panchayat_admin`
+ * while the person administers nothing.
+ *
+ * The server re-checks every write with `admins_geo`, so this governs buttons and never
+ * permission. Being wrong here shows a button that then refuses; it cannot grant
+ * anything.
+ */
+export function useMyAdminUnits(userId: string | undefined) {
+  return useQuery({
+    queryKey: keys.me.adminUnits(),
+    enabled: Boolean(userId),
+    staleTime: 1000 * 60 * 5,
+    queryFn: async (): Promise<AdminUnit[]> => {
+      const { data, error } = await supabase.rpc('my_admin_units');
+      if (error) throw error;
+      return (data ?? []) as AdminUnit[];
+    },
+  });
+}

@@ -40,27 +40,53 @@ Do not grant it to someone in a village they do not live in. The scope follows t
     where p.full_name ilike '%part of their name%';
    ```
 
-3. Check the village in that result is the one you mean. Then grant:
+3. Find the village you are granting **for**. You name it yourself rather than trusting
+   their profile to be pointing at the right one when you run this:
 
    ```sql
-   update profiles
-      set roles = array(select distinct unnest(roles || '{panchayat_admin}'::user_role[]))
-    where id = 'the-uuid-from-step-2';
+   select id, name_en, type, path::text
+     from geo_units
+    where name_en ilike '%village name%' and type in ('village', 'town');
    ```
 
-   The `array(select distinct unnest(...))` is not decoration: it adds the role without
-   dropping the ones already there, and running it twice leaves one copy rather than two.
+4. Grant, naming both:
 
-4. Tell them to **close and reopen Bespa**. The profile is cached for five minutes and
+   ```sql
+   insert into admin_grants (user_id, geo_unit_id, role, granted_by, note)
+   values ('the-person-uuid',
+           'the-village-uuid',
+           'panchayat_admin',
+           null,
+           'verified by phone, 2026-11-03')
+   on conflict (user_id, geo_unit_id, role) do nothing;
+   ```
+
+   The `note` is worth filling in. The role is handed out on a human check, so the record
+   of that check belongs with the grant rather than in your memory.
+
+   **The grant is pinned to that village and does not follow the person.** If they change
+   village later, their rights stay where they were granted — which is the point. Before
+   2026-11-03 the scope was read from their profile, so moving village moved the
+   megaphone with them.
+
+5. Tell them to **close and reopen Bespa**. The profile is cached for five minutes and
    kept across restarts, so the "Write a notice" button will not appear until the app
    refetches.
 
 ## Taking it away
 
 ```sql
-update profiles
-   set roles = array_remove(roles, 'panchayat_admin'::user_role)
- where id = 'the-uuid';
+delete from admin_grants
+ where user_id = 'the-uuid'
+   and geo_unit_id = 'the-village-uuid';
+```
+
+To see what someone currently holds:
+
+```sql
+select g.role, u.name_en as unit, g.granted_at, g.note
+  from admin_grants g join geo_units u on u.id = g.geo_unit_id
+ where g.user_id = 'the-uuid';
 ```
 
 Their notices stay published. `published_by` records who wrote each one, which is the
@@ -84,8 +110,9 @@ notice look official; `source` is set to `local` by the server and never by the 
 ## Checking what you have granted
 
 ```sql
-select p.full_name, g.name_en as village, p.roles
-  from profiles p
-  left join geo_units g on g.id = p.village_id
- where p.roles && '{panchayat_admin,district_admin,super_admin}'::user_role[];
+select p.full_name, u.name_en as administers, g.role, g.granted_at, g.note
+  from admin_grants g
+  join profiles p on p.id = g.user_id
+  join geo_units u on u.id = g.geo_unit_id
+ order by u.name_en, p.full_name;
 ```

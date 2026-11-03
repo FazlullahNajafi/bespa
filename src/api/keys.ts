@@ -26,6 +26,8 @@ export const keys = {
     privacy: () => ['me', 'privacy'] as const,
     /** The owner-only half — phone and verification. Never persisted to disk. */
     private: () => ['me', 'private'] as const,
+    /** Which geo units this user administers, if any (spec 02.1). */
+    adminUnits: () => ['me', 'adminUnits'] as const,
   },
   village: {
     all: (villageId: string) => ['village', villageId] as const,

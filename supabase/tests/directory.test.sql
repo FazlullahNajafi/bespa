@@ -52,6 +52,11 @@ update profiles set village_id = '00000000-0000-0000-0000-00000000d200'
 update profiles set roles = '{member,panchayat_admin}'::user_role[]
  where id = '00000000-0000-0000-0000-00000000d103';
 
+-- Since 20261103090000 the scope is the GRANT, not the profile's village.
+insert into admin_grants (user_id, geo_unit_id, role)
+values ('00000000-0000-0000-0000-00000000d103',
+        '00000000-0000-0000-0000-00000000d100', 'panchayat_admin');
+
 update profile_private set phone = '+919419000001'
  where user_id = '00000000-0000-0000-0000-00000000d101';
 
@@ -233,8 +238,6 @@ select is(
 -- security, so every refusal below is the point.
 
 reset role;
-update profiles set roles = '{member,panchayat_admin}'::user_role[]
- where id = '00000000-0000-0000-0000-00000000d103';
 
 select tests_become('00000000-0000-0000-0000-00000000d103');
 
