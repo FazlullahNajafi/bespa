@@ -629,6 +629,7 @@ export type Database = {
     }
     Functions: {
       admins_geo: { Args: { unit: string }; Returns: boolean }
+      delete_village_contact: { Args: { p_id: string }; Returns: undefined }
       forget_device_token: { Args: { p_token: string }; Returns: undefined }
       forget_my_devices: { Args: { token?: string }; Returns: undefined }
       geo_children: {
@@ -744,6 +745,16 @@ export type Database = {
         Returns: undefined
       }
       shares_my_village: { Args: { uid: string }; Returns: boolean }
+      update_village_contact: {
+        Args: {
+          p_designation: string
+          p_id: string
+          p_name: string
+          p_phone?: string
+          p_sort_order?: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       booking_status:

@@ -70,8 +70,11 @@ exactly what accountability is for.
 ## What they can and cannot do
 
 They **can** write a notice for their own village, which reaches every member of it and
-pushes to their phones; and edit one of their village's own notices afterwards (title,
-body, category, pin, expiry).
+pushes to their phones; edit one of their village's own notices afterwards (title, body,
+category, pin, expiry); and maintain the **panchayat contact cards** that sit above the
+directory — adding the sarpanch's card, correcting it when the office changes hands, and
+removing it. Those cards carry their phone number openly, because spec 3.4 treats an
+office's number as public within the village.
 
 They **cannot** publish to another village, to the block, or to the district — the server
 checks containment, so naming a unit above their scope is refused, not just hidden. They

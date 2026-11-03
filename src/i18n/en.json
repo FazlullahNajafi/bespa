@@ -8,7 +8,8 @@
     "save": "Save",
     "done": "Done",
     "edit": "Edit",
-    "saved": "Saved"
+    "saved": "Saved",
+    "remove": "Remove"
   },
   "tabs": {
     "home": "Home",
@@ -303,5 +304,23 @@
     "publishHint": "Sends the notice and tells the village",
     "queued": "Saved. It will be sent as soon as you have a connection — it has not reached anyone yet.",
     "write": "Write a notice"
+  },
+  "contacts": {
+    "title": "Panchayat contacts",
+    "subtitle": "These appear at the top of the {{village}} directory, with their numbers, for everyone in the village.",
+    "manage": "Panchayat contacts",
+    "manageHint": "Add or correct the cards above the directory",
+    "empty": "No contacts yet. The sarpanch is the one people look for first.",
+    "addHeading": "Add a contact",
+    "editing": "Correcting this contact",
+    "name": "Name",
+    "designation": "Which office?",
+    "designationHint": "Sarpanch, Panch, Secretary, Numberdar.",
+    "phone": "Phone number",
+    "phoneHint": "Shown to the whole village — this is the office’s number, not a private one.",
+    "add": "Add contact",
+    "saveChanges": "Save changes",
+    "editName": "Edit {{name}}",
+    "removeName": "Remove {{name}}"
   }
 }

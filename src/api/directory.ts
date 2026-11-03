@@ -1,7 +1,8 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 import { toErrorCode, type ErrorCode } from '@/lib/errors';
+import { registerHandler, submit } from '@/lib/outbox';
 import { keys } from './keys';
 
 /**
@@ -116,6 +117,105 @@ export function useMemberContact() {
 
       const row = (data ?? [])[0] as { phone: string | null; phone_verified: boolean } | undefined;
       return { ok: true, phone: row?.phone ?? null, verified: row?.phone_verified ?? false };
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Maintaining the panchayat cards (spec 03.4)
+// ---------------------------------------------------------------------------
+
+export type ContactEdit = {
+  /** Absent when adding; present when correcting an existing card. */
+  id?: string;
+  /** The village the card belongs to. Ignored on an edit — a card never moves. */
+  geoUnitId: string;
+  name: string;
+  designation: string;
+  /** E.164, or null. Public by virtue of the office, unlike a villager's number. */
+  phone: string | null;
+  sortOrder: number;
+};
+
+export type ContactWrite =
+  | { ok: true }
+  | { ok: false; code: ErrorCode }
+  | { ok: false; queued: true };
+
+const SAVE_CONTACT = 'save_village_contact';
+const REMOVE_CONTACT = 'remove_village_contact';
+
+/**
+ * One handler for both adding and correcting, because to the outbox they are the same
+ * kind of durable intent and the only difference is whether an id came with it.
+ */
+registerHandler<ContactEdit, true>(SAVE_CONTACT, async (edit) => {
+  const { error } = edit.id
+    ? await supabase.rpc('update_village_contact', {
+        p_id: edit.id,
+        p_name: edit.name,
+        p_designation: edit.designation,
+        p_phone: edit.phone ?? undefined,
+        p_sort_order: edit.sortOrder,
+      })
+    : await supabase.rpc('publish_village_contact', {
+        geo_unit: edit.geoUnitId,
+        name: edit.name,
+        designation: edit.designation,
+        phone: edit.phone ?? undefined,
+        sort_order: edit.sortOrder,
+      });
+
+  if (error) throw error;
+  return true;
+});
+
+registerHandler<{ id: string }, true>(REMOVE_CONTACT, async ({ id }) => {
+  const { error } = await supabase.rpc('delete_village_contact', { p_id: id });
+  if (error) throw error;
+  return true;
+});
+
+function toWrite(result: { status: string; code?: ErrorCode }): ContactWrite {
+  if (result.status === 'done') return { ok: true };
+  if (result.status === 'queued') return { ok: false, queued: true };
+  return { ok: false, code: result.code ?? 'unknown' };
+}
+
+export function useSaveVillageContact() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (edit: ContactEdit): Promise<ContactWrite> => {
+      // Keyed on the row for an edit and left unkeyed for an add: correcting the same
+      // card twice is one intent, while adding two people called Ali is two.
+      const result = await submit<true>({
+        kind: SAVE_CONTACT,
+        payload: edit,
+        idempotencyKey: edit.id ? `${SAVE_CONTACT}:${edit.id}` : undefined,
+      });
+      return toWrite(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
+    },
+  });
+}
+
+export function useRemoveVillageContact() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<ContactWrite> => {
+      const result = await submit<true>({
+        kind: REMOVE_CONTACT,
+        payload: { id },
+        idempotencyKey: `${REMOVE_CONTACT}:${id}`,
+      });
+      return toWrite(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
     },
   });
 }

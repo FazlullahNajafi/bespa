@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { useTranslation } from '@/i18n';
 import { Avatar } from '@/components/avatar';
@@ -45,9 +46,16 @@ function initialsName(member: DirectoryMember) {
   return member.full_name.trim() || '?';
 }
 
+/**
+ * Who may maintain the panchayat cards. The server re-checks with `admins_geo` inside
+ * every one of those functions, so this list only governs whether a button is drawn.
+ */
+const ADMIN_ROLES = ['panchayat_admin', 'district_admin', 'super_admin'];
+
 export default function DirectoryScreen() {
   const { t } = useTranslation();
   const colors = useColors();
+  const router = useRouter();
 
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
@@ -56,6 +64,10 @@ export default function DirectoryScreen() {
   const members = useDirectory(villageId);
   const contacts = useVillageContacts(villageId);
   const reveal = useMemberContact();
+
+  const canManage =
+    Boolean(villageId) &&
+    (profile.data?.roles ?? []).some((role) => ADMIN_ROLES.includes(role));
 
   const [search, setSearch] = useState('');
   const [occupation, setOccupation] = useState<string | null>(null);
@@ -139,7 +151,18 @@ export default function DirectoryScreen() {
   }
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        canManage ? (
+          <Button
+            label={t('contacts.manage')}
+            variant="secondary"
+            onPress={() => router.push('/directory/contacts')}
+            accessibilityHint={t('contacts.manageHint')}
+          />
+        ) : undefined
+      }
+    >
       <BackLink />
 
       <Text style={[type.display, { color: colors.text }]}>{t('directory.title')}</Text>

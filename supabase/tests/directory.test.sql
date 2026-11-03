@@ -10,7 +10,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(24);
 
 set search_path = public, extensions;
 
@@ -224,6 +224,78 @@ select is(
   (select phone from get_member_contact('00000000-0000-0000-0000-00000000d101')),
   '+919419000001',
   'and the window rolls, so yesterday''s lookups do not count against today');
+
+-- ---------------------------------------------------------------------------
+-- The panchayat cards: an office's number, and who may change it
+-- ---------------------------------------------------------------------------
+-- These carry their phone in the row, unlike a villager's, because spec 03.4 calls them
+-- public by definition of the office. That makes "who may write one" the whole of their
+-- security, so every refusal below is the point.
+
+reset role;
+update profiles set roles = '{member,panchayat_admin}'::user_role[]
+ where id = '00000000-0000-0000-0000-00000000d103';
+
+select tests_become('00000000-0000-0000-0000-00000000d103');
+
+select lives_ok(
+  $$ select publish_village_contact('00000000-0000-0000-0000-00000000d100',
+       'Mohammad Ali', 'Sarpanch', '+919419000111', 0) $$,
+  'an admin can publish a contact card for their own village');
+
+select is(
+  (select phone from village_contacts where name = 'Mohammad Ali'),
+  '+919419000111',
+  'and the number is in the row, because the office is public within the village');
+
+-- The next village over is not theirs, and the server must say so rather than relying on
+-- a screen that only shows them their own.
+select throws_ok(
+  $$ select publish_village_contact('00000000-0000-0000-0000-00000000d200',
+       'Someone Else', 'Sarpanch', '+919419000222', 0) $$,
+  '42501',
+  null,
+  'and cannot publish one for a village they do not administer');
+
+-- A plain villager, with no role at all.
+select tests_become('00000000-0000-0000-0000-00000000d102');
+
+select throws_ok(
+  $$ select publish_village_contact('00000000-0000-0000-0000-00000000d100',
+       'Impostor', 'Sarpanch', '+919419000333', 0) $$,
+  '42501',
+  null,
+  'a villager with no role cannot publish a contact card');
+
+select throws_ok(
+  $$ select update_village_contact(
+       (select id from village_contacts where name = 'Mohammad Ali'),
+       'Impostor', 'Sarpanch', '+919419000333', 0) $$,
+  '42501',
+  null,
+  'nor edit one — the number people ring is not editable by whoever is signed in');
+
+select throws_ok(
+  $$ select delete_village_contact(
+       (select id from village_contacts where name = 'Mohammad Ali')) $$,
+  '42501',
+  null,
+  'nor remove one');
+
+-- Correcting it is the case the whole migration exists for: an office changes hands, and
+-- a card still showing the last holder's number is worse than no card.
+select tests_become('00000000-0000-0000-0000-00000000d103');
+
+select lives_ok(
+  $$ select update_village_contact(
+       (select id from village_contacts where name = 'Mohammad Ali'),
+       'Ibrahim Khan', 'Sarpanch', '+919419000444', 0) $$,
+  'the admin can correct a card when the office changes hands');
+
+select is(
+  (select phone from village_contacts where name = 'Ibrahim Khan'),
+  '+919419000444',
+  'and the new holder''s number replaces the old one');
 
 select * from finish();
 rollback;
