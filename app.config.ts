@@ -169,6 +169,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           'Bespa uses your location once, to find which village you are in.',
       },
     ] as [string, Record<string, unknown>],
+    /**
+     * Photos (spec 03.2, 03.3). The permission string says what the photo is for rather
+     * than that access is needed — a request with no reason is a request that gets
+     * denied, and a villager who denies it once has denied the gallery forever.
+     *
+     * No camera permission: the picker reads the library only. Taking a photo inside the
+     * app is a second permission and a second thing to explain, and people here already
+     * have the photo before they open Bespa.
+     */
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'Bespa needs your photos so you can share one with your village.',
+      },
+    ] as [string, Record<string, unknown>],
     // Adds native code, so changing this requires a new development build — the JS
     // bundle alone cannot carry it.
     '@react-native-google-signin/google-signin',

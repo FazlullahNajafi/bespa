@@ -40,8 +40,12 @@ is "the whole stack vanished" rather than "one optional service failed". Neither
 by this app. Start without them:
 
 ```bash
-npx supabase start -x logflare,vector,supavisor,imgproxy,realtime,storage-api
+npx supabase start -x logflare,vector,supavisor,imgproxy,realtime
 ```
+
+`storage-api` used to be excluded too and no longer can be: the `images` bucket is real
+from 20261103140000, and without that container an upload fails while the database looks
+perfectly healthy. CI still excludes it, because pgTAP needs Postgres and nothing else.
 
 **The Supabase CLI exits 0 when it fails.** It reports the error as a JSON object on
 stdout and still returns success, so a backgrounded `supabase start` is announced as
