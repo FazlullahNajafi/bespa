@@ -22,8 +22,9 @@ already runs the village WhatsApp group, on the sarpanch's nomination. That is t
 decision from 2026-11-02 and it is why the composer is a plain form — the person using it
 is someone who already types.
 
-Do not grant it to someone in a village they do not live in. The scope follows their
-`village_id`, so moving village moves their admin rights with them.
+Do not grant it to someone in a village they do not live in. You name the village in the
+grant itself, so a careless one hands a stranger that village's megaphone and nothing
+about the person's own profile will correct it.
 
 ## How
 

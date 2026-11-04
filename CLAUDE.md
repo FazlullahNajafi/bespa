@@ -195,7 +195,12 @@ above, for the third time — the build succeeds, the plugin runs with `undefine
 app ships a blank grey rectangle that logs nothing. The key is deliberately not hard-coded
 the way the EAS project id and Sentry slugs are, because it is billable: restrict it in
 the Cloud console to the package name plus the build's SHA-1, then
-`eas env:create --variable-name EXPO_PUBLIC_GOOGLE_MAPS_KEY` for each environment.
+`eas env:set --name EXPO_PUBLIC_GOOGLE_MAPS_KEY --value … --environment development
+--environment preview --environment production` (`env:create` is deprecated, and its flag
+is `--name` while `env:delete`'s is `--variable-name`). `docs/setting-up-the-map.md` is
+the same ground written for the user to follow step by step; keep the two in step. The
+dev and preview SHA-1s do not need `eas credentials` — they are already in the committed
+`google-services.json`, as `oauth_client[].android_info.certificate_hash`.
 
 **`version` was bumped to 0.2.0 when `react-native-maps` arrived**, and must be bumped for
 any later native addition. `runtimeVersion` uses the `appVersion` policy here (the
