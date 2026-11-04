@@ -253,6 +253,11 @@ export default function PlacesScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        // `flexGrow: 0`, or the scroller absorbs whatever vertical slack `Screen`'s
+        // `flexGrow: 1` content container has left over — which on an empty list is most
+        // of the screen, and the filter row comes out 300px tall with the chips floating
+        // in the middle of it.
+        style={styles.chipScroller}
         contentContainerStyle={styles.chips}
       >
         <Chip label={t('places.all')} selected={category === null} onPress={() => setCategory(null)} />
@@ -271,7 +276,9 @@ export default function PlacesScreen() {
         <Button
           label={showMap ? t('places.showList') : t('places.showMap')}
           variant="secondary"
-          leading={showMap ? 'file' : 'pin'}
+          leading={
+            <Icon name={showMap ? 'file' : 'pin'} size={20} color={colors.primary} />
+          }
           onPress={() => setShowMap((on) => !on)}
         />
       ) : null}
@@ -318,7 +325,16 @@ export default function PlacesScreen() {
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', gap: space.xs, paddingVertical: space.xs },
+  chipScroller: { flexGrow: 0 },
+  chips: {
+    flexDirection: 'row',
+    gap: space.xs,
+    paddingVertical: space.xs,
+    // `center`, not the default `stretch`. A horizontal ScrollView's content container is
+    // a row, and a row stretches its children on the cross axis — so each chip grew to
+    // the height the scroller had resolved to and the filter row came out 300px tall.
+    alignItems: 'center',
+  },
   list: { gap: space.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: layout.tap },
   thumb: { width: 64, height: 64, borderRadius: radius.card },

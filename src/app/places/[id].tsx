@@ -184,7 +184,7 @@ export default function PlaceScreen() {
 
       <Button
         label={t('places.directions')}
-        leading="locate"
+        leading={<Icon name="locate" size={20} color={colors.onPrimary} />}
         onPress={() => void openDirections(place.lat, place.lon, place.name_en)}
         accessibilityHint={t('places.directionsHint')}
       />
@@ -193,7 +193,7 @@ export default function PlaceScreen() {
         <Button
           label={`${t('places.call')} ${fromE164(place.phone)}`}
           variant="secondary"
-          leading="phone"
+          leading={<Icon name="phone" size={20} color={colors.primary} />}
           onPress={() => void callPlace(place.phone as string)}
         />
       ) : null}

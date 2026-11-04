@@ -8,6 +8,7 @@ import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
+import { Icon } from '@/components/icon';
 import { PinPicker, mapAvailable } from '@/components/place-map';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
@@ -225,7 +226,7 @@ export default function NewPlaceScreen() {
         <Button
           label={t('places.pickPhotos')}
           variant="secondary"
-          leading="camera"
+          leading={<Icon name="camera" size={20} color={colors.primary} />}
           onPress={() => void choosePhotos()}
         />
       ) : (
@@ -259,7 +260,7 @@ export default function NewPlaceScreen() {
         <Button
           label={t('places.useMyLocation')}
           variant="secondary"
-          leading="locate"
+          leading={<Icon name="locate" size={20} color={colors.primary} />}
           onPress={() => void locate()}
           accessibilityHint={t('places.useMyLocationHint')}
         />

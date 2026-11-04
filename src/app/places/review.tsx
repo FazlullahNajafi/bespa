@@ -156,7 +156,7 @@ export default function PlacesReviewScreen() {
               <Button
                 label={t('places.directions')}
                 variant="ghost"
-                leading="locate"
+                leading={<Icon name="locate" size={20} color={colors.primary} />}
                 onPress={() => void openDirections(place.lat, place.lon, place.name_en)}
                 accessibilityHint={t('places.directionsHint')}
               />
