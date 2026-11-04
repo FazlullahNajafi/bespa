@@ -187,26 +187,26 @@ what actually blocks them. Check what shipped by reading the APK rather than the
 python -c "import zipfile,re; m=zipfile.ZipFile('app.apk').read('AndroidManifest.xml').decode('utf-16-le','ignore'); print(sorted(set(re.findall(r'android\.permission\.[A-Z_]+', m))))"
 ```
 
-**`react-native-maps` needs a Google Maps key, and a missing one is silent.** The plugin
-entry in `app.config.ts` is conditional on `EXPO_PUBLIC_GOOGLE_MAPS_KEY`; with no key the
-plugin is left out and `extra.mapsEnabled` is false, so the Places screens hide the map
-and keep working. With a key present but *undefined on the EAS server* — the `.env` trap
-above, for the third time — the build succeeds, the plugin runs with `undefined`, and the
-app ships a blank grey rectangle that logs nothing. The key is deliberately not hard-coded
-the way the EAS project id and Sentry slugs are, because it is billable: restrict it in
-the Cloud console to the package name plus the build's SHA-1, then
-`eas env:set --name EXPO_PUBLIC_GOOGLE_MAPS_KEY --value … --environment development
---environment preview --environment production` (`env:create` is deprecated, and its flag
-is `--name` while `env:delete`'s is `--variable-name`). `docs/setting-up-the-map.md` is
-the same ground written for the user to follow step by step; keep the two in step. The
-dev and preview SHA-1s do not need `eas credentials` — they are already in the committed
-`google-services.json`, as `oauth_client[].android_info.certificate_hash`.
+**There is no map, and that is a decision rather than a gap.** Places (spec 03.2) wants a
+list/map toggle and a drop-a-pin step. `react-native-maps` was installed, wired and then
+removed on 2026-11-05: the Android map needs a Google Maps key, a key needs a billing
+account on the Cloud project, and this project has none. Shipping a few MB of native map
+code that can never draw a tile is the wrong trade for 2 GB handsets.
 
-**`version` was bumped to 0.2.0 when `react-native-maps` arrived**, and must be bumped for
-any later native addition. `runtimeVersion` uses the `appVersion` policy here (the
-fingerprint policy fails on EAS — see `app.config.ts`), so the version string is the only
-thing stopping an update that contains a map view from reaching a build that has no map
-view compiled in.
+What it costs is **step 5 of the contribution flow**: without a map you can only add a
+place you are physically standing at, because "use my current location" is the only way
+left to set a coordinate. Everything else — the list, the category chips, search,
+distances, Directions, the 150 m duplicate check — is unaffected, and the coordinate
+column was always required.
+
+`docs/setting-up-the-map.md` is the step-by-step for turning it on if billing ever
+appears; `git show 1a1e7a2 -- src/components/place-map.tsx` is the component. A
+key-free route also exists — OSM raster tiles in a WebView — and is not built.
+
+**`version` is 0.2.0 and stays there.** It went up for the maps module, which is gone, but
+the 0.1.0 builds also predate `cameraPermission: false`, which changes the manifest. The
+`appVersion` runtime policy means the version string is the only thing separating builds
+whose native side differs, so it must not go back down.
 
 **EAS builds the committed git state, not the working tree.** A build started before
 `git commit` archives the previous commit — that is how the first attempt failed in 58

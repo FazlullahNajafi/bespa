@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -9,7 +9,6 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { Icon } from '@/components/icon';
-import { PinPicker, mapAvailable } from '@/components/place-map';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import {
@@ -19,7 +18,6 @@ import {
   type PlaceCategory,
 } from '@/api/places';
 import { useMyProfile } from '@/api/profile';
-import { useMyWeatherPoint } from '@/api/weather';
 import { useSession } from '@/store/session';
 import { categoryIcon } from '@/lib/place-categories';
 import { canPickImages, pickAndResize } from '@/lib/images';
@@ -57,7 +55,6 @@ export default function NewPlaceScreen() {
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
   const villageId = profile.data?.village_id ?? null;
-  const point = useMyWeatherPoint(Boolean(villageId));
 
   const submitPlace = useSubmitPlace();
 
@@ -86,14 +83,6 @@ export default function NewPlaceScreen() {
     where !== null &&
     phoneValid;
 
-  const centre = useMemo(
-    () =>
-      point.data
-        ? { lat: point.data.lat, lon: point.data.lon }
-        : { lat: 34.5539, lon: 76.1349 }, // Kargil town, if the village has no coordinate
-    [point.data],
-  );
-
   async function choosePhotos() {
     setNote(null);
     const picked = await pickAndResize(5);
@@ -115,11 +104,6 @@ export default function NewPlaceScreen() {
     }
     setWhere(result.fix);
     // A new coordinate is a new question, so whatever was acknowledged no longer applies.
-    setKnowsDuplicate(false);
-  }
-
-  function movePin(next: Fix) {
-    setWhere(next);
     setKnowsDuplicate(false);
   }
 
@@ -266,16 +250,7 @@ export default function NewPlaceScreen() {
         />
       ) : null}
 
-      {mapAvailable() ? (
-        <>
-          <Text style={[type.caption, { color: colors.textSecondary }]}>
-            {t('places.dropPin')}
-          </Text>
-          <PinPicker value={where} centre={centre} category={category} onChange={movePin} />
-        </>
-      ) : (
-        <Banner message={t('places.noMap')} tone="info" />
-      )}
+      <Banner message={t('places.noMap')} tone="info" />
 
       {where ? (
         <Text style={[type.caption, { color: colors.textSecondary }]}>

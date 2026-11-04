@@ -79,7 +79,7 @@ expo-router: a folder is a URL, and a group in brackets is a layout that adds no
 | `notices/new.tsx` | The composer. Everything deciding trust is server-side: `publish_notice` stamps the author and forces `source = 'local'`, so nothing written here can dress itself up as a government notice. |
 | `directory/index.tsx` | The member list, search, panchayat contact cards, and the reveal-one-number flow. |
 | `gallery/index.tsx`, `[id].tsx`, `review.tsx`, `banner.tsx` | The grid, the full-screen pager, the moderation queue, and the admin's choice of the five photos on Home. |
-| `places/index.tsx`, `new.tsx`, `[id].tsx`, `review.tsx` | Places (spec 03.2). The list with category chips, search and an optional map; one scrolling form rather than the spec's six-screen wizard, because none of the six answers changes the next question; the detail with directions and a call button; the queue, which carries a Directions button of its own — a photo is judged from the photo, a coordinate cannot be. |
+| `places/index.tsx`, `new.tsx`, `[id].tsx`, `review.tsx` | Places (spec 03.2). The list with category chips and search; one scrolling form rather than the spec's six-screen wizard, because none of the six answers changes the next question; the detail with directions and a call button; the queue, which carries a Directions button of its own — a photo is judged from the photo, a coordinate cannot be. **No map:** see the status table. |
 | `profile/edit.tsx`, `profile/privacy.tsx` | Full-screen tasks with a Save, deliberately outside `(tabs)` so a stray tab tap cannot abandon unsaved edits. |
 
 Every group sets `headerShown: false`: `Screen` pays the status-bar inset itself, and a
@@ -125,7 +125,7 @@ these modules return TanStack hooks or a discriminated result.
 | `phone.ts` | Stored as E.164, typed without the country code. A number outside India cannot be entered — the right trade for one district of one country. |
 | `images.ts` | Pick, resize to a 1600 px long edge at quality 0.7, upload, sign. The numbers are the Phase 1 spike's: 4.4 MB becomes 184 KB. |
 | `distance.ts` | Haversine, computed on the phone. The server has PostGIS, but answering per row per render keyed by a coordinate that changes as someone walks turns a scrollable list into a query. |
-| `place-actions.ts` | Directions and the dialer, both handed to another app — Bespa is not a navigation app and must not look like one. Also `canShowMap()`, the build-time answer to whether a Maps key was compiled in. |
+| `place-actions.ts` | Directions and the dialer, both handed to another app that already has a map — which, with no map of our own, is the only route rather than merely the better one. |
 | `place-categories.ts` | A glyph per category. Nine are drawings of their own; mosque, imambargah and khanqah are three different buildings here and the distinction is not a nicety. |
 | `notice-share.ts` | The forwarded WhatsApp message, which is the app's real front door. Title first and bold, because a group list shows only two lines. |
 | `notice-actions.ts` | Open the document, or pass it on. Neither throws: a share sheet the reader backs out of is not an error worth a banner. |
@@ -156,7 +156,6 @@ scaling are far easier to guarantee when we own the primitives.
 | `weather-card.tsx` | Hidden entirely on failure, never an error, and never restored from disk — a week-old temperature shown as current is worse than none. |
 | `privacy-form.tsx` | The per-field controls, shared by the onboarding step and the settings screen. |
 | `village-banner.tsx` | Home's 16:9 carousel, five admin-chosen photos, suppressed in Lite mode and rendering nothing at all when empty — the app ships no fake data, and an illustrated placeholder at the top of every village's home screen is fake data. |
-| `place-map.tsx` | `react-native-maps`, loaded lazily and absent without complaint. A missing native *component* fails when it renders rather than on import, which is a red screen; a missing API key fails silently, which is worse. |
 | `google-mark.tsx` | Google's "G", kept out of `icon.tsx` because every glyph there takes the theme's colour and this is a trademark that must not. |
 | `avatar`, `card`, `chip`, `banner`, `list-row`, `empty-state`, `stepper`, `back-link`, `screen-stub` | The rest. `card` refuses a second elevation when nested; `back-link` lives in the content rather than a native header. |
 
@@ -278,7 +277,8 @@ order — notices first, because the district mirror is useful at zero local par
 | Notices — composing | Done | The composer screen, verified on device. Expiry is four choices rather than a date picker — a picker is native code and a new build, to say "about a week". |
 | Village directory | Done | Migration, API module, screen, and 16 pgTAP assertions. The contact reveal is rate-limited and audited where the subject can read it. |
 | Village gallery | Done | Submit through the outbox, moderate, pager, tab tagging, and the admin-chosen Home banner. 26 pgTAP assertions. |
-| Places | Built, unverified | Migration, 24 pgTAP assertions, API module and four screens. Needs `db push` to the hosted project, and the map needs a Google Maps key and a new native build — without one the screens work and the map is simply absent. |
+| Places | Done | Migration, 24 pgTAP assertions, API module and four screens, verified on device 2026-11-05. |
+| Places — the map | **Not built, by decision** | `react-native-maps` needs a Google Maps key; a key needs a billing account; there is none. Installed and then removed the same day rather than shipping native code that cannot draw a tile. The cost is spec 03.2 step 5: a place can only be added from where you are standing. `docs/setting-up-the-map.md` has the reversal; `git show 1a1e7a2` has the component. |
 | Weather | Done | For the user's own village, hidden entirely on failure. Formally out of v1 scope. |
 | Design system | Done | Tokens in both themes with 24 contrast rules asserted in CI, about twenty primitives, the icon set generated. |
 | i18n | Partial | `en` complete; `ur` and `bft` declared and RTL wired, but no strings yet. |

@@ -1,5 +1,4 @@
 import { Linking, Platform } from 'react-native';
-import Constants from 'expo-constants';
 
 /**
  * What a reader can do with a place: get directions to it, or ring it.
@@ -7,23 +6,12 @@ import Constants from 'expo-constants';
  * Both hand off to another app rather than doing the work here. Bespa is not a navigation
  * app and must not pretend to be one — the phone already has Google Maps, it already
  * knows the roads, and it works with the screen off in a jeep.
- */
-
-/**
- * Whether a map can be drawn at all.
  *
- * `react-native-maps` with no API key renders a blank grey rectangle and logs nothing, so
- * a screen that cannot tell the difference shows a broken map and calls it a map. The
- * flag is set in `app.config.ts` from whether the key was present when the native build
- * was made — which is a build-time fact, so reading it at runtime is exactly right.
- *
- * Note this is *not* the same question as "is the native module present". A JS-only
- * update can reach a build made before `react-native-maps` existed; `Maps` is loaded
- * lazily in `place-map.tsx` for that reason, the same shape as `location.ts`.
+ * Bespa draws no map of its own either, decided 2026-11-05: `react-native-maps` needs a
+ * Google Maps key and a key needs a billing account. That makes the hand-off the only
+ * route rather than merely the better one. `docs/setting-up-the-map.md` has what
+ * reversing it would take.
  */
-export function canShowMap(): boolean {
-  return Constants.expoConfig?.extra?.mapsEnabled === true;
-}
 
 /**
  * Opens the handset's own maps app at a coordinate, with the place's name as the label.

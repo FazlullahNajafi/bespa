@@ -11,7 +11,6 @@ import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { Icon } from '@/components/icon';
-import { PlacesMap, mapAvailable } from '@/components/place-map';
 import { Screen } from '@/components/screen';
 import { StatusPill } from '@/components/status-pill';
 import { TextField } from '@/components/text-field';
@@ -23,7 +22,6 @@ import {
   type PlaceCategory,
 } from '@/api/places';
 import { useMyAdminUnits, useMyProfile } from '@/api/profile';
-import { useMyWeatherPoint } from '@/api/weather';
 import { useSession } from '@/store/session';
 import { categoryIcon } from '@/lib/place-categories';
 import { formatDistance, metresBetween } from '@/lib/distance';
@@ -38,10 +36,11 @@ import { useColors } from '@/theme/use-scheme';
  * out there are no banks; a chip row shows the whole vocabulary at once, and spec 08.6
  * puts an icon on each so it reads without English.
  *
- * **The map is optional and the list is not.** `react-native-maps` needs an API key the
- * build may not have (see `place-map.tsx`), and a village of thirty places is a list
- * long before it is a map. So the toggle appears only when a map can actually be drawn,
- * and everything works without it.
+ * **There is no map, by decision (2026-11-05).** `react-native-maps` needs a Google Maps
+ * key, a key needs a billing account, and this project does not have one. A village of
+ * thirty places is a list long before it is a map, so the loss is small; what it really
+ * costs is step 5 of the contribution flow, which is now "use my current location" only.
+ * `docs/setting-up-the-map.md` has what turning it on would take.
  *
  * **Distances appear only for someone who already allowed location.** Opening a list of
  * shops must not open a permission dialog; anyone who used the picker's "use my location"
@@ -145,14 +144,9 @@ export default function PlacesScreen() {
   const userId = session?.user.id ?? null;
 
   const places = usePlaces(villageId);
-  // Named for the weather, but it is the village's own coordinate — falling back to the
-  // block when a village has none, which 50 of 129 do not. It is cached for a day, so
-  // centring the map here costs nothing.
-  const point = useMyWeatherPoint(Boolean(villageId));
 
   const [category, setCategory] = useState<PlaceCategory | null>(null);
   const [query, setQuery] = useState('');
-  const [showMap, setShowMap] = useState(false);
   const [fix, setFix] = useState<Fix | null>(null);
 
   // Silent: no prompt, no banner, no retry. A missing fix costs the distances and
@@ -192,14 +186,6 @@ export default function PlacesScreen() {
       (profile.data?.roles ?? []).includes('super_admin'));
 
   const pending = rows.filter((place) => place.status === 'pending').length;
-
-  // Only approved places go on the map: a pin is a claim about the village, and an
-  // unreviewed one has not earned that. Your own pending place still shows in the list.
-  const mappable = useMemo(() => shown.filter((place) => place.status === 'approved'), [shown]);
-
-  const centre = point.data
-    ? { lat: point.data.lat, lon: point.data.lon }
-    : { lat: 34.5539, lon: 76.1349 }; // Kargil town, if the village has no coordinate
 
   function open(place: Place) {
     router.push({ pathname: '/places/[id]', params: { id: place.id } });
@@ -272,17 +258,6 @@ export default function PlacesScreen() {
         ))}
       </ScrollView>
 
-      {mapAvailable() ? (
-        <Button
-          label={showMap ? t('places.showList') : t('places.showMap')}
-          variant="secondary"
-          leading={
-            <Icon name={showMap ? 'file' : 'pin'} size={20} color={colors.primary} />
-          }
-          onPress={() => setShowMap((on) => !on)}
-        />
-      ) : null}
-
       {places.isPending ? (
         <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
       ) : places.isError ? (
@@ -300,8 +275,6 @@ export default function PlacesScreen() {
         <Card>
           <EmptyState icon="pin" message={t('places.empty')} />
         </Card>
-      ) : showMap ? (
-        <PlacesMap places={mappable} centre={centre} onSelect={open} />
       ) : shown.length === 0 ? (
         <Card>
           <EmptyState icon="search" message={t('places.noMatch')} />

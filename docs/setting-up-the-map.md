@@ -1,14 +1,31 @@
 # Setting up the map
 
-The Places screen (spec 03.2) has a list and a map. The list works now. The map does not,
-and will not until Google issues a key and that key reaches the build.
+> **Not done, on purpose — decided 2026-11-05.** A Google Maps key needs a billing
+> account on the Cloud project, and this project has none. `react-native-maps` was
+> installed, wired and then removed, so the app ships no map code at all.
+>
+> This file is kept as the instructions for reversing that if billing ever appears. None
+> of it is a pending task.
+>
+> **What the app does instead.** The Places list, search, category chips, distances,
+> Directions and the 150 m duplicate check all work without a map. The one real loss is
+> spec 03.2 step 5: a place can only be added from where you are standing, because "use
+> my current location" is the only way left to set a coordinate.
+>
+> **If the pin-drop turns out to matter**, there is a key-free route — OpenStreetMap
+> raster tiles rendered by Leaflet inside a WebView, no account and no card. It is more
+> work than this page and it is not built.
 
-Right now the app handles its absence quietly: the Map/List toggle is hidden, the
-Add-a-place screen says "This build has no map. You can still add a place from where you
-are standing", and everything else behaves normally. So nothing is broken while you work
-through this — the map simply appears once the key is in.
+If you do turn billing on, the steps below take about twenty minutes, in four parts, and
+end with `react-native-maps` being reinstalled:
 
-It is about twenty minutes, in three parts.
+```bash
+npx expo install react-native-maps
+git show 1a1e7a2 -- src/components/place-map.tsx | git apply
+```
+
+That restores the map component as it was written and tested; the two screens then need
+their toggle and `PinPicker` put back, which `git show 1a1e7a2 -- src/app/places/` shows.
 
 ---
 
