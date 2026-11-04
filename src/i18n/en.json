@@ -322,5 +322,40 @@
     "saveChanges": "Save changes",
     "editName": "Edit {{name}}",
     "removeName": "Remove {{name}}"
+  },
+  "gallery": {
+    "title": "Village photos",
+    "tile": "Photos",
+    "photo": "Photo",
+    "empty": "No photos yet. Share one of your village.",
+    "noCaption": "No caption",
+    "caption": "Say something about the photo",
+    "captionHint": "Optional. It is shown with every photo you send now.",
+    "add": "Add photos",
+    "addHint": "Pick up to ten photos; they send in the background",
+    "sent": "Sent. The panchayat will look at it before the village sees it.",
+    "queued": "Saved. It will send when you have a connection — nobody has seen it yet.",
+    "status": {
+      "pending": "Waiting",
+      "rejected": "Not accepted",
+      "approved": "Shown"
+    },
+    "rejectedBecause": "Not accepted: {{reason}}",
+    "withdraw": "Remove this photo",
+    "waiting": "{{count}} photo waiting for you",
+    "waiting_other": "{{count}} photos waiting for you",
+    "review": "Photos to review",
+    "reviewHint": "Opens the photos waiting for a decision",
+    "reviewIntro": "Oldest first. A photo is not shown to the village until you accept it.",
+    "nothingWaiting": "Nothing waiting. The village sees everything that was accepted.",
+    "approve": "Accept",
+    "reject": "Not this one",
+    "reason": "Why not? (only if you reject)",
+    "reasonHint": "The person who sent it will read this.",
+    "reasonRequired": "Say why, so the person who sent it knows.",
+    "pick": {
+      "denied": "Bespa cannot see your photos. Allow it from Android settings.",
+      "unsupported": "This build cannot pick photos. It needs a newer app."
+    }
   }
 }

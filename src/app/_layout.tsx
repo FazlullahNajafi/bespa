@@ -162,6 +162,7 @@ function RootNavigator() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="notices" />
         <Stack.Screen name="directory" />
+        <Stack.Screen name="gallery" />
       </Stack>
     </>
   );

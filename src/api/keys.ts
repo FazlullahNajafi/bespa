@@ -38,5 +38,9 @@ export const keys = {
     directory: (villageId: string) => ['village', villageId, 'directory'] as const,
     /** The panchayat's own contact cards, pinned above the directory (spec 03.4). */
     contacts: (villageId: string) => ['village', villageId, 'contacts'] as const,
+    gallery: (villageId: string) => ['village', villageId, 'gallery'] as const,
+    galleryPending: (villageId: string) => ['village', villageId, 'gallery', 'pending'] as const,
+    /** Keyed by object path, not by village: a signed URL belongs to one object. */
+    imageUrl: (path: string) => ['village', 'image', path] as const,
   },
 } as const;

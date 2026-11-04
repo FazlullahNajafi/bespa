@@ -1,0 +1,244 @@
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { supabase } from '@/lib/supabase';
+import type { ErrorCode } from '@/lib/errors';
+import { registerHandler, submit } from '@/lib/outbox';
+import { signedUrl, uploadToBucket } from '@/lib/images';
+import { keys } from './keys';
+
+/**
+ * The village gallery (spec 03.3).
+ *
+ * The upload goes **through the outbox**, which is not ceremony — it is the measured
+ * consequence of the Phase 1 spike. A resized photo is 184 KB, which is about a second on
+ * wifi and the better part of a minute on 2G, and spec 02.3 is written for 2G. Nobody
+ * should watch a spinner for that, so the screen hands the local file to the queue and
+ * says it will go; the outbox uploads the bytes and records the row when there is a
+ * connection, which may be tomorrow.
+ *
+ * `mediaPaths` has been on `submit()` since Phase 0 and unused until now. This is what it
+ * was for: the payload is small and JSON, the files are listed separately, and the
+ * handler is what turns one into the other.
+ */
+
+export type GalleryStatus = 'pending' | 'approved' | 'rejected';
+
+export type GalleryImage = {
+  id: string;
+  storage_path: string;
+  caption: string | null;
+  status: GalleryStatus;
+  reject_reason: string | null;
+  uploaded_by: string;
+  created_at: string;
+};
+
+const COLUMNS = 'id, storage_path, caption, status, reject_reason, uploaded_by, created_at';
+
+/**
+ * What the village may see, plus whatever belongs to the caller.
+ *
+ * The policy does the deciding — approved for the village, always for the uploader,
+ * always for an admin — so this asks for rows and renders what comes back rather than
+ * reasoning about visibility a second time on the client.
+ */
+export function useGallery(villageId: string | null | undefined) {
+  return useQuery({
+    queryKey: keys.village.gallery(villageId ?? 'mine'),
+    enabled: Boolean(villageId),
+    staleTime: 1000 * 60 * 5,
+    queryFn: async (): Promise<GalleryImage[]> => {
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select(COLUMNS)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data ?? []) as GalleryImage[];
+    },
+  });
+}
+
+/** Only what is waiting for a decision, for the moderation queue. */
+export function usePendingGallery(villageId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: keys.village.galleryPending(villageId ?? 'mine'),
+    enabled: Boolean(villageId) && enabled,
+    staleTime: 1000 * 60,
+    queryFn: async (): Promise<GalleryImage[]> => {
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select(COLUMNS)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data ?? []) as GalleryImage[];
+    },
+  });
+}
+
+/**
+ * Signed URLs for a page of images, one query each.
+ *
+ * Per-image rather than one batch call so that a single expired or missing object leaves
+ * a gap in the grid instead of emptying it, and so each URL can be cached and refreshed
+ * on its own. They last an hour; the query is kept well inside that.
+ */
+export function useImageUrls(paths: string[]) {
+  return useQueries({
+    queries: paths.map((path) => ({
+      queryKey: keys.village.imageUrl(path),
+      staleTime: 1000 * 60 * 45,
+      queryFn: () => signedUrl(path),
+    })),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Contributing
+// ---------------------------------------------------------------------------
+
+export type GalleryDraft = {
+  villageId: string;
+  caption: string | null;
+};
+
+export type GalleryWrite =
+  | { ok: true }
+  | { ok: false; code: ErrorCode }
+  /** Offline, which for a photo is the normal case rather than the exception. */
+  | { ok: false; queued: true };
+
+const SUBMIT_IMAGES = 'submit_gallery_images';
+
+registerHandler<GalleryDraft, true>(SUBMIT_IMAGES, async (draft, mediaPaths) => {
+  // From the stored session rather than the payload: a photo queued before a phone was
+  // handed to someone else must upload as whoever is signed in when it drains, or not at
+  // all — and the storage policy would refuse it anyway.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const uid = sessionData.session?.user.id;
+  if (!uid) {
+    // 42501 is permanent in outbox/policy.ts, so the row is dropped rather than retried
+    // forever against a session that is gone.
+    throw Object.assign(new Error('no session'), { code: '42501' });
+  }
+
+  for (const uri of mediaPaths) {
+    const path = await uploadToBucket(uri, draft.villageId, uid);
+    const { error } = await supabase.rpc('submit_gallery_image', {
+      geo_unit: draft.villageId,
+      storage_path: path,
+      caption: draft.caption ?? undefined,
+    });
+    if (error) throw error;
+  }
+
+  return true;
+});
+
+export function useSubmitGallery() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args: {
+      draft: GalleryDraft;
+      uris: string[];
+    }): Promise<GalleryWrite> => {
+      // No idempotency key: two submissions of the same photo are two intents, and the
+      // storage path is generated per upload so a retry of the *same* queued row reuses
+      // nothing. `storage_path` is unique server-side, which is the real guard.
+      const result = await submit<true>({
+        kind: SUBMIT_IMAGES,
+        payload: args.draft,
+        mediaPaths: args.uris,
+      });
+
+      if (result.status === 'done') return { ok: true };
+      if (result.status === 'queued') return { ok: false, queued: true };
+      return { ok: false, code: result.code };
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Moderating
+// ---------------------------------------------------------------------------
+
+const REVIEW_IMAGE = 'review_gallery_image';
+const WITHDRAW_IMAGE = 'withdraw_gallery_image';
+
+registerHandler<{ id: string; approve: boolean; reason: string | null }, true>(
+  REVIEW_IMAGE,
+  async ({ id, approve, reason }) => {
+    const { error } = await supabase.rpc('review_gallery_image', {
+      image_id: id,
+      approve,
+      reason: reason ?? undefined,
+    });
+    if (error) throw error;
+    return true;
+  },
+);
+
+registerHandler<{ id: string }, true>(WITHDRAW_IMAGE, async ({ id }) => {
+  const { data, error } = await supabase.rpc('withdraw_gallery_image', { image_id: id });
+  if (error) throw error;
+
+  // The row is gone; take the bytes with it. Failing here leaves an orphaned object,
+  // which is untidy rather than unsafe — nothing can reach it without a row.
+  if (typeof data === 'string') {
+    await supabase.storage.from('images').remove([data]);
+  }
+  return true;
+});
+
+function toWrite(result: { status: string; code?: ErrorCode }): GalleryWrite {
+  if (result.status === 'done') return { ok: true };
+  if (result.status === 'queued') return { ok: false, queued: true };
+  return { ok: false, code: result.code ?? 'unknown' };
+}
+
+export function useReviewImage() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args: {
+      id: string;
+      approve: boolean;
+      reason?: string;
+    }): Promise<GalleryWrite> => {
+      const result = await submit<true>({
+        kind: REVIEW_IMAGE,
+        payload: { id: args.id, approve: args.approve, reason: args.reason ?? null },
+        // One decision per photo. A double tap must not approve and then reject.
+        idempotencyKey: `${REVIEW_IMAGE}:${args.id}`,
+      });
+      return toWrite(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
+    },
+  });
+}
+
+export function useWithdrawImage() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<GalleryWrite> => {
+      const result = await submit<true>({
+        kind: WITHDRAW_IMAGE,
+        payload: { id },
+        idempotencyKey: `${WITHDRAW_IMAGE}:${id}`,
+      });
+      return toWrite(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
+    },
+  });
+}

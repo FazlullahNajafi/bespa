@@ -73,6 +73,96 @@ export type Timings = {
   uploadedBytes: number;
 };
 
+/**
+ * Picks up to `limit` photos and shrinks each one, returning local files.
+ *
+ * Resizing happens HERE and not at upload time, which is the measured decision from the
+ * spike: 4.4 MB becomes 184 KB, and the outbox should be carrying the 184 KB. The cost is
+ * that the queued file lives in the cache directory, which Android may clear under
+ * storage pressure — so a photo queued on a dead connection can be lost before it drains.
+ * That window is short, and the alternative is copying every pick into permanent storage
+ * for a journey most of them make in seconds.
+ */
+export async function pickAndResize(limit = 1): Promise<
+  { status: 'ok'; uris: string[] } | { status: 'cancelled' | 'unsupported' | 'denied' }
+> {
+  const imagePicker = pickerModule();
+  const imageManipulator = manipulatorModule();
+  if (!imagePicker || !imageManipulator) return { status: 'unsupported' };
+
+  const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return { status: 'denied' };
+
+  const picked = await imagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: false,
+    allowsMultipleSelection: limit > 1,
+    selectionLimit: limit,
+    quality: 1,
+  });
+  if (picked.canceled || !picked.assets?.length) return { status: 'cancelled' };
+
+  const uris: string[] = [];
+  for (const asset of picked.assets) {
+    uris.push(await shrink(asset.uri, asset.width, asset.height));
+  }
+  return { status: 'ok', uris };
+}
+
+/** The resize on its own, so both the spike and the gallery use the same one. */
+async function shrink(uri: string, width?: number, height?: number): Promise<string> {
+  const imageManipulator = manipulatorModule();
+  if (!imageManipulator) return uri;
+
+  const longEdge = Math.max(width ?? 0, height ?? 0);
+  const scale = longEdge > MAX_EDGE ? MAX_EDGE / longEdge : 1;
+
+  const context = imageManipulator.ImageManipulator.manipulate(uri);
+  if (scale < 1) {
+    context.resize({
+      width: Math.round((width ?? MAX_EDGE) * scale),
+      height: Math.round((height ?? MAX_EDGE) * scale),
+    });
+  }
+  const rendered = await context.renderAsync();
+  const saved = await rendered.saveAsync({
+    compress: QUALITY,
+    format: imageManipulator.SaveFormat.JPEG,
+  });
+  return saved.uri;
+}
+
+/**
+ * Uploads an already-resized local file and answers with its object path.
+ *
+ * The path is `<villageId>/<userId>/<name>` because the storage policies read those two
+ * segments — the first decides which village may see it, the second who may delete it.
+ * `submit_gallery_image` checks the same prefix, so a row cannot be attached to someone
+ * else's object.
+ */
+export async function uploadToBucket(
+  uri: string,
+  villageId: string,
+  userId: string,
+): Promise<string> {
+  const body = await (await fetch(uri)).arrayBuffer();
+  const path = `${villageId}/${userId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.jpg`;
+
+  const { error } = await supabase.storage
+    .from('images')
+    .upload(path, body, { contentType: 'image/jpeg', upsert: false });
+  if (error) throw error;
+
+  return path;
+}
+
+/** A signed URL to read one object. The bucket is private, so this is the only way in. */
+export async function signedUrl(path: string, seconds = 60 * 60): Promise<string | null> {
+  const { data, error } = await supabase.storage.from('images').createSignedUrl(path, seconds);
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
 export type PipelineResult =
   | { status: 'ok'; path: string; url: string; timings: Timings }
   | { status: 'cancelled' }

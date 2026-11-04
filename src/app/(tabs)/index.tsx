@@ -47,6 +47,7 @@ type Tile = {
  */
 const TILES: Tile[] = [
   { key: 'directory', icon: 'people', labelKey: 'directory.tile', href: '/directory', tint: 'primary' },
+  { key: 'gallery', icon: 'image', labelKey: 'gallery.tile', href: '/gallery', tint: 'accent' },
   { key: 'transport', icon: 'car', labelKey: 'tabs.transport', href: '/(tabs)/transport', tint: 'primary' },
   { key: 'calendar', icon: 'flag', labelKey: 'tabs.calendar', href: '/(tabs)/calendar', tint: 'accent' },
   { key: 'services', icon: 'file', labelKey: 'tabs.services', href: '/(tabs)/services', tint: 'info' },

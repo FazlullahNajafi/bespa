@@ -195,6 +195,87 @@ export type Database = {
           },
         ]
       }
+      gallery_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          geo_path: unknown
+          geo_unit_id: string
+          id: string
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["mod_status"]
+          storage_path: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          geo_path: unknown
+          geo_unit_id: string
+          id?: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["mod_status"]
+          storage_path: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          geo_path?: unknown
+          geo_unit_id?: string
+          id?: string
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["mod_status"]
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_images_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: false
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_images_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_images_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_images_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_images_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geo_units: {
         Row: {
           centroid: unknown
@@ -805,6 +886,10 @@ export type Database = {
         Args: { locale?: string; platform?: string; token: string }
         Returns: undefined
       }
+      review_gallery_image: {
+        Args: { approve: boolean; image_id: string; reason?: string }
+        Returns: undefined
+      }
       set_my_occupation: { Args: { p_occupation?: string }; Returns: undefined }
       set_my_privacy: {
         Args: {
@@ -820,6 +905,10 @@ export type Database = {
         Returns: undefined
       }
       shares_my_village: { Args: { uid: string }; Returns: boolean }
+      submit_gallery_image: {
+        Args: { caption?: string; geo_unit: string; storage_path: string }
+        Returns: string
+      }
       update_village_contact: {
         Args: {
           p_designation: string
@@ -830,6 +919,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      withdraw_gallery_image: { Args: { image_id: string }; Returns: string }
     }
     Enums: {
       booking_status:
