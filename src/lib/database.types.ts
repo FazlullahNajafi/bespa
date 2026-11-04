@@ -493,6 +493,111 @@ export type Database = {
           },
         ]
       }
+      places: {
+        Row: {
+          category: Database["public"]["Enums"]["place_category"]
+          created_at: string
+          description: string | null
+          geo_path: unknown
+          geo_unit_id: string
+          id: string
+          lat: number | null
+          lon: number | null
+          name_bft: string | null
+          name_en: string
+          phone: string | null
+          photo_paths: string[]
+          point: unknown
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["mod_status"]
+          submitted_by: string
+          timings: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["place_category"]
+          created_at?: string
+          description?: string | null
+          geo_path: unknown
+          geo_unit_id: string
+          id?: string
+          lat?: number | null
+          lon?: number | null
+          name_bft?: string | null
+          name_en: string
+          phone?: string | null
+          photo_paths: string[]
+          point: unknown
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["mod_status"]
+          submitted_by: string
+          timings?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["place_category"]
+          created_at?: string
+          description?: string | null
+          geo_path?: unknown
+          geo_unit_id?: string
+          id?: string
+          lat?: number | null
+          lon?: number | null
+          name_bft?: string | null
+          name_en?: string
+          phone?: string | null
+          photo_paths?: string[]
+          point?: unknown
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["mod_status"]
+          submitted_by?: string
+          timings?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: false
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "places_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "places_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "places_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "places_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       privacy_settings: {
         Row: {
           in_directory: boolean
@@ -866,6 +971,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      places_near: {
+        Args: {
+          category: Database["public"]["Enums"]["place_category"]
+          lat: number
+          lon: number
+          radius_m?: number
+        }
+        Returns: {
+          distance_m: number
+          id: string
+          name_en: string
+        }[]
+      }
       publish_notice: {
         Args: {
           body: string
@@ -894,6 +1012,10 @@ export type Database = {
       }
       review_gallery_image: {
         Args: { approve: boolean; image_id: string; reason?: string }
+        Returns: undefined
+      }
+      review_place: {
+        Args: { approve: boolean; place_id: string; reason?: string }
         Returns: undefined
       }
       set_gallery_kind: {
@@ -926,6 +1048,22 @@ export type Database = {
         Args: { caption?: string; geo_unit: string; storage_path: string }
         Returns: string
       }
+      submit_place: {
+        Args: {
+          category: Database["public"]["Enums"]["place_category"]
+          description?: string
+          duplicate_acknowledged?: boolean
+          geo_unit: string
+          lat: number
+          lon: number
+          name_bft?: string
+          name_en: string
+          phone?: string
+          photo_paths: string[]
+          timings?: string
+        }
+        Returns: string
+      }
       update_village_contact: {
         Args: {
           p_designation: string
@@ -937,6 +1075,7 @@ export type Database = {
         Returns: undefined
       }
       withdraw_gallery_image: { Args: { image_id: string }; Returns: string }
+      withdraw_place: { Args: { place_id: string }; Returns: string[] }
     }
     Enums: {
       booking_status:

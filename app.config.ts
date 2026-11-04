@@ -40,11 +40,39 @@ const ids = {
  */
 const easProjectId = process.env.EAS_PROJECT_ID ?? '38b1dd9a-ff70-4697-822c-1031700383b1';
 
+/**
+ * The Google Maps key for `react-native-maps` (spec 03.2's list/map toggle and pin drop).
+ *
+ * Not hard-coded, unlike the EAS and Sentry ids above, because this one is billable: an
+ * unrestricted Maps key in a public repository is somebody else's map quota. It is
+ * restricted in the Cloud console to this package name plus the build's SHA-1, which is
+ * what makes it safe to ship inside the APK at all.
+ *
+ * Which means the CLAUDE.md trap applies in full — EAS Build evaluates this file on its
+ * own servers, where `.env` does not exist. **The key has to be an EAS environment
+ * variable for each profile**, or the plugin silently receives `undefined` there and
+ * every build comes out with a blank grey map while looking perfect locally.
+ *
+ * Until it exists the plugin is left out entirely rather than passed an empty string: a
+ * missing key renders a grey rectangle with no error, and `extra.mapsEnabled` is what
+ * lets the app show something honest instead.
+ */
+const mapsKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? null;
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: ids.name,
   slug: 'bespa',
-  version: '0.1.0',
+  /**
+   * Bumped to 0.2.0 for `react-native-maps` (2026-11-05).
+   *
+   * Not cosmetic. `runtimeVersion` is the `appVersion` policy, so the version string is
+   * the only thing separating a build that contains a native module from one that does
+   * not — and `app.config.ts` already documents why fingerprinting is unavailable here.
+   * Leaving it at 0.1.0 would let an update carrying the Places map reach the 0.1.0
+   * preview build, which has no map view compiled in and would red-screen on render.
+   */
+  version: '0.2.0',
   orientation: 'portrait',
   scheme: ids.scheme,
   userInterfaceStyle: 'automatic',
@@ -58,6 +86,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // so `Constants.expoConfig.extra` can serve it when the env var is absent at runtime,
     // the same arrangement as the Supabase pair above.
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    // Whether a map can be drawn at all. The key itself is never read from here — the
+    // native side gets it from the plugin — so this is a flag and not a leak.
+    mapsEnabled: mapsKey !== null,
     ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
   },
 
@@ -196,6 +227,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Adds native code, so changing this requires a new development build — the JS
     // bundle alone cannot carry it.
     '@react-native-google-signin/google-signin',
+    /**
+     * Places (spec 03.2) needs a map twice: the list/map toggle, and dropping a pin for
+     * somewhere you are not currently standing.
+     *
+     * Conditional, so that a tree with no key prebuilds and runs — the Places screens
+     * then offer "use my current location" only, which is the common case for a villager
+     * adding the shop they are standing in front of.
+     */
+    ...(mapsKey
+      ? [['react-native-maps', { androidGoogleMapsApiKey: mapsKey }] as [string, Record<string, unknown>]]
+      : []),
     [
       'expo-splash-screen',
       {

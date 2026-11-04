@@ -59,6 +59,32 @@ export type FixResult =
   | { status: 'failed' };
 
 /**
+ * A coordinate only if the user has already said yes.
+ *
+ * Places (spec 03.2) shows how far away each place is, which is worth having and is not
+ * worth a permission dialog nobody asked for: a list of the village's shops must not
+ * open with a system prompt. Anyone who used the picker's "use my location" during
+ * onboarding has already granted it, so for them the distances are free.
+ *
+ * `getForegroundPermissionsAsync` reads the current grant without prompting, which is the
+ * whole difference from `getFix` below.
+ */
+export async function getFixIfAllowed(): Promise<FixResult> {
+  const location = locationModule();
+  if (!location) return { status: 'unsupported' };
+
+  try {
+    if (!(await location.getForegroundPermissionsAsync()).granted) {
+      return { status: 'denied' };
+    }
+  } catch {
+    return { status: 'failed' };
+  }
+
+  return getFix();
+}
+
+/**
  * Asks permission if needed and returns one coordinate.
  *
  * `Balanced` accuracy rather than `Highest`: a village is hundreds of metres across, and

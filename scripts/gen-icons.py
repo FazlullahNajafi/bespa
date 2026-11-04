@@ -78,6 +78,55 @@ EXTRA = {
              '<Circle cx="17" cy="6" r="2.4" {...p}/>'
              '<Circle cx="17" cy="18" r="2.4" {...p}/>'
              '<Path d="M8.1 10.9l6.8-3.8M8.1 13.1l6.8 3.8" {...p}/></>',
+    # ---------------------------------------------------------------------------
+    # Place categories (spec 03.2). Nine of the twelve needed a glyph of their own.
+    #
+    # Spec 08.6 asks for an icon *and* a word, which only helps when the icon is right:
+    # on a filter chip row the icon is what a reader who does not read English scans, so
+    # two categories drawn the same are worse than no icons. `school` reuses `book`,
+    # `tourist` reuses `mountain` and `other` reuses `pin`; the rest are below.
+    #
+    # The three religious categories are the ones that had to be got right rather than
+    # approximated, because in Kargil they are three different kinds of building and the
+    # distinction is not a detail. Each is drawn from the feature a resident would point
+    # at: a mosque's dome between two minarets, an imambargah's alam on its pole above
+    # the hall, a khanqah's tiered wooden spire.
+    "mosque": '<><Path d="M3.5 20h17" {...p}/>'
+              '<Path d="M6 20v-9.8M18 20v-9.8" {...p}/>'
+              '<Path d="M6 10.2V8.8M18 10.2V8.8" {...p}/>'
+              '<Path d="M8.5 20v-4.6c0-2 1.6-3.6 3.5-3.6s3.5 1.6 3.5 3.6V20" {...p}/>'
+              '<Path d="M12 11.8V9.3" {...p}/></>',
+    "imambargah": '<><Path d="M3.5 20h17" {...p}/>'
+                  '<Rect x="5" y="11.5" width="14" height="8.5" rx="1.4" {...p}/>'
+                  '<Path d="M12 11.5V4.5" {...p}/>'
+                  '<Path d="M12 5h4.5l-1.6 1.9L16.5 8.8H12" {...p}/></>',
+    "khanqah": '<><Path d="M3.5 20h17" {...p}/>'
+               '<Path d="M12 3.5l4.5 4.3h-9L12 3.5z" {...p}/>'
+               '<Path d="M12 7.8l7 5.2H5l7-5.2z" {...p}/>'
+               '<Path d="M7.5 13v7h9v-7" {...p}/></>',
+    # A building with a cross. The red-cross glyph alone reads as first aid; a hospital
+    # here is a building people walk to.
+    "hospital": '<><Rect x="4.5" y="7" width="15" height="13" rx="2" {...p}/>'
+                '<Path d="M12 10.5v6M9 13.5h6" {...p}/></>',
+    # The civic building: pediment over columns. This is the shape a bank usually gets as
+    # well, which is why `bank` below is a rupee instead -- the two must not collide.
+    "office": '<><Path d="M3.5 20h17" {...p}/>'
+              '<Path d="M4 10.5l8-4.5 8 4.5H4z" {...p}/>'
+              '<Path d="M6.5 10.5V20M10 10.5V20M14 10.5V20M17.5 10.5V20" {...p}/></>',
+    "bank": '<><Rect x="4.5" y="5" width="15" height="14" rx="2" {...p}/>'
+            '<Path d="M9.5 8.8h5M9.5 11.1h5" {...p}/>'
+            '<Path d="M9.8 8.8c3 0 3.5 4.6-.3 4.6h1.1l3.4 3.2" {...p}/></>',
+    # A droplet, not a tap. A water point in a Ladakhi village is as often a spring or a
+    # standpipe as a fitted tap, and the droplet covers all three.
+    "water": '<><Path d="M12 3.8c0 0 5.2 5.9 5.2 9.3a5.2 5.2 0 0 1-10.4 0c0-3.4 5.2-9.3 5.2-9.3z" {...p}/></>',
+    # A shop under its awning -- the shape of every storefront on the Kargil main bazaar.
+    "market": '<><Path d="M3.5 20h17" {...p}/>'
+              '<Path d="M4 9.5l1.5-3.5h13L20 9.5H4z" {...p}/>'
+              '<Path d="M5.5 9.5V20h13V9.5" {...p}/>'
+              '<Path d="M9.5 20v-5h5v5" {...p}/></>',
+    "sports": '<><Circle cx="12" cy="12" r="7.5" {...p}/>'
+              '<Path d="M4.8 9.8c4.2 1.3 10.2 1.3 14.4 0" {...p}/>'
+              '<Path d="M12 4.6c-2.6 4.5-2.6 10.3 0 14.8" {...p}/></>',
 }
 
 HEADER = '''import type { ComponentProps } from 'react';

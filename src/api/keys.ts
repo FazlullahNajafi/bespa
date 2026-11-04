@@ -38,6 +38,14 @@ export const keys = {
     directory: (villageId: string) => ['village', villageId, 'directory'] as const,
     /** The panchayat's own contact cards, pinned above the directory (spec 03.4). */
     contacts: (villageId: string) => ['village', villageId, 'contacts'] as const,
+    places: (villageId: string) => ['village', villageId, 'places'] as const,
+    placesPending: (villageId: string) => ['village', villageId, 'places', 'pending'] as const,
+    /**
+     * Keyed by the question, not by the village: the duplicate prompt asks "what else of
+     * this category is within 150 m of *here*", and `here` changes as a pin is dragged.
+     */
+    placesNear: (category: string | null, lat: number | null, lon: number | null) =>
+      ['village', 'placesNear', category, lat, lon] as const,
     gallery: (villageId: string) => ['village', villageId, 'gallery'] as const,
     galleryPending: (villageId: string) => ['village', villageId, 'gallery', 'pending'] as const,
     banner: (villageId: string) => ['village', villageId, 'banner'] as const,

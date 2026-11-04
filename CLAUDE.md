@@ -187,6 +187,22 @@ what actually blocks them. Check what shipped by reading the APK rather than the
 python -c "import zipfile,re; m=zipfile.ZipFile('app.apk').read('AndroidManifest.xml').decode('utf-16-le','ignore'); print(sorted(set(re.findall(r'android\.permission\.[A-Z_]+', m))))"
 ```
 
+**`react-native-maps` needs a Google Maps key, and a missing one is silent.** The plugin
+entry in `app.config.ts` is conditional on `EXPO_PUBLIC_GOOGLE_MAPS_KEY`; with no key the
+plugin is left out and `extra.mapsEnabled` is false, so the Places screens hide the map
+and keep working. With a key present but *undefined on the EAS server* — the `.env` trap
+above, for the third time — the build succeeds, the plugin runs with `undefined`, and the
+app ships a blank grey rectangle that logs nothing. The key is deliberately not hard-coded
+the way the EAS project id and Sentry slugs are, because it is billable: restrict it in
+the Cloud console to the package name plus the build's SHA-1, then
+`eas env:create --variable-name EXPO_PUBLIC_GOOGLE_MAPS_KEY` for each environment.
+
+**`version` was bumped to 0.2.0 when `react-native-maps` arrived**, and must be bumped for
+any later native addition. `runtimeVersion` uses the `appVersion` policy here (the
+fingerprint policy fails on EAS — see `app.config.ts`), so the version string is the only
+thing stopping an update that contains a map view from reaching a build that has no map
+view compiled in.
+
 **EAS builds the committed git state, not the working tree.** A build started before
 `git commit` archives the previous commit — that is how the first attempt failed in 58
 seconds, building a tree whose `package.json` lacked `expo-dev-client` while the profile
