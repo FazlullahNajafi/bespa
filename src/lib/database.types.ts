@@ -197,11 +197,13 @@ export type Database = {
       }
       gallery_images: {
         Row: {
+          banner_position: number | null
           caption: string | null
           created_at: string
           geo_path: unknown
           geo_unit_id: string
           id: string
+          kind: Database["public"]["Enums"]["gallery_kind"]
           reject_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -211,11 +213,13 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          banner_position?: number | null
           caption?: string | null
           created_at?: string
           geo_path: unknown
           geo_unit_id: string
           id?: string
+          kind?: Database["public"]["Enums"]["gallery_kind"]
           reject_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -225,11 +229,13 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          banner_position?: number | null
           caption?: string | null
           created_at?: string
           geo_path?: unknown
           geo_unit_id?: string
           id?: string
+          kind?: Database["public"]["Enums"]["gallery_kind"]
           reject_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -890,6 +896,13 @@ export type Database = {
         Args: { approve: boolean; image_id: string; reason?: string }
         Returns: undefined
       }
+      set_gallery_kind: {
+        Args: {
+          image_id: string
+          new_kind: Database["public"]["Enums"]["gallery_kind"]
+        }
+        Returns: undefined
+      }
       set_my_occupation: { Args: { p_occupation?: string }; Returns: undefined }
       set_my_privacy: {
         Args: {
@@ -902,6 +915,10 @@ export type Database = {
       }
       set_my_village: {
         Args: { panchayat?: string; village: string }
+        Returns: undefined
+      }
+      set_village_banner: {
+        Args: { geo_unit: string; image_ids: string[] }
         Returns: undefined
       }
       shares_my_village: { Args: { uid: string }; Returns: boolean }

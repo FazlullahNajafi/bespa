@@ -356,6 +356,22 @@
     "pick": {
       "denied": "Bespa cannot see your photos. Allow it from Android settings.",
       "unsupported": "This build cannot pick photos. It needs a newer app."
-    }
+    },
+    "kind": {
+      "place": "Place",
+      "festival": "Festival",
+      "general": "Other"
+    },
+    "by": "By {{name}} · {{date}}",
+    "someone": "a villager",
+    "share": "Share",
+    "shareFrom": "A photo from {{village}}, on Bespa.",
+    "bannerTitle": "Photos on the home screen",
+    "bannerHint": "Choose which photos the village sees first",
+    "bannerIntro": "Tap up to five photos. The number shows the order the village will see them in.",
+    "bannerNothing": "No accepted photos yet. Accept some first.",
+    "bannerFull": "Five is the most the home screen holds.",
+    "bannerSaved": "Saved. The village will see these at the top.",
+    "bannerSave": "Use these {{count}} photos"
   }
 }

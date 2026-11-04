@@ -13,13 +13,7 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { StatusPill } from '@/components/status-pill';
 import { TextField } from '@/components/text-field';
-import {
-  useGallery,
-  useImageUrls,
-  useSubmitGallery,
-  useWithdrawImage,
-  type GalleryImage,
-} from '@/api/gallery';
+import { useGallery, useImageUrls, useSubmitGallery, type GalleryImage } from '@/api/gallery';
 import { useMyAdminUnits, useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
 import { canPickImages, pickAndResize } from '@/lib/images';
@@ -105,11 +99,9 @@ export default function GalleryScreen() {
 
   const images = useGallery(villageId);
   const submitImages = useSubmitGallery();
-  const withdraw = useWithdrawImage();
 
   const [caption, setCaption] = useState('');
   const [note, setNote] = useState<string | null>(null);
-  const [selected, setSelected] = useState<GalleryImage | null>(null);
 
   // Memoised together: `?? []` makes a new array every render, which would make the
   // paths a new array too and re-sign every URL on every keystroke.
@@ -181,6 +173,15 @@ export default function GalleryScreen() {
         </Pressable>
       ) : null}
 
+      {canReview ? (
+        <Button
+          label={t('gallery.bannerTitle')}
+          variant="secondary"
+          onPress={() => router.push('/gallery/banner')}
+          accessibilityHint={t('gallery.bannerHint')}
+        />
+      ) : null}
+
       <TextField
         label={t('gallery.caption')}
         hint={t('gallery.captionHint')}
@@ -222,38 +223,12 @@ export default function GalleryScreen() {
               image={image}
               url={urls[index]?.data}
               mine={image.uploaded_by === userId}
-              onPress={() => setSelected(selected?.id === image.id ? null : image)}
+              onPress={() => router.push({ pathname: '/gallery/[id]', params: { id: image.id } })}
             />
           ))}
         </View>
       )}
 
-      {/* Tapping a tile opens its details here rather than on a second screen: the full
-          pager is slice two, and a caption with a reason on it is most of what a
-          contributor needs in the meantime. */}
-      {selected ? (
-        <Card>
-          <Text style={[type.bodySmall, styles.selectedCaption, { color: colors.text }]}>
-            {selected.caption ?? t('gallery.noCaption')}
-          </Text>
-          {selected.status === 'rejected' && selected.reject_reason ? (
-            <Text style={[type.caption, { color: colors.danger }]}>
-              {t('gallery.rejectedBecause', { reason: selected.reject_reason })}
-            </Text>
-          ) : null}
-          {selected.uploaded_by === userId || canReview ? (
-            <Button
-              label={t('gallery.withdraw')}
-              variant="ghost"
-              loading={withdraw.isPending}
-              onPress={() => {
-                void withdraw.mutateAsync(selected.id);
-                setSelected(null);
-              }}
-            />
-          ) : null}
-        </Card>
-      ) : null}
     </Screen>
   );
 }

@@ -40,6 +40,7 @@ export const keys = {
     contacts: (villageId: string) => ['village', villageId, 'contacts'] as const,
     gallery: (villageId: string) => ['village', villageId, 'gallery'] as const,
     galleryPending: (villageId: string) => ['village', villageId, 'gallery', 'pending'] as const,
+    banner: (villageId: string) => ['village', villageId, 'banner'] as const,
     /** Keyed by object path, not by village: a signed URL belongs to one object. */
     imageUrl: (path: string) => ['village', 'image', path] as const,
   },

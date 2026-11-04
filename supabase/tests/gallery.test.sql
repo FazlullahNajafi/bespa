@@ -9,7 +9,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(26);
 
 set search_path = public, extensions;
 
@@ -202,6 +202,72 @@ select is(
   withdraw_gallery_image((select id from gallery_images where storage_path like '%/a.jpg')),
   '00000000-0000-0000-0000-0000000a1100/00000000-0000-0000-0000-0000000a1101/a.jpg',
   'its uploader can, and gets the storage path back so the bytes can go too');
+
+-- ---------------------------------------------------------------------------
+-- Tabs and the Home banner (spec 03.1 section 2, 03.3)
+-- ---------------------------------------------------------------------------
+-- A photo of its own: the one above was withdrawn by the test before this, which is
+-- exactly the sort of thing a shared fixture hides until it bites.
+
+select tests_become('00000000-0000-0000-0000-0000000a1101');
+select submit_gallery_image(
+  '00000000-0000-0000-0000-0000000a1100',
+  '00000000-0000-0000-0000-0000000a1100/00000000-0000-0000-0000-0000000a1101/d.jpg',
+  'The mosque at Eid');
+
+select is(
+  (select kind::text from gallery_images where caption = 'The mosque at Eid'),
+  'general',
+  'a photo starts untagged rather than guessed into a tab');
+
+select lives_ok(
+  $$ select set_gallery_kind(
+       (select id from gallery_images where caption = 'The mosque at Eid'), 'festival') $$,
+  'and the person who took it can say what it is');
+
+select tests_become('00000000-0000-0000-0000-0000000a1102');
+select throws_ok(
+  $$ select set_gallery_kind(
+       (select id from gallery_images where caption = 'The mosque at Eid'), 'place') $$,
+  '42501',
+  null,
+  'while a bystander cannot retag someone else''s photo');
+
+select tests_become('00000000-0000-0000-0000-0000000a1103');
+
+-- Still pending, so not eligible for the banner yet.
+select throws_ok(
+  $$ select set_village_banner('00000000-0000-0000-0000-0000000a1100',
+       array[(select id from gallery_images where caption = 'The mosque at Eid')]) $$,
+  '22023',
+  null,
+  'a photo the village cannot see yet cannot be on its front page');
+
+select review_gallery_image(
+  (select id from gallery_images where caption = 'The mosque at Eid'), true);
+
+select lives_ok(
+  $$ select set_village_banner('00000000-0000-0000-0000-0000000a1100',
+       array[(select id from gallery_images where caption = 'The mosque at Eid')]) $$,
+  'once approved, an admin can put it on the village banner');
+
+select is(
+  (select banner_position from gallery_images where caption = 'The mosque at Eid'),
+  1::smallint,
+  'and the order given is the order stored');
+
+select throws_ok(
+  $$ select set_village_banner('00000000-0000-0000-0000-0000000a1100',
+       array[(select id from gallery_images where caption = 'Blurry one'),
+             (select id from gallery_images where caption = 'The mosque at Eid')]) $$,
+  '22023',
+  null,
+  'and a banner containing a rejected photo is refused whole, not quietly trimmed');
+
+select is(
+  (select banner_position from gallery_images where caption = 'The mosque at Eid'),
+  1::smallint,
+  'that refusal left the banner exactly as it was');
 
 select * from finish();
 rollback;

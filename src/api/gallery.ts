@@ -22,18 +22,28 @@ import { keys } from './keys';
  */
 
 export type GalleryStatus = 'pending' | 'approved' | 'rejected';
+/** Spec 03.3's three tabs. The enum has existed since the first migration. */
+export type GalleryKind = 'place' | 'festival' | 'general';
 
 export type GalleryImage = {
   id: string;
   storage_path: string;
   caption: string | null;
   status: GalleryStatus;
+  kind: GalleryKind;
+  banner_position: number | null;
   reject_reason: string | null;
   uploaded_by: string;
   created_at: string;
+  /** Spec 03.3 shows the contributor. A name is always visible (spec 03.4). */
+  uploader: { full_name: string } | null;
 };
 
-const COLUMNS = 'id, storage_path, caption, status, reject_reason, uploaded_by, created_at';
+// `gallery_images` has two foreign keys to `profiles` — uploaded_by and reviewed_by — so
+// the embed has to name the constraint or PostgREST cannot tell which one is meant.
+const COLUMNS =
+  'id, storage_path, caption, status, kind, banner_position, reject_reason, ' +
+  'uploaded_by, created_at, uploader:profiles!gallery_images_uploaded_by_fkey(full_name)';
 
 /**
  * What the village may see, plus whatever belongs to the caller.
@@ -54,7 +64,7 @@ export function useGallery(villageId: string | null | undefined) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data ?? []) as GalleryImage[];
+      return (data ?? []) as unknown as GalleryImage[];
     },
   });
 }
@@ -73,7 +83,7 @@ export function usePendingGallery(villageId: string | null | undefined, enabled:
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data ?? []) as GalleryImage[];
+      return (data ?? []) as unknown as GalleryImage[];
     },
   });
 }
@@ -234,6 +244,91 @@ export function useWithdrawImage() {
         kind: WITHDRAW_IMAGE,
         payload: { id },
         idempotencyKey: `${WITHDRAW_IMAGE}:${id}`,
+      });
+      return toWrite(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
+    },
+  });
+}
+
+/**
+ * The village's Home carousel: at most five approved photos, in the order an admin set.
+ *
+ * Separate from `useGallery` and not filtered out of it, because Home must not pay for
+ * the whole gallery to show five pictures — this is a cold-start query on a 2 GB phone,
+ * and spec 03.1 wants first paint under four seconds.
+ */
+export function useVillageBanner(villageId: string | null | undefined) {
+  return useQuery({
+    queryKey: keys.village.banner(villageId ?? 'mine'),
+    enabled: Boolean(villageId),
+    // The banner changes when an admin changes it, which is rarely.
+    staleTime: 1000 * 60 * 30,
+    queryFn: async (): Promise<GalleryImage[]> => {
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select(COLUMNS)
+        .not('banner_position', 'is', null)
+        .order('banner_position');
+
+      if (error) throw error;
+      return (data ?? []) as unknown as GalleryImage[];
+    },
+  });
+}
+
+const SET_BANNER = 'set_village_banner';
+const SET_KIND = 'set_gallery_kind';
+
+registerHandler<{ villageId: string; ids: string[] }, true>(
+  SET_BANNER,
+  async ({ villageId, ids }) => {
+    const { error } = await supabase.rpc('set_village_banner', {
+      geo_unit: villageId,
+      image_ids: ids,
+    });
+    if (error) throw error;
+    return true;
+  },
+);
+
+registerHandler<{ id: string; kind: GalleryKind }, true>(SET_KIND, async ({ id, kind }) => {
+  const { error } = await supabase.rpc('set_gallery_kind', { image_id: id, new_kind: kind });
+  if (error) throw error;
+  return true;
+});
+
+export function useSetBanner() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args: { villageId: string; ids: string[] }): Promise<GalleryWrite> => {
+      const result = await submit<true>({
+        kind: SET_BANNER,
+        payload: args,
+        // The banner is one sequence, not five edits: the last intent wins and a retry
+        // re-applies the same end state.
+        idempotencyKey: `${SET_BANNER}:${args.villageId}`,
+      });
+      return toWrite(result);
+    },
+    onSuccess: (result) => {
+      if (result.ok) void client.invalidateQueries({ queryKey: ['village'] });
+    },
+  });
+}
+
+export function useSetKind() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args: { id: string; kind: GalleryKind }): Promise<GalleryWrite> => {
+      const result = await submit<true>({
+        kind: SET_KIND,
+        payload: args,
+        idempotencyKey: `${SET_KIND}:${args.id}`,
       });
       return toWrite(result);
     },

@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { NoticeCard } from '@/components/notice-card';
+import { VillageBanner } from '@/components/village-banner';
 import { WeatherCard } from '@/components/weather-card';
 import { useGeoUnit } from '@/api/geo';
 import { useNotices } from '@/api/notices';
@@ -104,6 +105,10 @@ export default function HomeScreen() {
         coords={point.data ? { lat: point.data.lat, lon: point.data.lon } : null}
         placeName={point.data?.place}
       />
+
+      {/* Section 2 of spec 03.1, between the header and the weather. Renders nothing at
+          all until an admin has chosen photos, and nothing in Lite mode. */}
+      <VillageBanner villageId={profile.data?.village_id} />
 
       <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
         {t('home.quickAccess')}
