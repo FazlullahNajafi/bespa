@@ -534,5 +534,36 @@
     "statPublished": "Published.",
     "statRemove": "Remove",
     "statsCensusNote": "Ladakh's 2026 census is not published yet. Add the new figures as a new year when they are — the old ones stay, and the village page moves forward on its own."
+  },
+  "helplines": {
+    "title": "Emergency numbers",
+    "tile": "Helplines",
+    "intro": "These work without internet. One tap opens your dialer — you still press call.",
+    "group": {
+      "emergency": "Emergency",
+      "national": "Other helplines",
+      "kargil": "Kargil district"
+    },
+    "name": {
+      "all": "All emergencies",
+      "allNote": "Police, fire and ambulance on one number",
+      "ambulance": "Ambulance",
+      "police": "Police",
+      "fire": "Fire",
+      "ambulanceGov": "Ambulance (government)",
+      "child": "Child helpline",
+      "women": "Women's helpline",
+      "crime": "Crime stopper",
+      "policeControl": "Police Control Room, Kargil",
+      "jointControl": "Joint Control Room, Kargil",
+      "election": "District Contact Centre (elections)"
+    },
+    "call": "Call {{name}} on {{number}}",
+    "sourceLine": "From kargil.nic.in, checked {{checked}}.",
+    "sourceStale": "The district's own page was last updated {{pageUpdated}}, so a landline may have changed. The short numbers do not change.",
+    "openSource": "Open the district page"
+  },
+  "services": {
+    "intro": "Emergency numbers are here now. The rest of this tab is still being built."
   }
 }
