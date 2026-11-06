@@ -100,6 +100,67 @@ export type Database = {
           },
         ]
       }
+      bookings: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          passenger_id: string
+          phone: string | null
+          pickup_note: string | null
+          seat_nos: number[]
+          status: Database["public"]["Enums"]["booking_status"]
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          passenger_id: string
+          phone?: string | null
+          pickup_note?: string | null
+          seat_nos: number[]
+          status?: Database["public"]["Enums"]["booking_status"]
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          passenger_id?: string
+          phone?: string | null
+          pickup_note?: string | null
+          seat_nos?: number[]
+          status?: Database["public"]["Enums"]["booking_status"]
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_access_log: {
         Row: {
           accessed_at: string
@@ -739,6 +800,179 @@ export type Database = {
           },
         ]
       }
+      trip_seats: {
+        Row: {
+          booking_id: string | null
+          held_by: string | null
+          hold_expires_at: string | null
+          seat_no: number
+          status: Database["public"]["Enums"]["seat_status"]
+          trip_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          held_by?: string | null
+          hold_expires_at?: string | null
+          seat_no: number
+          status?: Database["public"]["Enums"]["seat_status"]
+          trip_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          held_by?: string | null
+          hold_expires_at?: string | null
+          seat_no?: number
+          status?: Database["public"]["Enums"]["seat_status"]
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_seats_held_by_fkey"
+            columns: ["held_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_seats_held_by_fkey"
+            columns: ["held_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_seats_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          cancel_reason: string | null
+          class: Database["public"]["Enums"]["trip_class"]
+          contact_phone: string | null
+          created_at: string
+          departure_date: string
+          departure_window: string | null
+          driver_id: string
+          from_label: string
+          id: string
+          mode: Database["public"]["Enums"]["trip_mode"]
+          pickup_note: string | null
+          price_per_seat: number
+          seats_total: number
+          status: Database["public"]["Enums"]["trip_status"]
+          to_label: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          class?: Database["public"]["Enums"]["trip_class"]
+          contact_phone?: string | null
+          created_at?: string
+          departure_date: string
+          departure_window?: string | null
+          driver_id: string
+          from_label: string
+          id?: string
+          mode?: Database["public"]["Enums"]["trip_mode"]
+          pickup_note?: string | null
+          price_per_seat: number
+          seats_total: number
+          status?: Database["public"]["Enums"]["trip_status"]
+          to_label: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          class?: Database["public"]["Enums"]["trip_class"]
+          contact_phone?: string | null
+          created_at?: string
+          departure_date?: string
+          departure_window?: string | null
+          driver_id?: string
+          from_label?: string
+          id?: string
+          mode?: Database["public"]["Enums"]["trip_mode"]
+          pickup_note?: string | null
+          price_per_seat?: number
+          seats_total?: number
+          status?: Database["public"]["Enums"]["trip_status"]
+          to_label?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          registration: string | null
+          seats: number
+          type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          registration?: string | null
+          seats: number
+          type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          registration?: string | null
+          seats?: number
+          type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       village_change_log: {
         Row: {
           changed_at: string
@@ -994,6 +1228,39 @@ export type Database = {
     }
     Functions: {
       admins_geo: { Args: { unit: string }; Returns: boolean }
+      book_seats: {
+        Args: {
+          phone?: string
+          pickup_note?: string
+          seat_nos: number[]
+          trip: string
+        }
+        Returns: {
+          booking_id: string
+          code: string
+        }[]
+      }
+      cancel_booking: { Args: { booking: string }; Returns: undefined }
+      cancel_trip: {
+        Args: { reason: string; trip: string }
+        Returns: undefined
+      }
+      confirm_booking: { Args: { booking: string }; Returns: undefined }
+      create_trip: {
+        Args: {
+          contact_phone?: string
+          departure_date: string
+          departure_window?: string
+          from_label: string
+          mode?: Database["public"]["Enums"]["trip_mode"]
+          pickup_note?: string
+          price_per_seat: number
+          seats_total: number
+          to_label: string
+          vehicle: string
+        }
+        Returns: string
+      }
       delete_village_contact: { Args: { p_id: string }; Returns: undefined }
       delete_village_stat: {
         Args: { geo_unit: string; metric_key: string; year: number }
@@ -1036,6 +1303,10 @@ export type Database = {
       has_role: {
         Args: { r: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
+      }
+      hold_seats: {
+        Args: { seat_nos: number[]; trip: string }
+        Returns: number[]
       }
       import_official_notice: {
         Args: {
@@ -1121,6 +1392,7 @@ export type Database = {
         Args: { locale?: string; platform?: string; token: string }
         Returns: undefined
       }
+      release_my_holds: { Args: { trip: string }; Returns: undefined }
       review_gallery_image: {
         Args: { approve: boolean; image_id: string; reason?: string }
         Returns: undefined
@@ -1128,6 +1400,16 @@ export type Database = {
       review_place: {
         Args: { approve: boolean; place_id: string; reason?: string }
         Returns: undefined
+      }
+      ride_hold_minutes: { Args: never; Returns: string }
+      save_vehicle: {
+        Args: {
+          registration?: string
+          seats: number
+          type: Database["public"]["Enums"]["vehicle_type"]
+          vehicle_id?: string
+        }
+        Returns: string
       }
       set_gallery_kind: {
         Args: {

@@ -101,6 +101,12 @@ export function toErrorCode(error: unknown): ErrorCode {
     if (code === '42501') return 'not_permitted';
     // 22023 invalid_parameter_value — an RPC rejected an argument the client sent.
     if (code === '22023') return 'invalid_input';
+    // PT409 — PostgREST reads the digits after `PT` as an HTTP status, so this is the
+    // only way an RPC can raise a 409 Conflict. Two callers use it and they mean the
+    // same thing: what you asked for was taken between reading and writing. For a seat
+    // that is `book_seats`; for a place it is the 150 m duplicate prompt, which the
+    // submit screen intercepts before this mapper ever sees it.
+    if (code === 'PT409') return 'seat_unavailable';
   }
 
   const status = (error as { status?: number })?.status;

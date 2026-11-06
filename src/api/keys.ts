@@ -52,4 +52,19 @@ export const keys = {
     /** Keyed by object path, not by village: a signed URL belongs to one object. */
     imageUrl: (path: string) => ['village', 'image', path] as const,
   },
+  /**
+   * Rides are **not** under `village`: a trip runs Kargil → Leh and its passengers come
+   * from a dozen villages, so nothing here is scoped by one. Invalidating `['rides']`
+   * after any write drops the board, the seat map and the bookings together, which is
+   * what a booking actually changes.
+   */
+  rides: {
+    all: ['rides'] as const,
+    trips: (from: string | null, to: string | null, date: string | null) =>
+      ['rides', 'trips', from, to, date] as const,
+    trip: (tripId: string) => ['rides', 'trip', tripId] as const,
+    myTrips: () => ['rides', 'myTrips'] as const,
+    bookings: () => ['rides', 'bookings'] as const,
+    vehicles: () => ['rides', 'vehicles'] as const,
+  },
 } as const;
