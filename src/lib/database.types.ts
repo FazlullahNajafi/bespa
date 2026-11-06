@@ -853,6 +853,113 @@ export type Database = {
           },
         ]
       }
+      village_profiles: {
+        Row: {
+          cover_path: string | null
+          description: string | null
+          geo_path: unknown
+          geo_unit_id: string
+          history_note: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cover_path?: string | null
+          description?: string | null
+          geo_path: unknown
+          geo_unit_id: string
+          history_note?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cover_path?: string | null
+          description?: string | null
+          geo_path?: unknown
+          geo_unit_id?: string
+          history_note?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "village_profiles_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: true
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "village_profiles_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "village_profiles_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      village_stats: {
+        Row: {
+          geo_path: unknown
+          geo_unit_id: string
+          metric_key: string
+          source: string
+          updated_at: string
+          updated_by: string | null
+          value: number
+          year: number
+        }
+        Insert: {
+          geo_path: unknown
+          geo_unit_id: string
+          metric_key: string
+          source: string
+          updated_at?: string
+          updated_by?: string | null
+          value: number
+          year: number
+        }
+        Update: {
+          geo_path?: unknown
+          geo_unit_id?: string
+          metric_key?: string
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "village_stats_geo_unit_id_fkey"
+            columns: ["geo_unit_id"]
+            isOneToOne: false
+            referencedRelation: "geo_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "village_stats_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "village_stats_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       directory_members: {
@@ -888,6 +995,10 @@ export type Database = {
     Functions: {
       admins_geo: { Args: { unit: string }; Returns: boolean }
       delete_village_contact: { Args: { p_id: string }; Returns: undefined }
+      delete_village_stat: {
+        Args: { geo_unit: string; metric_key: string; year: number }
+        Returns: undefined
+      }
       forget_device_token: { Args: { p_token: string }; Returns: undefined }
       forget_my_devices: { Args: { token?: string }; Returns: undefined }
       geo_children: {
@@ -1041,6 +1152,25 @@ export type Database = {
       }
       set_village_banner: {
         Args: { geo_unit: string; image_ids: string[] }
+        Returns: undefined
+      }
+      set_village_profile: {
+        Args: {
+          cover_path?: string
+          description?: string
+          geo_unit: string
+          history_note?: string
+        }
+        Returns: undefined
+      }
+      set_village_stat: {
+        Args: {
+          geo_unit: string
+          metric_key: string
+          source: string
+          value: number
+          year: number
+        }
         Returns: undefined
       }
       shares_my_village: { Args: { uid: string }; Returns: boolean }

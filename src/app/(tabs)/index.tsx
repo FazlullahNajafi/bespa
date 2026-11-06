@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -8,12 +9,14 @@ import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { NoticeCard } from '@/components/notice-card';
+import { StatGrid } from '@/components/stat-grid';
 import { VillageBanner } from '@/components/village-banner';
 import { WeatherCard } from '@/components/weather-card';
 import { useGeoUnit } from '@/api/geo';
 import { useNotices } from '@/api/notices';
 import { useMyWeatherPoint } from '@/api/weather';
 import { useMyProfile } from '@/api/profile';
+import { latestByMetric, useVillageProfile, useVillageStats } from '@/api/village';
 import { useSession } from '@/store/session';
 import { fontFamily, layout, radius, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
@@ -67,6 +70,13 @@ export default function HomeScreen() {
   // Spec 03.1 section 6: the latest three, pinned first. The query already orders
   // that way, so the limit is the whole of the rule.
   const notices = useNotices(Boolean(profile.data?.village_id), 3);
+  // Sections 3 and 5 of spec 03.1. Both are cached for an hour and both render nothing
+  // rather than a placeholder when an admin has written nothing — the app ships no fake
+  // data (spec 01.8 #4), and an empty card at the top of Home is the most prominent
+  // place possible to put one.
+  const page = useVillageProfile(profile.data?.village_id);
+  const stats = useVillageStats(profile.data?.village_id);
+  const latest = useMemo(() => latestByMetric(stats.data ?? []), [stats.data]);
 
   const name = profile.data?.full_name?.trim() || '';
   const tint = {
@@ -110,6 +120,51 @@ export default function HomeScreen() {
       {/* Section 2 of spec 03.1, between the header and the weather. Renders nothing at
           all until an admin has chosen photos, and nothing in Lite mode. */}
       <VillageBanner villageId={profile.data?.village_id} />
+
+      {/* Section 3 — the my-village card. Always tappable, even with no description:
+          the About page carries the places count, the member count and the figures, and
+          an admin with nothing written yet is exactly the person who needs to reach the
+          edit screen behind it. That lesson is the notices empty state's, below. */}
+      <Pressable
+        onPress={() => router.push('/village')}
+        accessibilityRole="button"
+        accessibilityLabel={t('village.card')}
+      >
+        <Card>
+          <View style={styles.villageRow}>
+            <View style={styles.villageText}>
+              <Text style={[type.bodySmall, styles.villageTitle, { color: colors.text }]}>
+                {t('village.card')}
+              </Text>
+              <Text
+                style={[type.caption, { color: colors.textSecondary }]}
+                numberOfLines={3}
+              >
+                {page.data?.description ?? t('village.noDescription')}
+              </Text>
+            </View>
+            <Icon name="chevron" size={16} color={colors.textSecondary} />
+          </View>
+        </Card>
+      </Pressable>
+
+      {/* Section 5 — statistics. Absent entirely until a figure has been published,
+          because "Village statistics not published yet" under a heading is still a
+          section about nothing. */}
+      {latest.length > 0 ? (
+        <>
+          <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
+            {t('village.stats')}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/village/stats')}
+            accessibilityRole="button"
+            accessibilityLabel={t('village.statsAll')}
+          >
+            <StatGrid latest={latest} />
+          </Pressable>
+        </>
+      ) : null}
 
       <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
         {t('home.quickAccess')}
@@ -195,6 +250,9 @@ const styles = StyleSheet.create({
   eyebrow: { textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fontFamily.semibold },
   avatarTap: { minWidth: layout.tap, minHeight: layout.tap, alignItems: 'center', justifyContent: 'center' },
   sectionLabel: { textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fontFamily.semibold },
+  villageRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: layout.tap },
+  villageText: { flex: 1, gap: 2 },
+  villageTitle: { fontFamily: fontFamily.semibold, fontWeight: '600' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tile: {
     flexBasis: '31%',
