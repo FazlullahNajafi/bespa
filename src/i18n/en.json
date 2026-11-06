@@ -233,7 +233,11 @@
     "yearsAgo_one": "{{count}} year ago",
     "yearsAgo_other": "{{count}} years ago",
     "upcoming": "Coming up",
-    "unknown": ""
+    "unknown": "",
+    "choose": "Choose a date",
+    "chosen": "Date: {{date}}",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
   },
   "notices": {
     "title": "Notices",
@@ -643,14 +647,17 @@
     "registration": "Registration number",
     "registrationHint": "Optional, but passengers look for it",
     "vehicleSeats": "Passenger seats (not counting you)",
-    "saveVehicle": "Save vehicle",
-    "vehicleSaved": "Vehicle saved.",
-    "needVehicle": "Add your vehicle first — a trip needs to know how many seats it has.",
+    "needVehicle": "Tell us what you drive first. A trip needs to know how many seats it has.",
     "route": "Where are you going?",
     "date": "Which day?",
-    "dateHint": "YYYY-MM-DD",
-    "window": "Roughly what time?",
-    "windowHint": "For example: early morning, around 5 AM",
+    "window": {
+      "title": "Roughly what time?",
+      "earlyMorning": "Early morning",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening",
+      "night": "Night"
+    },
     "price": "Price per seat (₹)",
     "seatsOnSale": "How many seats are you selling?",
     "pickupArea": "Where will you pick people up?",
@@ -665,8 +672,21 @@
     "cancelReasonRequired": "Say why — passengers are owed a reason.",
     "tripCancelled": "Trip cancelled. Everyone who booked has been told.",
     "needRoute": "Enter where you are going from and to.",
-    "needDate": "Enter a date as YYYY-MM-DD.",
+    "needDate": "Choose the day you are travelling.",
     "needPrice": "Enter a price.",
-    "needSeats": "Enter how many seats."
+    "needSeats": "Enter how many seats.",
+    "fromWhere": "Starting from",
+    "toWhere": "Going to",
+    "otherPlace": "Somewhere else",
+    "dateLabel": "Day of travel",
+    "vehicleIntro": "Asked once. Your next trip will not ask again.",
+    "vehicleSeatsHint": "Not counting your own seat",
+    "vehicleSeatCount": "{{count}} seat",
+    "vehicleSeatCount_other": "{{count}} seats",
+    "addVehicle": "Add your vehicle",
+    "needDifferent": "The two places must be different.",
+    "tooManySeats": "That is more seats than your vehicle has.",
+    "pickupAreaHint": "Optional. For example: from the taxi stand",
+    "saveVehicle": "Save"
   }
 }
