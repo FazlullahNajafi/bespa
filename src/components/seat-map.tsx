@@ -9,36 +9,43 @@ import { fontFamily, radius, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 /**
- * The seat map (spec 04.2, "the centrepiece") — drawn as the inside of the vehicle.
+ * The seat map (spec 04.2, "the centrepiece") — the inside of the vehicle, seen from
+ * above.
  *
- * The first version was a wrapping grid of numbered squares. It was correct and it felt
- * like a form: you could not tell a Tempo Traveller from a Xylo, which seat was by a
- * window, or where the driver sat. Spec 04.2 says the passenger's question is *"who is
- * going to Leh on Thursday and is there a window seat?"* — a grid cannot answer the
- * second half.
+ * Two goes at this. The first was a wrapping grid of squares, which read as a form. The
+ * second added a body outline and was called a keyboard, which was fair: evenly spaced
+ * rounded squares in straight rows *is* a keypad, whatever is drawn around it. What was
+ * missing was not more chrome but the two things that make a plan read as a vehicle —
+ * **seats that look like seats** and **a body that is not a rectangle**.
  *
- * So: a body with a bonnet and a windscreen, the driver at the front **right** because
- * India drives on the left, a gangway where the vehicle has one, and window seats marked
- * with a pane glyph rather than left to be inferred from position.
+ * So each seat now has a backrest; the nose tapers and carries a windscreen; there are
+ * wheels; and the cab is visibly separated from the cabin by the bulkhead the windscreen
+ * implies. The driver sits front-right, because India drives on the left.
  *
- * Everything that decides *state* is unchanged and still the server's:
+ * **The plan comes from the vehicle, not from the sale.** An Innova is a seven-seat
+ * Innova whether four seats are for sale or seven. Seats the vehicle has but this trip
+ * is not selling are drawn in place, dimmed and marked — leaving them out drew a
+ * different car, which is what made a four-seat sale look like a four-seat vehicle.
  *
- * - **Colour is never the only signal** (spec 08.1). Every state pairs a colour with a
- *   glyph, and the seat number stays legible in all of them.
- * - **An expired hold renders as free**, exactly as the server treats it, with the clock
- *   read from ticking state so a seat frees up on screen without waiting for a refetch.
+ * State is unchanged and still the server's: colour never carries meaning alone (spec
+ * 08.1), and an expired hold renders as free exactly as the server treats it, from a
+ * ticking clock so a seat frees up on screen without waiting for a refetch.
  */
 
 export function SeatMap({
   seats,
   vehicleType,
+  vehicleSeats,
   me,
   selected,
   onToggle,
   disabled = false,
 }: {
+  /** The seats actually on sale, from the server. */
   seats: TripSeat[];
   vehicleType: VehicleType;
+  /** How many seats the vehicle has, which is what the plan is drawn from. */
+  vehicleSeats: number;
   me: string | null;
   selected: number[];
   onToggle: (seatNo: number) => void;
@@ -49,29 +56,61 @@ export function SeatMap({
   const now = useNow();
 
   const byNumber = new Map(seats.map((s) => [s.seat_no, s]));
-  const rows = layoutFor(vehicleType, seats.length);
+  // Never fewer than the seats on sale, in case a vehicle's capacity was edited down
+  // after a trip was posted on it.
+  const capacity = Math.max(vehicleSeats, seats.length);
+  const rows = layoutFor(vehicleType, capacity);
   const columns = columnsIn(rows);
   const shape = shapeOf(vehicleType);
 
+  function Backrest({ colour }: { colour: string }) {
+    return <View style={[styles.backrest, { backgroundColor: colour }]} />;
+  }
+
   function renderSlot(slot: Slot, key: string) {
-    if (slot.kind === 'gap') {
-      return <View key={key} style={styles.slot} />;
-    }
+    if (slot.kind === 'gap') return <View key={key} style={styles.slot} />;
 
     if (slot.kind === 'driver') {
       return (
         <View
           key={key}
-          style={[styles.slot, styles.driver, { backgroundColor: colors.surfaceAlt }]}
+          style={[
+            styles.slot,
+            styles.seatShape,
+            styles.driver,
+            { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+          ]}
           accessibilityLabel={t('rides.driverSeat')}
         >
-          <Icon name="steering" size={22} color={colors.textSecondary} />
+          <Backrest colour={colors.border} />
+          <Icon name="steering" size={20} color={colors.textSecondary} />
         </View>
       );
     }
 
     const seat = byNumber.get(slot.seatNo);
-    if (!seat) return <View key={key} style={styles.slot} />;
+
+    // A seat the vehicle has that this trip is not selling.
+    if (!seat) {
+      return (
+        <View
+          key={key}
+          accessibilityLabel={t('rides.seatNotForSale', { number: slot.seatNo })}
+          style={[
+            styles.slot,
+            styles.seatShape,
+            {
+              backgroundColor: colors.surfaceAlt,
+              borderColor: colors.borderSoft,
+              borderStyle: 'dashed',
+            },
+          ]}
+        >
+          <Backrest colour={colors.borderSoft} />
+          <Icon name="close" size={13} color={colors.textFaint} />
+        </View>
+      );
+    }
 
     const takeable = seatTakeable(seat, me, now);
     const isSelected = selected.includes(seat.seat_no);
@@ -92,7 +131,6 @@ export function SeatMap({
         : colors.text;
 
     const glyph = isSelected ? 'check' : booked ? 'lock' : contested ? 'clock' : null;
-
     const stateKey = isSelected
       ? 'yours'
       : booked
@@ -117,7 +155,7 @@ export function SeatMap({
         })}
         style={({ pressed }) => [
           styles.slot,
-          styles.seat,
+          styles.seatShape,
           {
             backgroundColor: background,
             borderColor: isSelected ? colors.primary : colors.border,
@@ -125,55 +163,60 @@ export function SeatMap({
           },
         ]}
       >
-        {/* Window seats are what people ask for, so they are marked rather than left to
-            be worked out from where the square sits. */}
+        <Backrest colour={isSelected ? colors.onPrimary : colors.border} />
+
         {slot.position === 'window' ? (
           <View style={styles.windowMark}>
-            <Icon name="window-seat" size={11} color={foreground} />
+            <Icon name="window-seat" size={10} color={foreground} />
           </View>
         ) : null}
 
-        <Text style={[type.body, styles.number, { color: foreground }]}>
+        <Text style={[type.bodySmall, styles.number, { color: foreground }]}>
           {seat.seat_no}
         </Text>
-        {glyph ? <Icon name={glyph} size={13} color={foreground} /> : null}
+        {glyph ? <Icon name={glyph} size={12} color={foreground} /> : null}
       </Pressable>
     );
   }
 
   return (
     <View>
-      <View
-        style={[
-          styles.body,
-          { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
-        ]}
-      >
-        {/* The bonnet and windscreen. Two lines of chrome, and they are what turn a
-            column of squares into a vehicle seen from above. */}
-        <View style={[styles.bonnet, { backgroundColor: colors.border }]} />
-        <Text style={[type.caption, styles.front, { color: colors.textSecondary }]}>
-          {t('rides.front')}
-        </Text>
-
-        {rows.map((row, r) => (
-          <View key={`r-${r}`} style={styles.row}>
-            {row.map((slot, c) => renderSlot(slot, `s-${r}-${c}`))}
-            {/* Short rows are padded so every row is the same width and the body stays
-                rectangular. */}
-            {Array.from({ length: columns - row.length }, (_, i) => (
-              <View key={`pad-${r}-${i}`} style={styles.slot} />
-            ))}
+      <View style={styles.outer}>
+        {/* Wheels, outside the body on both sides. Four small bars, and they do more
+            than the whole outline did to say "this is a vehicle". */}
+        {[0, 1].map((side) => (
+          <View key={side} style={[styles.axles, side === 0 ? styles.left : styles.right]}>
+            <View style={[styles.wheel, { backgroundColor: colors.textSecondary }]} />
+            <View style={[styles.wheel, { backgroundColor: colors.textSecondary }]} />
           </View>
         ))}
 
-        <Text style={[type.caption, styles.front, { color: colors.textSecondary }]}>
-          {t(`rides.shape.${shape}`)}
-        </Text>
+        <View
+          style={[
+            styles.body,
+            { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+          ]}
+        >
+          {/* The nose: a narrower bar above a windscreen that spans most of the width.
+              The taper is what stops the body reading as a rectangle. */}
+          <View style={[styles.nose, { backgroundColor: colors.border }]} />
+          <View style={[styles.windscreen, { borderColor: colors.border }]} />
+
+          {rows.map((row, r) => (
+            <View key={`r-${r}`} style={styles.row}>
+              {row.map((slot, c) => renderSlot(slot, `s-${r}-${c}`))}
+              {Array.from({ length: columns - row.length }, (_, i) => (
+                <View key={`pad-${r}-${i}`} style={styles.slot} />
+              ))}
+            </View>
+          ))}
+        </View>
       </View>
 
-      {/* The key. Four states on a plan of squares is not self-explanatory, and this is
-          the screen where a misread costs somebody a seat. */}
+      <Text style={[type.caption, styles.caption, { color: colors.textSecondary }]}>
+        {t(`rides.shape.${shape}`)}
+      </Text>
+
       <View style={styles.legend}>
         {(['free', 'yours', 'beingTaken', 'taken'] as const).map((state) => (
           <View key={state} style={styles.legendItem}>
@@ -205,38 +248,65 @@ export function SeatMap({
 const SLOT = 52;
 
 const styles = StyleSheet.create({
+  outer: { alignSelf: 'center', paddingHorizontal: 10 },
+  axles: {
+    position: 'absolute',
+    top: 70,
+    bottom: 24,
+    justifyContent: 'space-between',
+  },
+  left: { left: 0 },
+  right: { right: 0 },
+  wheel: { width: 10, height: 34, borderRadius: 5 },
   body: {
-    alignSelf: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    // A deep radius at the top and a shallow one at the bottom: that asymmetry alone
-    // reads as "front of a vehicle".
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderBottomLeftRadius: radius.card,
-    borderBottomRightRadius: radius.card,
+    // A deep nose radius against a shallow tail: the asymmetry is most of what makes
+    // this read as a vehicle rather than a panel.
+    borderTopLeftRadius: 42,
+    borderTopRightRadius: 42,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
     paddingHorizontal: space.sm,
     paddingTop: space.sm,
     paddingBottom: space.md,
     gap: space.xs,
   },
-  bonnet: { width: '55%', height: 4, borderRadius: 2, marginBottom: 2 },
-  front: { letterSpacing: 0.6, textTransform: 'uppercase' },
+  nose: { width: 40, height: 4, borderRadius: 2 },
+  windscreen: {
+    width: '72%',
+    height: 14,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    marginBottom: space.xs,
+  },
   row: { flexDirection: 'row', gap: space.xs },
   slot: { width: SLOT, height: SLOT },
-  seat: {
-    borderWidth: 1,
-    borderRadius: radius.card,
+  seatShape: {
+    borderWidth: 1.5,
+    // Square-ish cushion, rounded shoulders: a seat, not a key.
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 7,
+    borderBottomRightRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 7,
   },
-  driver: {
-    borderRadius: radius.card,
-    alignItems: 'center',
-    justifyContent: 'center',
+  driver: {},
+  backrest: {
+    position: 'absolute',
+    top: 4,
+    width: '55%',
+    height: 3,
+    borderRadius: 2,
   },
-  windowMark: { position: 'absolute', top: 3, left: 4, opacity: 0.7 },
+  windowMark: { position: 'absolute', bottom: 3, left: 4, opacity: 0.75 },
   number: { fontFamily: fontFamily.semibold, fontWeight: '600' },
+  caption: { textAlign: 'center', paddingTop: space.xs },
   legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',

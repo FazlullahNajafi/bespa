@@ -247,6 +247,7 @@ export default function TripScreen() {
           <SeatMap
             seats={data.trip_seats}
             vehicleType={data.vehicle?.type ?? 'other'}
+            vehicleSeats={data.vehicle?.seats ?? data.trip_seats.length}
             me={me}
             selected={selected}
             onToggle={(n) => void toggleSeat(n)}

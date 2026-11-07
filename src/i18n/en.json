@@ -659,7 +659,7 @@
       "night": "Night"
     },
     "price": "Price per seat (₹)",
-    "seatsOnSale": "How many seats are you selling?",
+    "seatsOnSale": "Seats for sale",
     "pickupArea": "Where will you pick people up?",
     "publish": "Post this trip",
     "published": "Posted. Passengers can see it now.",
@@ -727,7 +727,12 @@
       "live": "You are live",
       "minusSeat": "One less seat",
       "departed": "Departed",
-      "endedLive": "Taken off the board."
-    }
+      "endedLive": "Taken off the board.",
+      "yours": "This is your van",
+      "seeYours": "See your van"
+    },
+    "tripNote": "Anything to tell passengers?",
+    "tripNoteHint": "Optional. For example: I can collect you from your house in town.",
+    "seatNotForSale": "Seat {{number}}, not for sale on this trip"
   }
 }

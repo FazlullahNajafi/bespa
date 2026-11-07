@@ -293,7 +293,9 @@ export default function NewTripScreen() {
         ))}
       </View>
 
-      {/* 5 — money and seats, side by side because both are short numbers */}
+      {/* 5 — money and seats, side by side because both are short numbers.
+          Both labels are kept to one line: a two-line label on one side pushed its
+          input a row lower than the other and the pair sat visibly crooked. */}
       <View style={styles.pair}>
         <View style={styles.half}>
           <TextField
@@ -327,10 +329,16 @@ export default function NewTripScreen() {
         error={phoneValid ? undefined : t('profile.edit.phoneInvalid')}
       />
 
-      {/* Optional, and last. */}
+      {/* Not "where will you pick people up?".
+          On a long run out of Kargil the driver collects from each passenger's own
+          house — that is the norm here, and spec 04.2 says the same from the other
+          side: pickup is the passenger's location, which the booking form already
+          asks them for. Asking the driver was asking a question with no answer. What
+          is left is an open note, which is where "I can collect from your house in
+          town" actually belongs. */}
       <TextField
-        label={t('rides.pickupArea')}
-        hint={t('rides.pickupAreaHint')}
+        label={t('rides.tripNote')}
+        hint={t('rides.tripNoteHint')}
         value={pickup}
         onChangeText={setPickup}
         maxLength={160}

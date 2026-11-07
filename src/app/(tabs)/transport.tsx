@@ -114,7 +114,10 @@ export default function TransportScreen() {
   const [note, setNote] = useState<string | null>(null);
 
   const trips = useTrips({});
-  const board = useLiveBoard(hasVillage && segment === 'short');
+  // Polled whichever segment is showing, because the footer on *both* has to know
+  // whether this driver is already on the board — a button offering "Go live" to
+  // someone who is live is a button that lies.
+  const board = useLiveBoard(hasVillage);
   const claim = useClaimLiveSeat();
 
   const rows = useMemo(() => trips.data ?? [], [trips.data]);
@@ -133,6 +136,7 @@ export default function TransportScreen() {
   }, [rows, from, to]);
 
   const vans = board.data ?? [];
+  const myVan = vans.find((ride) => ride.driver_id === session?.user.id) ?? null;
 
   async function onClaim(liveId: string) {
     setNote(null);
@@ -144,7 +148,13 @@ export default function TransportScreen() {
     <Screen
       footer={
         <Button
-          label={segment === 'long' ? t('rides.postTrip') : t('rides.board.goLive')}
+          label={
+            segment === 'long'
+              ? t('rides.postTrip')
+              : myVan
+                ? t('rides.board.seeYours')
+                : t('rides.board.goLive')
+          }
           onPress={() =>
             router.push(segment === 'long' ? '/rides/new' : '/rides/go-live')
           }
@@ -272,6 +282,7 @@ export default function TransportScreen() {
                 <LiveRideCard
                   key={ride.id}
                   ride={ride}
+                  me={session?.user.id ?? null}
                   claiming={claim.isPending}
                   onClaim={() => void onClaim(ride.id)}
                 />

@@ -18,6 +18,12 @@ import type { VehicleType } from '@/api/rides';
  *
  * Seat 1 is the front passenger seat — the one people ask for by name — then rows fill
  * left to right from the front. That matches how a driver counts his vehicle out loud.
+ *
+ * **The plan is drawn from the vehicle, not from the sale.** An Innova with seven seats
+ * is an Innova whether the driver is selling seven of them or four, and drawing a
+ * four-seat car for a four-seat sale drew a vehicle that does not exist. So the caller
+ * passes the vehicle's capacity; seat numbers above the number on sale come back as
+ * `held` slots, which the map renders as "not for sale" rather than leaving a hole.
  */
 
 export type SeatPosition = 'window' | 'middle' | 'aisle';
@@ -27,6 +33,11 @@ export type Slot =
   | { kind: 'driver' }
   /** The gangway. Rendered as empty space, not as a seat. */
   | { kind: 'gap' };
+
+/** A seat the vehicle has but this trip is not selling. */
+export function isForSale(slot: Slot, seatsOnSale: number): boolean {
+  return slot.kind === 'seat' && slot.seatNo <= seatsOnSale;
+}
 
 export type VehicleShape = 'car' | 'van' | 'bus';
 

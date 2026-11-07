@@ -26,13 +26,21 @@ import { useColors } from '@/theme/use-scheme';
  * **Minutes live is shown**, because a van that went live four minutes ago and one that
  * has been waiting forty are different propositions, and the board would otherwise
  * flatten them.
+ *
+ * **A driver sees neither action on their own van.** Offering someone a seat in the
+ * vehicle they are sitting in, and a button to telephone themselves, is the kind of
+ * thing that makes a reader doubt everything else on the screen. Their own row is
+ * marked as theirs instead.
  */
 export function LiveRideCard({
   ride,
+  me,
   onClaim,
   claiming,
 }: {
   ride: LiveRide;
+  /** The signed-in user, so a driver is not offered a seat in their own van. */
+  me: string | null;
   onClaim: () => void;
   claiming: boolean;
 }) {
@@ -40,6 +48,7 @@ export function LiveRideCard({
   const colors = useColors();
   const now = useNow(30_000);
 
+  const mine = me !== null && ride.driver_id === me;
   const left = liveSeatsLeft(ride);
   const minutes = Math.max(0, Math.round((now - Date.parse(ride.went_live_at)) / 60000));
 
@@ -93,26 +102,35 @@ export function LiveRideCard({
         </Text>
       ) : null}
 
-      <View style={styles.actions}>
-        {ride.contact ? (
+      {mine ? (
+        <View style={styles.yours}>
+          <Icon name="check" size={14} color={colors.primary} />
+          <Text style={[type.caption, styles.yoursText, { color: colors.primary }]}>
+            {t('rides.board.yours')}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.actions}>
+          {ride.contact ? (
+            <View style={styles.action}>
+              <Button
+                label={t('rides.callDriver')}
+                leading={<Icon name="phone" size={20} color={colors.onPrimary} />}
+                onPress={() => void dial(ride.contact as string)}
+              />
+            </View>
+          ) : null}
           <View style={styles.action}>
             <Button
-              label={t('rides.callDriver')}
-              leading={<Icon name="phone" size={20} color={colors.onPrimary} />}
-              onPress={() => void dial(ride.contact as string)}
+              label={t('rides.board.coming')}
+              variant="secondary"
+              loading={claiming}
+              onPress={onClaim}
+              accessibilityHint={t('rides.board.comingNote')}
             />
           </View>
-        ) : null}
-        <View style={styles.action}>
-          <Button
-            label={t('rides.board.coming')}
-            variant="secondary"
-            loading={claiming}
-            onPress={onClaim}
-            accessibilityHint={t('rides.board.comingNote')}
-          />
         </View>
-      </View>
+      )}
     </Card>
   );
 }
@@ -129,4 +147,6 @@ const styles = StyleSheet.create({
   fare: { fontFamily: fontFamily.semibold, fontWeight: '600', paddingTop: space.xs },
   actions: { flexDirection: 'row', gap: space.xs, paddingTop: space.xs },
   action: { flex: 1 },
+  yours: { flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingTop: space.xs },
+  yoursText: { fontFamily: fontFamily.semibold, fontWeight: '600' },
 });
