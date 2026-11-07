@@ -117,3 +117,90 @@ select p.full_name, u.name_en as administers, g.role, g.granted_at, g.note
   join geo_units u on u.id = g.geo_unit_id
  order by u.name_en, p.full_name;
 ```
+
+---
+
+# Checking driver documents
+
+A separate job from the one above, and a separate kind of admin.
+
+## Why a panchayat admin cannot do it
+
+A panchayat admin administers a **village**. A commercial driving licence is a district
+document: it is issued by the RTO, it is valid across Ladakh, and a village has no
+standing to judge one. It also carries a full name, an address, a date of birth and a
+licence number — so "who may look at it" is a privacy question, not a convenience one.
+
+The server enforces this. `reviews_drivers()` allows only **`district_admin`** and
+**`super_admin`**, which are the two roles deliberately not pinned to a geography. A
+panchayat admin of the applicant's own village is refused the document, the queue, and
+the decision. There is a pgTAP assertion for each of those three.
+
+## Making yourself able to review
+
+Unlike `panchayat_admin`, this is not a row in `admin_grants` — it is a role on the
+profile, because it applies everywhere rather than to one place. Same reasoning as the
+October fix: `roles` is not user-writable, so it can only be set by someone with the
+database keys.
+
+In the Supabase dashboard → **SQL editor**, with your own email:
+
+```sql
+update profiles
+   set roles = array(select distinct unnest(roles || 'super_admin'::user_role))
+ where id = (select id from auth.users where email = 'you@example.com');
+```
+
+`array(select distinct unnest(...))` rather than `roles || 'super_admin'` on its own, so
+running it twice does not leave you with the role listed twice.
+
+Check it took:
+
+```sql
+select u.email, p.roles
+  from profiles p join auth.users u on u.id = p.id
+ where 'super_admin' = any(p.roles) or 'district_admin' = any(p.roles);
+```
+
+Then **close and reopen Bespa** — the profile is cached for five minutes, and the row
+that appears on the Profile tab is drawn from it.
+
+## Where you actually review
+
+**Profile tab → Driver documents.** The row only appears for the two roles above.
+
+Each card shows who sent it, which document it is, and how long it has been waiting.
+**Open the photo** opens it full-screen in the browser on a signed link that lasts
+fifteen minutes — deliberately not an inline thumbnail, because a licence has small print
+and a thumbnail is how a document gets approved without being read.
+
+Then **Looks right**, or **Send it back** with a reason. The reason is required and the
+driver reads it, so write what they should photograph instead — "the photo is too dark",
+not "rejected".
+
+## What approving actually unlocks
+
+Only the **commercial driving licence** gates anything. Once it is approved that driver
+can post trips and go live; until then the server refuses both with their own error code
+and the app offers them this flow instead of the form.
+
+The permit and the taxi badge are collected and shown on their verification screen, but
+they do not gate anything. Blocking a licensed driver off the board over a route permit
+he has not photographed yet would empty the board for a clerical reason rather than a
+safety one.
+
+Withdrawing a licence — send it back after approving — takes the badge off trips that
+driver has **already** posted, because the badge is read live rather than stored on the
+trip. A cached badge is the one that keeps vouching after the vouching stopped.
+
+## For testing, end to end
+
+1. Grant yourself `super_admin` with the statement above, reopen the app.
+2. On the driver account: occupation **Driver** during sign-up, or Rides → Post a trip →
+   **Get verified**. Send a photo of anything for the licence.
+3. On your account: Profile → **Driver documents** → open it → **Looks right**.
+4. Back on the driver account, Post a trip now shows the form instead of the offer.
+
+One account can do all of it: grant yourself `super_admin`, send your own licence, and
+approve it. Nothing stops a reviewer approving their own document — worth knowing before
+a real pilot, and listed in the open issues in `docs/architecture.md`.

@@ -778,6 +778,7 @@
     "openDoc": "Open the photo",
     "doneForNow": "Done",
     "later": "I'll send them later",
-    "laterHint": "You can send them any time from the Rides tab"
+    "laterHint": "You can send them any time from the Rides tab",
+    "queueHint": "Check licences so drivers can post trips"
   }
 }

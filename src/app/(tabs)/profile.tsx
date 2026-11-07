@@ -37,6 +37,14 @@ export default function ProfileScreen() {
   const { session, signOut } = useSession();
   const profile = useMyProfile(session?.user.id);
   const priv = useMyPrivate(session?.user.id);
+
+  // `reviews_drivers()` on the server is the authority; this only decides whether to
+  // draw the row. Read from `roles` rather than from a grant: `district_admin` and
+  // `super_admin` are the two roles with no geography attached, which is exactly why
+  // they are the ones that may judge a licence.
+  const roles = profile.data?.roles ?? [];
+  const canReviewDrivers =
+    roles.includes('district_admin') || roles.includes('super_admin');
   const village = useGeoUnit(profile.data?.village_id);
 
   const name = profile.data?.full_name?.trim() || '';
@@ -132,6 +140,20 @@ export default function ProfileScreen() {
           drills
           onPress={() => router.push('/profile/privacy')}
         />
+
+        {/* Only for the two roles that are deliberately not pinned to a geography.
+            A panchayat admin administers a village and a driving licence is not a
+            village matter, so this row does not appear for one — the server refuses
+            them either way, and a row that leads to a refusal is worse than no row. */}
+        {canReviewDrivers ? (
+          <ListRow
+            title={t('driver.queue')}
+            subtitle={t('driver.queueHint')}
+            leading={<Icon name="car" size={20} color={colors.primary} />}
+            drills
+            onPress={() => router.push('/driver/review')}
+          />
+        ) : null}
       </View>
 
       <Button

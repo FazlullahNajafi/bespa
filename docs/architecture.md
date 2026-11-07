@@ -290,6 +290,30 @@ order — notices first, because the district mirror is useful at zero local par
 
 ---
 
+| Transport — long distance | Prototype, working | Post, browse, hold, book, cancel, with spec 04.6's `trip_seats` concurrency enforced in the database and 35 pgTAP assertions, eight of them the two-passengers-one-seat race. No ratings, payment QR or Realtime. |
+| Transport — the live board | Prototype, working | Spec 04.4's short-distance half: go live, 45-minute auto-expiry evaluated on read, "I'm coming" as a ten-minute courtesy signal. 18 assertions. |
+| Driver verification | Done | Three RTO documents in a private `documents` bucket readable by their owner and a district reviewer only, a fourth onboarding step, and spec 04.5's gate on posting. 24 assertions, four of them the privacy boundary. |
+
+---
+
+## Known gaps worth writing down
+
+- **A reviewer can approve their own licence.** `reviews_drivers()` asks whether you hold
+  `district_admin` or `super_admin`, not whether the document is somebody else's. For a
+  one-person pilot that is the only way to test the flow at all, and it is how
+  `docs/making-someone-an-admin.md` tells you to do it. Before a real pilot it wants a
+  `user_id <> auth.uid()` check in `review_driver_document`, and before more than one
+  reviewer exists it wants an audit row naming who approved what.
+- **Nothing expires a verification.** A licence has an expiry date and this schema does
+  not record it, so an approved driver stays approved. Withdrawing is manual — send the
+  document back from the queue, which un-badges their existing trips immediately.
+- **Unverified drivers are refused but not told why in the board's own copy.** The two
+  ride screens offer the verification flow; the push-notification half of spec 04.5,
+  where a driver learns their document was reviewed without opening the app, is not
+  built.
+
+---
+
 ## What is next
 
 The phasing is spec 09.1's, with Civic before Transport: it is lower-risk, and it builds
