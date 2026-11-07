@@ -8,10 +8,18 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { Icon } from '@/components/icon';
+import { LiveRideCard } from '@/components/live-ride-card';
 import { Screen } from '@/components/screen';
+import { Segmented } from '@/components/segmented';
 import { StatusPill } from '@/components/status-pill';
 import { TextField } from '@/components/text-field';
-import { seatsFree, useTrips, type Trip } from '@/api/rides';
+import {
+  seatsFree,
+  useClaimLiveSeat,
+  useLiveBoard,
+  useTrips,
+  type Trip,
+} from '@/api/rides';
 import { useMyProfile } from '@/api/profile';
 import { useSession } from '@/store/session';
 import { formatDay } from '@/lib/format-date';
@@ -19,23 +27,20 @@ import { fontFamily, layout, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 /**
- * The ride board (spec 04.2, "Browse") — long distance only.
+ * Transport (spec 04.1) — the two economies, side by side and not merged.
  *
- * Spec 04 is emphatic that Kargil has two transport economies and that merging them
- * produces a product serving neither: long distance is days ahead and wants booking,
- * short distance is ten minutes away and wants a live presence board. **Only the first
- * is built.** There is no segmented control offering a second tab that does nothing.
+ * Spec 04 opens by saying Kargil has two genuinely different transport economies and
+ * that the central decision of the module is to refuse to merge them: long distance is
+ * days ahead and wants booking, short distance is ten minutes away and wants
+ * *visibility*. The segmented cards are that decision made visible, which is why they
+ * are two labelled cards rather than a thin toggle — "Long distance" means nothing to
+ * someone opening this tab for the first time, and the line underneath does the work.
  *
- * **The trial banner is not decoration.** Spec 04.5 is a whole section on verification
- * and none of it exists yet: anyone can post a trip and nothing checks they own a
- * vehicle or a licence. A villager who treats this like a verified service and waits at
- * five in the morning for a stranger has been misled by the app, so the screen says
- * plainly what it is, and "call the driver" is offered at every step the way spec 04.2
- * insists.
- *
- * **Never fabricate supply** (spec 04.7 #4): the empty state says there are no trips and
- * offers to post one. No demo drivers.
+ * **Never fabricate supply** (spec 04.7 #4). Both empty states say there is nothing and
+ * offer the action that would change it. No demo drivers, no sample vans.
  */
+
+type Segment = 'long' | 'short';
 
 function TripRow({ trip, onPress }: { trip: Trip; onPress: () => void }) {
   const { t } = useTranslation();
@@ -103,13 +108,18 @@ export default function TransportScreen() {
   const profile = useMyProfile(session?.user.id);
   const hasVillage = Boolean(profile.data?.village_id);
 
+  const [segment, setSegment] = useState<Segment>('long');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [note, setNote] = useState<string | null>(null);
 
   const trips = useTrips({});
+  const board = useLiveBoard(hasVillage && segment === 'short');
+  const claim = useClaimLiveSeat();
+
   const rows = useMemo(() => trips.data ?? [], [trips.data]);
 
-  // Filtered on the client. The query already caps at 50 rows for the whole district,
+  // Filtered on the client: the query already caps at 50 rows for the whole district,
   // and a round trip per keystroke on a 2G connection would be far worse than scanning
   // an array that is already in memory.
   const shown = useMemo(() => {
@@ -122,88 +132,159 @@ export default function TransportScreen() {
     );
   }, [rows, from, to]);
 
+  const vans = board.data ?? [];
+
+  async function onClaim(liveId: string) {
+    setNote(null);
+    const result = await claim.mutateAsync({ liveId });
+    setNote(result.ok ? 'rides.board.claimSent' : `errors.${result.code}`);
+  }
+
   return (
     <Screen
       footer={
         <Button
-          label={t('rides.postTrip')}
-          onPress={() => router.push('/rides/new')}
+          label={segment === 'long' ? t('rides.postTrip') : t('rides.board.goLive')}
+          onPress={() =>
+            router.push(segment === 'long' ? '/rides/new' : '/rides/go-live')
+          }
           disabled={!hasVillage}
         />
       }
     >
       <Text style={[type.display, { color: colors.text }]}>{t('rides.title')}</Text>
 
-      {/* Says what this is before anyone relies on it. */}
       <Banner message={t('rides.prototypeBody')} tone="danger" />
 
-      <View style={styles.actions}>
-        <Button
-          label={t('rides.myBookings')}
-          variant="secondary"
-          onPress={() => router.push('/rides/bookings')}
-        />
-      </View>
+      <Segmented
+        value={segment}
+        onChange={setSegment}
+        options={[
+          {
+            value: 'long',
+            label: t('rides.segLong'),
+            hint: t('rides.segLongHint'),
+            icon: 'car',
+          },
+          {
+            value: 'short',
+            label: t('rides.segShort'),
+            hint: t('rides.segShortHint'),
+            icon: 'town',
+          },
+        ]}
+      />
 
-      <View style={styles.filters}>
-        <View style={styles.filter}>
-          <TextField
-            label={t('rides.from')}
-            value={from}
-            onChangeText={setFrom}
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-        </View>
-        <View style={styles.filter}>
-          <TextField
-            label={t('rides.to')}
-            value={to}
-            onChangeText={setTo}
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-        </View>
-      </View>
+      <Button
+        label={t('rides.myBookings')}
+        variant="secondary"
+        onPress={() => router.push('/rides/bookings')}
+      />
 
-      {trips.isPending ? (
-        <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
-      ) : trips.isError ? (
-        <Banner
-          message={t('errors.unknown')}
-          action={
-            <Button
-              label={t('common.retry')}
-              variant="secondary"
-              onPress={() => void trips.refetch()}
+      {note ? (
+        <Banner message={t(note)} tone={note.startsWith('errors.') ? 'danger' : 'info'} />
+      ) : null}
+
+      {segment === 'long' ? (
+        <>
+          <View style={styles.filters}>
+            <View style={styles.filter}>
+              <TextField
+                label={t('rides.from')}
+                value={from}
+                onChangeText={setFrom}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
+            <View style={styles.filter}>
+              <TextField
+                label={t('rides.to')}
+                value={to}
+                onChangeText={setTo}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+
+          {trips.isPending ? (
+            <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
+          ) : trips.isError ? (
+            <Banner
+              message={t('errors.unknown')}
+              action={
+                <Button
+                  label={t('common.retry')}
+                  variant="secondary"
+                  onPress={() => void trips.refetch()}
+                />
+              }
             />
-          }
-        />
-      ) : rows.length === 0 ? (
-        <Card>
-          <EmptyState icon="car" message={t('rides.empty')} />
-        </Card>
-      ) : shown.length === 0 ? (
-        <Card>
-          <EmptyState icon="search" message={t('rides.noMatch')} />
-        </Card>
+          ) : rows.length === 0 ? (
+            <Card>
+              <EmptyState icon="car" message={t('rides.empty')} />
+            </Card>
+          ) : shown.length === 0 ? (
+            <Card>
+              <EmptyState icon="search" message={t('rides.noMatch')} />
+            </Card>
+          ) : (
+            <View style={styles.list}>
+              {shown.map((trip) => (
+                <TripRow
+                  key={trip.id}
+                  trip={trip}
+                  onPress={() =>
+                    router.push({ pathname: '/rides/[id]', params: { id: trip.id } })
+                  }
+                />
+              ))}
+            </View>
+          )}
+        </>
       ) : (
-        <View style={styles.list}>
-          {shown.map((trip) => (
-            <TripRow
-              key={trip.id}
-              trip={trip}
-              onPress={() => router.push({ pathname: '/rides/[id]', params: { id: trip.id } })}
+        <>
+          <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
+            {t('rides.board.intro')}
+          </Text>
+
+          {board.isPending ? (
+            <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
+          ) : board.isError ? (
+            <Banner
+              message={t('errors.unknown')}
+              action={
+                <Button
+                  label={t('common.retry')}
+                  variant="secondary"
+                  onPress={() => void board.refetch()}
+                />
+              }
             />
-          ))}
-        </View>
+          ) : vans.length === 0 ? (
+            <Card>
+              <EmptyState icon="town" message={t('rides.board.empty')} />
+            </Card>
+          ) : (
+            <View style={styles.list}>
+              {vans.map((ride) => (
+                <LiveRideCard
+                  key={ride.id}
+                  ride={ride}
+                  claiming={claim.isPending}
+                  onClaim={() => void onClaim(ride.id)}
+                />
+              ))}
+            </View>
+          )}
+        </>
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  actions: { gap: space.xs },
   filters: { flexDirection: 'row', gap: space.sm },
   filter: { flex: 1 },
   list: { gap: space.sm },

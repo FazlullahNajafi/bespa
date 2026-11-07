@@ -388,3 +388,136 @@ export function useCancelTrip() {
     onSuccess: () => void client.invalidateQueries({ queryKey: ['rides'] }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// The short-distance live board (spec 04.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * The other transport economy. Spec 04 refuses to merge the two, and this half has no
+ * booking in it at all: a driver says "I am at the stand with four seats", it shows for
+ * 45 minutes, and it expires on its own. Tapping "I'm coming" is a courtesy signal with
+ * a ten-minute life, not a contract.
+ */
+export type LiveRide = {
+  id: string;
+  driver_id: string;
+  driver_name: string | null;
+  vehicle: VehicleType;
+  registration: string | null;
+  from_label: string;
+  to_label: string;
+  seats_free: number;
+  claimed: number;
+  fare: number | null;
+  stand_note: string | null;
+  went_live_at: string;
+  expires_at: string;
+  /** The number the driver published when going live — never their profile's. */
+  contact: string | null;
+};
+
+/** What is left after the claims already pending are taken off. */
+export function liveSeatsLeft(ride: LiveRide): number {
+  return Math.max(0, ride.seats_free - ride.claimed);
+}
+
+export function useLiveBoard(enabled: boolean) {
+  return useQuery({
+    queryKey: keys.rides.board(),
+    enabled,
+    // A stand board is only worth anything if it is current. Spec 04.4 wants Realtime;
+    // until that is wired, a 20-second poll is close enough to "the numbers just change"
+    // and costs one small request.
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 20,
+    refetchOnWindowFocus: true,
+    queryFn: async (): Promise<LiveRide[]> => {
+      const { data, error } = await supabase.rpc('live_board');
+      if (error) throw error;
+      return (data ?? []) as LiveRide[];
+    },
+  });
+}
+
+export function useGoLive() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      vehicleId: string;
+      fromLabel: string;
+      toLabel: string;
+      seatsFree: number;
+      fare?: number | null;
+      standNote?: string | null;
+      contactPhone?: string | null;
+    }): Promise<RideResult<string>> => {
+      const { data, error } = await supabase.rpc('go_live', {
+        vehicle: args.vehicleId,
+        from_label: args.fromLabel,
+        to_label: args.toLabel,
+        seats_free: args.seatsFree,
+        fare: args.fare ?? undefined,
+        stand_note: args.standNote ?? undefined,
+        contact_phone: args.contactPhone ?? undefined,
+      });
+      if (error) return { ok: false, code: toErrorCode(error) };
+      return { ok: true, data: data as string };
+    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['rides'] }),
+  });
+}
+
+export function useSetLiveSeats() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      liveId: string;
+      seatsFree: number;
+    }): Promise<RideResult<true>> => {
+      const { error } = await supabase.rpc('set_live_seats', {
+        live: args.liveId,
+        seats_free: args.seatsFree,
+      });
+      if (error) return { ok: false, code: toErrorCode(error) };
+      return { ok: true, data: true };
+    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.rides.board() }),
+  });
+}
+
+export function useEndLive() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      liveId: string;
+      reason: string;
+    }): Promise<RideResult<true>> => {
+      const { error } = await supabase.rpc('end_live', {
+        live: args.liveId,
+        reason: args.reason,
+      });
+      if (error) return { ok: false, code: toErrorCode(error) };
+      return { ok: true, data: true };
+    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: ['rides'] }),
+  });
+}
+
+export function useClaimLiveSeat() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      liveId: string;
+      pickupNote?: string | null;
+    }): Promise<RideResult<true>> => {
+      const { error } = await supabase.rpc('claim_live_seat', {
+        live: args.liveId,
+        pickup_note: args.pickupNote ?? undefined,
+      });
+      if (error) return { ok: false, code: toErrorCode(error) };
+      return { ok: true, data: true };
+    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.rides.board() }),
+  });
+}

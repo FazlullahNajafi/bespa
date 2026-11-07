@@ -609,7 +609,7 @@
     },
     "cancelledBecause": "Cancelled: {{reason}}",
     "pickSeats": "Pick your seats",
-    "seatLabel": "Seat {{number}}, {{state}}",
+    "seatLabel": "Seat {{number}}, {{position}}, {{state}}",
     "seatState": {
       "free": "Free",
       "yours": "Yours",
@@ -687,6 +687,47 @@
     "needDifferent": "The two places must be different.",
     "tooManySeats": "That is more seats than your vehicle has.",
     "pickupAreaHint": "Optional. For example: from the taxi stand",
-    "saveVehicle": "Save"
+    "saveVehicle": "Save",
+    "seatPosition": {
+      "window": "Window",
+      "aisle": "By the gangway",
+      "middle": "Middle"
+    },
+    "driverSeat": "Driver's seat",
+    "front": "Front",
+    "shape": {
+      "car": "Looking down into the vehicle",
+      "van": "Looking down into the van",
+      "bus": "Looking down into the bus"
+    },
+    "segLong": "Long distance",
+    "segShort": "In & around Kargil",
+    "segLongHint": "Book a seat days ahead",
+    "segShortHint": "Leaving in the next few minutes",
+    "board": {
+      "title": "Leaving now",
+      "intro": "Drivers at the stand right now. No booking — turn up, or tell them you are coming.",
+      "empty": "No vans on the board. If you drive, you can go live.",
+      "liveFor": "Live {{minutes}} min",
+      "seatsLeft": "{{count}} seat left",
+      "seatsLeft_other": "{{count}} seats left",
+      "full": "Full",
+      "claimed": "{{count}} person is coming",
+      "claimed_other": "{{count}} people are coming",
+      "coming": "I'm coming",
+      "comingNote": "Tells the driver. Seats are first-come — this holds nothing.",
+      "claimSent": "Told the driver. Go to the stand.",
+      "goLive": "Go live",
+      "goLiveTitle": "Put your van on the board",
+      "goLiveIntro": "You will show for 45 minutes, then drop off by yourself.",
+      "seatsNow": "How many seats are free right now?",
+      "fare": "Fare per person (₹)",
+      "stand": "Where are you waiting?",
+      "standHint": "For example: main stand",
+      "live": "You are live",
+      "minusSeat": "One less seat",
+      "departed": "Departed",
+      "endedLive": "Taken off the board."
+    }
   }
 }

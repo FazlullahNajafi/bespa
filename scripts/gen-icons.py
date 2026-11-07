@@ -124,6 +124,16 @@ EXTRA = {
               '<Path d="M4 9.5l1.5-3.5h13L20 9.5H4z" {...p}/>'
               '<Path d="M5.5 9.5V20h13V9.5" {...p}/>'
               '<Path d="M9.5 20v-5h5v5" {...p}/></>',
+    # Two glyphs for the vehicle-shaped seat map (spec 04.2). A steering wheel marks
+    # the driver's place so the cab row reads as a cab rather than two odd seats, and a
+    # window pane marks the seats people actually ask for by name — "is there a window
+    # seat?" is the passenger's question in spec 04.2, so it cannot be left to position
+    # alone on a drawing someone is scanning.
+    "steering": '<><Circle cx="12" cy="12" r="8" {...p}/>'
+                '<Circle cx="12" cy="12" r="2.6" {...p}/>'
+                '<Path d="M4.2 11.2h5.2M14.6 11.2h5.2M12 14.6V20" {...p}/></>',
+    "window-seat": '<><Rect x="5" y="5.5" width="14" height="13" rx="2" {...p}/>'
+                   '<Path d="M5 12h14M12 5.5v13" {...p}/></>',
     "sports": '<><Circle cx="12" cy="12" r="7.5" {...p}/>'
               '<Path d="M4.8 9.8c4.2 1.3 10.2 1.3 14.4 0" {...p}/>'
               '<Path d="M12 4.6c-2.6 4.5-2.6 10.3 0 14.8" {...p}/></>',

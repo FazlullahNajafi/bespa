@@ -393,6 +393,122 @@ export type Database = {
           },
         ]
       }
+      live_claims: {
+        Row: {
+          created_at: string
+          expires_at: string
+          live_id: string
+          passenger_id: string
+          pickup_note: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          live_id: string
+          passenger_id: string
+          pickup_note?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          live_id?: string
+          passenger_id?: string
+          pickup_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_claims_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "live_rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_claims_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_claims_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_rides: {
+        Row: {
+          contact_phone: string | null
+          driver_id: string
+          ended_at: string | null
+          ended_reason: string | null
+          expires_at: string
+          fare: number | null
+          from_label: string
+          id: string
+          seats_free: number
+          stand_note: string | null
+          to_label: string
+          vehicle_id: string
+          went_live_at: string
+        }
+        Insert: {
+          contact_phone?: string | null
+          driver_id: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          expires_at?: string
+          fare?: number | null
+          from_label: string
+          id?: string
+          seats_free: number
+          stand_note?: string | null
+          to_label: string
+          vehicle_id: string
+          went_live_at?: string
+        }
+        Update: {
+          contact_phone?: string | null
+          driver_id?: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          expires_at?: string
+          fare?: number | null
+          from_label?: string
+          id?: string
+          seats_free?: number
+          stand_note?: string | null
+          to_label?: string
+          vehicle_id?: string
+          went_live_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_rides_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_rides_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_rides_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notice_sources: {
         Row: {
           disclaimer: string | null
@@ -1245,6 +1361,10 @@ export type Database = {
         Args: { reason: string; trip: string }
         Returns: undefined
       }
+      claim_live_seat: {
+        Args: { live: string; pickup_note?: string }
+        Returns: undefined
+      }
       confirm_booking: { Args: { booking: string }; Returns: undefined }
       create_trip: {
         Args: {
@@ -1266,6 +1386,7 @@ export type Database = {
         Args: { geo_unit: string; metric_key: string; year: number }
         Returns: undefined
       }
+      end_live: { Args: { live: string; reason?: string }; Returns: undefined }
       forget_device_token: { Args: { p_token: string }; Returns: undefined }
       forget_my_devices: { Args: { token?: string }; Returns: undefined }
       geo_children: {
@@ -1300,6 +1421,18 @@ export type Database = {
           phone_verified: boolean
         }[]
       }
+      go_live: {
+        Args: {
+          contact_phone?: string
+          fare?: number
+          from_label: string
+          seats_free: number
+          stand_note?: string
+          to_label: string
+          vehicle: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: { r: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
@@ -1322,6 +1455,25 @@ export type Database = {
         Returns: string
       }
       is_phone_verified: { Args: never; Returns: boolean }
+      live_board: {
+        Args: never
+        Returns: {
+          claimed: number
+          contact: string
+          driver_id: string
+          driver_name: string
+          expires_at: string
+          fare: number
+          from_label: string
+          id: string
+          registration: string
+          seats_free: number
+          stand_note: string
+          to_label: string
+          vehicle: Database["public"]["Enums"]["vehicle_type"]
+          went_live_at: string
+        }[]
+      }
       my_admin_units: {
         Args: never
         Returns: {
@@ -1392,6 +1544,7 @@ export type Database = {
         Args: { locale?: string; platform?: string; token: string }
         Returns: undefined
       }
+      release_live_claim: { Args: { live: string }; Returns: undefined }
       release_my_holds: { Args: { trip: string }; Returns: undefined }
       review_gallery_image: {
         Args: { approve: boolean; image_id: string; reason?: string }
@@ -1416,6 +1569,10 @@ export type Database = {
           image_id: string
           new_kind: Database["public"]["Enums"]["gallery_kind"]
         }
+        Returns: undefined
+      }
+      set_live_seats: {
+        Args: { live: string; seats_free: number }
         Returns: undefined
       }
       set_my_occupation: { Args: { p_occupation?: string }; Returns: undefined }

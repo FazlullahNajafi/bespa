@@ -66,5 +66,7 @@ export const keys = {
     myTrips: () => ['rides', 'myTrips'] as const,
     bookings: () => ['rides', 'bookings'] as const,
     vehicles: () => ['rides', 'vehicles'] as const,
+    /** The short-distance board. Polled, so it is its own key. */
+    board: () => ['rides', 'board'] as const,
   },
 } as const;
