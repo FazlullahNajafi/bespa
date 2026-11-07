@@ -5,7 +5,7 @@ import { Icon } from '@/components/icon';
 import { seatTakeable, type TripSeat, type VehicleType } from '@/api/rides';
 import { columnsIn, layoutFor, shapeOf, type Slot } from '@/lib/seat-layout';
 import { useNow } from '@/lib/use-now';
-import { fontFamily, radius, space, type } from '@/theme/tokens';
+import { fontFamily, space, type } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
 /**

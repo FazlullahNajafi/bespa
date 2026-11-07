@@ -15,7 +15,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(35);
 
 set search_path = public, extensions;
 
@@ -66,6 +66,27 @@ select lives_ok(
   $$ select save_vehicle('xylo', 6::smallint, 'JK07 1234') $$,
   'a driver can save their vehicle');
 
+-- Spec 04.5 gates posting on a verified licence, so an unverified driver is refused
+-- before any of the rest of this file is reachable. Asserted here rather than only in
+-- `driver_verification.test.sql`, because this is the file that would otherwise be
+-- quietly rewritten to work around the gate.
+select throws_ok(
+  $$ select create_trip(
+       (select id from vehicles limit 1), 'Kargil', 'Leh',
+       (current_date + 3), 1500, 6::smallint) $$,
+  'PT403',
+  null,
+  'an unverified driver cannot post a trip at all');
+
+-- Verified from here on. As postgres: `driver_documents` grants no insert, which is
+-- the point — a driver cannot approve themselves.
+reset role;
+insert into driver_documents (user_id, kind, storage_path, status, reviewed_by, reviewed_at)
+values ('00000000-0000-0000-0000-0000000d1101', 'licence',
+        '00000000-0000-0000-0000-0000000d1101/licence/a.jpg', 'approved',
+        '00000000-0000-0000-0000-0000000d1101', now());
+select tests_become('00000000-0000-0000-0000-0000000d1101');
+
 select throws_ok(
   $$ select create_trip(
        (select id from vehicles limit 1), 'Kargil', 'Leh',
@@ -110,6 +131,16 @@ select is(
   'all of them free to begin with');
 
 -- A passenger cannot post a trip on someone else's vehicle.
+--
+-- Verified first, deliberately: without it the verification gate refuses them before
+-- the ownership check is ever reached, and this assertion would pass while testing
+-- something else entirely.
+reset role;
+insert into driver_documents (user_id, kind, storage_path, status, reviewed_by, reviewed_at)
+values ('00000000-0000-0000-0000-0000000d1102', 'licence',
+        '00000000-0000-0000-0000-0000000d1102/licence/a.jpg', 'approved',
+        '00000000-0000-0000-0000-0000000d1102', now());
+
 select tests_become('00000000-0000-0000-0000-0000000d1102');
 select throws_ok(
   $$ select create_trip(

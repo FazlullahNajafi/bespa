@@ -69,4 +69,17 @@ export const keys = {
     /** The short-distance board. Polled, so it is its own key. */
     board: () => ['rides', 'board'] as const,
   },
+  /**
+   * Driver verification. Its own branch, not under `rides`: a licence outlives any one
+   * trip, and invalidating every ride query because a document was reviewed would drop
+   * the board for no reason.
+   */
+  driver: {
+    all: ['driver'] as const,
+    documents: () => ['driver', 'documents'] as const,
+    verified: () => ['driver', 'verified'] as const,
+    queue: () => ['driver', 'queue'] as const,
+    badges: (ids: string[]) => ['driver', 'badges', ids] as const,
+    docUrl: (path: string) => ['driver', 'docUrl', path] as const,
+  },
 } as const;

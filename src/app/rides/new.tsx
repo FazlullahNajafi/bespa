@@ -13,6 +13,7 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { useCreateTrip, useMyVehicles } from '@/api/rides';
+import { useAmVerifiedDriver } from '@/api/driver';
 import { useMyPrivate, useMyProfile } from '@/api/profile';
 import { useGeoUnit } from '@/api/geo';
 import { useSession } from '@/store/session';
@@ -76,6 +77,7 @@ export default function NewTripScreen() {
   const village = useGeoUnit(profile.data?.village_id);
 
   const vehicles = useMyVehicles(session?.user.id);
+  const verified = useAmVerifiedDriver(Boolean(session));
   const createTrip = useCreateTrip();
 
   const vehicle = vehicles.data?.[0] ?? null;
@@ -155,6 +157,23 @@ export default function NewTripScreen() {
       return;
     }
     setNote({ key: `errors.${result.code}`, bad: true });
+  }
+
+  // Spec 04.5 refuses an unverified driver server-side. Showing the offer instead of
+  // the form means the refusal arrives before the typing rather than after it.
+  if (!verified.isPending && verified.data === false) {
+    return (
+      <Screen>
+        <BackLink />
+        <Text style={[type.display, { color: colors.text }]}>{t('rides.postTrip')}</Text>
+        <Card>
+          <Text style={[type.body, { color: colors.text }]}>
+            {t('driver.notVerifiedYet')}
+          </Text>
+        </Card>
+        <Button label={t('driver.verifyCta')} onPress={() => router.push('/driver')} />
+      </Screen>
+    );
   }
 
   // Without a vehicle there is nothing to ask: the seat count comes from it, so the rest

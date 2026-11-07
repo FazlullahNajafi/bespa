@@ -18,6 +18,7 @@ import {
   useMyVehicles,
   useSetLiveSeats,
 } from '@/api/rides';
+import { useAmVerifiedDriver } from '@/api/driver';
 import { useMyPrivate, useMyProfile } from '@/api/profile';
 import { useGeoUnit } from '@/api/geo';
 import { useSession } from '@/store/session';
@@ -58,6 +59,7 @@ export default function GoLiveScreen() {
   const village = useGeoUnit(profile.data?.village_id);
 
   const vehicles = useMyVehicles(session?.user.id);
+  const verified = useAmVerifiedDriver(Boolean(session));
   const board = useLiveBoard(true);
   const goLive = useGoLive();
   const setSeats = useSetLiveSeats();
@@ -118,6 +120,21 @@ export default function GoLiveScreen() {
       result.ok
         ? { key: 'rides.live', bad: false }
         : { key: `errors.${result.code}`, bad: true },
+    );
+  }
+
+  if (!verified.isPending && verified.data === false) {
+    return (
+      <Screen>
+        <BackLink />
+        <Text style={[type.display, { color: colors.text }]}>{t('rides.board.goLive')}</Text>
+        <Card>
+          <Text style={[type.body, { color: colors.text }]}>
+            {t('driver.notVerifiedYet')}
+          </Text>
+        </Card>
+        <Button label={t('driver.verifyCta')} onPress={() => router.push('/driver')} />
+      </Screen>
     );
   }
 

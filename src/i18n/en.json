@@ -631,7 +631,7 @@
     "confirm": "Confirm booking",
     "booked": "Booked. Your code is {{code}}.",
     "bookingCode": "Booking code {{code}}",
-    "callDriver": "Call the driver",
+    "callDriver": "Call driver",
     "cancelBooking": "Cancel this booking",
     "bookingStatus": {
       "requested": "Waiting for the driver",
@@ -733,6 +733,48 @@
     },
     "tripNote": "Anything to tell passengers?",
     "tripNoteHint": "Optional. For example: I can collect you from your house in town.",
-    "seatNotForSale": "Seat {{number}}, not for sale on this trip"
+    "seatNotForSale": "Seat {{number}}, not for sale on this trip",
+    "confirmNeeds": "Add your phone number and where to pick you up."
+  },
+  "driver": {
+    "title": "Confirm you drive a taxi",
+    "eyebrow": "Taxi driver verification",
+    "intro": "We only confirm that you drive a taxi. No Aadhaar, no bank details — just the papers the RTO has already given you.",
+    "progress": "{{done}} of {{total}} checked",
+    "reviewTime": "Review usually takes a few hours.",
+    "gateNote": "Your licence has to be checked before you can post a trip or go live. The other two are optional.",
+    "verifiedNote": "You are verified. You can post trips and go live.",
+    "doc": {
+      "licence": "Commercial driving licence",
+      "licenceSub": "With the passenger (PSV) badge endorsement",
+      "permit": "Taxi permit",
+      "permitSub": "RTO route or tourist taxi permit",
+      "badge": "Taxi driver badge",
+      "badgeSub": "Driver badge from the transport office"
+    },
+    "state": {
+      "notUploaded": "Not sent",
+      "reviewing": "Being checked",
+      "verified": "Checked",
+      "rejected": "Sent back"
+    },
+    "upload": "Send photo",
+    "reupload": "Send another",
+    "replace": "Replace",
+    "sent": "Sent. We will check it.",
+    "rejectedBecause": "Sent back: {{reason}}",
+    "notVerifiedYet": "Your licence has not been checked yet.",
+    "verifyCta": "Get verified",
+    "required": "Needed before you can post",
+    "optional": "Optional",
+    "queue": "Driver documents",
+    "queueIntro": "Oldest first. A driver cannot post a trip until their licence is checked.",
+    "queueEmpty": "Nothing waiting.",
+    "approve": "Looks right",
+    "reject": "Send it back",
+    "reason": "Why? (only if you send it back)",
+    "reasonHint": "The driver reads this and sends another photo.",
+    "reasonRequired": "Say why, so they know what to send.",
+    "openDoc": "Open the photo"
   }
 }

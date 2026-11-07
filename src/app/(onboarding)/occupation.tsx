@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -62,6 +63,7 @@ export default function OccupationStepScreen() {
   const { t } = useTranslation();
   const colors = useColors();
   const client = useQueryClient();
+  const router = useRouter();
 
   const save = useSetMyOccupation();
 
@@ -76,7 +78,14 @@ export default function OccupationStepScreen() {
     setError(null);
     const result = await save.mutateAsync(occupation);
 
-    if (result.ok) return; // The gate routes onward once the profile refetches.
+    if (result.ok) {
+      // A driver needs their papers checked before they can post anything (spec 04.5),
+      // so the one occupation with a next step gets taken to it. Pushed on top of
+      // wherever the gate lands rather than replacing it: the back gesture still
+      // returns to the app, and nobody is trapped on a form they cannot fill today.
+      if (occupation === 'driver') router.push('/driver');
+      return; // The gate routes onward once the profile refetches.
+    }
 
     if ('queued' in result) {
       // Offline. The write is durable in the outbox, but the gate reads

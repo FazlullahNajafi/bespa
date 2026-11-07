@@ -93,6 +93,8 @@ export default function TripScreen() {
 
   const phoneValue = phone ?? fromE164(priv.data?.phone ?? null);
   const phoneValid = phoneValue.trim().length === 0 || isValidNational(phoneValue.trim());
+  const canConfirm =
+    isValidNational(phoneValue.trim()) && pickup.trim().length > 0;
 
   if (trip.isPending) {
     return (
@@ -283,12 +285,22 @@ export default function TripScreen() {
               {/* Spec 04.2 step 3, worded as the spec words it. */}
               <Banner message={t('rides.payNote')} tone="info" />
 
+              {/* Both are required, and the button says so by being unavailable until
+                  they are there. A booking with no number is a driver who cannot ring
+                  to confirm — spec 04.2 is emphatic that an unconfirmable booking is
+                  not trusted here — and one with no pickup is a driver who does not
+                  know which house to come to. It was tappable with neither. */}
               <Button
                 label={t('rides.confirm')}
                 onPress={() => void confirmBooking()}
                 loading={book.isPending}
-                disabled={!phoneValid}
+                disabled={!canConfirm}
               />
+              {!canConfirm ? (
+                <Text style={[type.caption, { color: colors.textSecondary }]}>
+                  {t('rides.confirmNeeds')}
+                </Text>
+              ) : null}
               <Button
                 label={t('common.cancel')}
                 variant="ghost"

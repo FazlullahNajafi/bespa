@@ -256,6 +256,68 @@ export type Database = {
           },
         ]
       }
+      driver_documents: {
+        Row: {
+          kind: Database["public"]["Enums"]["driver_doc_kind"]
+          reject_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["mod_status"]
+          storage_path: string
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          kind: Database["public"]["Enums"]["driver_doc_kind"]
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["mod_status"]
+          storage_path: string
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          kind?: Database["public"]["Enums"]["driver_doc_kind"]
+          reject_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["mod_status"]
+          storage_path?: string
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gallery_images: {
         Row: {
           banner_position: number | null
@@ -1386,6 +1448,16 @@ export type Database = {
         Args: { geo_unit: string; metric_key: string; year: number }
         Returns: undefined
       }
+      driver_review_queue: {
+        Args: never
+        Returns: {
+          full_name: string
+          kind: Database["public"]["Enums"]["driver_doc_kind"]
+          storage_path: string
+          submitted_at: string
+          user_id: string
+        }[]
+      }
       end_live: { Args: { live: string; reason?: string }; Returns: undefined }
       forget_device_token: { Args: { p_token: string }; Returns: undefined }
       forget_my_devices: { Args: { token?: string }; Returns: undefined }
@@ -1455,6 +1527,7 @@ export type Database = {
         Returns: string
       }
       is_phone_verified: { Args: never; Returns: boolean }
+      is_verified_driver: { Args: { uid?: string }; Returns: boolean }
       live_board: {
         Args: never
         Returns: {
@@ -1546,6 +1619,15 @@ export type Database = {
       }
       release_live_claim: { Args: { live: string }; Returns: undefined }
       release_my_holds: { Args: { trip: string }; Returns: undefined }
+      review_driver_document: {
+        Args: {
+          approve: boolean
+          driver: string
+          kind: Database["public"]["Enums"]["driver_doc_kind"]
+          reason?: string
+        }
+        Returns: undefined
+      }
       review_gallery_image: {
         Args: { approve: boolean; image_id: string; reason?: string }
         Returns: undefined
@@ -1554,6 +1636,7 @@ export type Database = {
         Args: { approve: boolean; place_id: string; reason?: string }
         Returns: undefined
       }
+      reviews_drivers: { Args: never; Returns: boolean }
       ride_hold_minutes: { Args: never; Returns: string }
       save_vehicle: {
         Args: {
@@ -1613,6 +1696,13 @@ export type Database = {
         Returns: undefined
       }
       shares_my_village: { Args: { uid: string }; Returns: boolean }
+      submit_driver_document: {
+        Args: {
+          kind: Database["public"]["Enums"]["driver_doc_kind"]
+          storage_path: string
+        }
+        Returns: undefined
+      }
       submit_gallery_image: {
         Args: { caption?: string; geo_unit: string; storage_path: string }
         Returns: string
@@ -1643,6 +1733,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      verified_drivers: {
+        Args: { ids: string[] }
+        Returns: {
+          user_id: string
+        }[]
+      }
       withdraw_gallery_image: { Args: { image_id: string }; Returns: string }
       withdraw_place: { Args: { place_id: string }; Returns: string[] }
     }
@@ -1654,6 +1750,7 @@ export type Database = {
         | "cancelled_by_driver"
         | "no_show"
         | "completed"
+      driver_doc_kind: "licence" | "permit" | "badge"
       event_category:
         | "religious_islamic"
         | "religious_buddhist"
@@ -1858,6 +1955,7 @@ export const Constants = {
         "no_show",
         "completed",
       ],
+      driver_doc_kind: ["licence", "permit", "badge"],
       event_category: [
         "religious_islamic",
         "religious_buddhist",

@@ -16,7 +16,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(18);
 
 set search_path = public, extensions;
 
@@ -55,6 +55,19 @@ end $$;
 select tests_become('00000000-0000-0000-0000-0000000e1101');
 
 select save_vehicle('eeco', 6::smallint, 'JK07 5555');
+
+select throws_ok(
+  $$ select go_live((select id from vehicles limit 1), 'Kargil', 'Baroo', 4::smallint) $$,
+  'PT403',
+  null,
+  'an unverified driver cannot go live either (spec 04.5)');
+
+reset role;
+insert into driver_documents (user_id, kind, storage_path, status, reviewed_by, reviewed_at)
+values ('00000000-0000-0000-0000-0000000e1101', 'licence',
+        '00000000-0000-0000-0000-0000000e1101/licence/a.jpg', 'approved',
+        '00000000-0000-0000-0000-0000000e1101', now());
+select tests_become('00000000-0000-0000-0000-0000000e1101');
 
 select throws_ok(
   $$ select go_live((select id from vehicles limit 1), 'Kargil', 'Baroo', 9::smallint) $$,
