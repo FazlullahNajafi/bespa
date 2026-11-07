@@ -113,6 +113,27 @@ export function useDriverQueue(enabled: boolean) {
 export type DriverWrite = { ok: true } | { ok: false; code: ErrorCode };
 
 /**
+ * Marks the onboarding step seen, whether or not anything was sent.
+ *
+ * Direct rather than queued: the gate reads this flag from the server on the next
+ * profile refetch, so a queued write would leave the user looking at the step they just
+ * finished. The same reasoning the occupation step's own flag follows.
+ */
+export function useMarkDriverDocsAsked() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<DriverWrite> => {
+      const { error } = await supabase.rpc('mark_driver_docs_asked');
+      if (error) return { ok: false, code: toErrorCode(error) };
+      return { ok: true };
+    },
+    // The gate reads the profile, so that is what has to be refetched.
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.me.all }),
+  });
+}
+
+/**
  * Upload one document and file it.
  *
  * Direct rather than through the outbox, like the ride calls and for a related reason:

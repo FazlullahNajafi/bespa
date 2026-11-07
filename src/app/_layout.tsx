@@ -77,6 +77,20 @@ function useAuthRedirect() {
         ? profile.data.privacy_reviewed_at === null
         : false;
 
+    // The fourth step, and the only conditional one: a driver is asked for the papers
+    // spec 04.5 gates posting on. Last, because village and privacy decide whether the
+    // app can show anything at all and a new driver should reach a working app before
+    // being asked to photograph a licence.
+    //
+    // It is a flag and not a `router.push` from the occupation screen, which is what
+    // was tried first and never appeared — this gate replaces the route the moment the
+    // profile refetches, and a push cannot win against that.
+    const needsDriverPapers =
+      !needsVillage && !needsOccupation && !needsPrivacy && profile.data
+        ? profile.data.occupation === 'driver' &&
+          profile.data.driver_docs_asked_at === null
+        : false;
+
     // Onboarding now has two screens, so "am I already in the group" is no longer a
     // precise enough question — without checking which one, the privacy branch would
     // re-replace itself on every render of the screen it just routed to.
@@ -99,6 +113,10 @@ function useAuthRedirect() {
       }
     } else if (needsPrivacy) {
       if (!(inOnboarding && step === 'privacy')) router.replace('/(onboarding)/privacy');
+    } else if (needsDriverPapers) {
+      if (!(inOnboarding && step === 'driver-papers')) {
+        router.replace('/(onboarding)/driver-papers');
+      }
     } else if (inAuthGroup || inOnboarding) {
       router.replace('/(tabs)');
     }

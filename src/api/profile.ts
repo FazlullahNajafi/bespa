@@ -19,6 +19,8 @@ export type MyProfile = {
   privacy_reviewed_at: string | null;
   /** Null until the occupation step has been put to them, answered or skipped (03.6). */
   occupation_asked_at: string | null;
+  /** Null, for a driver, routes to (onboarding)/driver-papers. */
+  driver_docs_asked_at: string | null;
 };
 
 /**
@@ -42,7 +44,7 @@ export function useMyProfile(userId: string | undefined) {
         .from('profiles')
         .select(
           'id, full_name, avatar_path, occupation, bio, village_id, panchayat_id, roles, ' +
-          'created_at, privacy_reviewed_at, occupation_asked_at',
+          'created_at, privacy_reviewed_at, occupation_asked_at, driver_docs_asked_at',
         )
         .eq('id', userId!)
         .maybeSingle();

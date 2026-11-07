@@ -775,6 +775,9 @@
     "reason": "Why? (only if you send it back)",
     "reasonHint": "The driver reads this and sends another photo.",
     "reasonRequired": "Say why, so they know what to send.",
-    "openDoc": "Open the photo"
+    "openDoc": "Open the photo",
+    "doneForNow": "Done",
+    "later": "I'll send them later",
+    "laterHint": "You can send them any time from the Rides tab"
   }
 }

@@ -917,6 +917,7 @@ export type Database = {
           avatar_path: string | null
           bio: string | null
           created_at: string
+          driver_docs_asked_at: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -933,6 +934,7 @@ export type Database = {
           avatar_path?: string | null
           bio?: string | null
           created_at?: string
+          driver_docs_asked_at?: string | null
           full_name?: string
           id: string
           is_active?: boolean
@@ -949,6 +951,7 @@ export type Database = {
           avatar_path?: string | null
           bio?: string | null
           created_at?: string
+          driver_docs_asked_at?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -1547,6 +1550,7 @@ export type Database = {
           went_live_at: string
         }[]
       }
+      mark_driver_docs_asked: { Args: never; Returns: undefined }
       my_admin_units: {
         Args: never
         Returns: {

@@ -13,7 +13,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(24);
 
 set search_path = public, extensions;
 
@@ -196,6 +196,41 @@ select is(
      array['00000000-0000-0000-0000-0000000f1101']::uuid[])),
   0,
   'withdrawing the licence un-badges the trips they already posted');
+
+-- ---------------------------------------------------------------------------
+-- The onboarding flag (spec 04.5 as a gated step)
+-- ---------------------------------------------------------------------------
+select tests_become('00000000-0000-0000-0000-0000000f1102');
+
+select is(
+  (select driver_docs_asked_at from profiles where id = '00000000-0000-0000-0000-0000000f1102'),
+  null,
+  'the step starts unseen');
+
+select throws_ok(
+  $$ update profiles set driver_docs_asked_at = now()
+      where id = '00000000-0000-0000-0000-0000000f1102' $$,
+  '42501',
+  null,
+  'and a user cannot stamp it themselves — a flag the client can write is a flag that '
+  'gets written to skip the step it guards');
+
+select lives_ok(
+  $$ select mark_driver_docs_asked() $$,
+  'only the definer function can');
+
+select isnt(
+  (select driver_docs_asked_at from profiles where id = '00000000-0000-0000-0000-0000000f1102'),
+  null,
+  'which marks the step seen');
+
+-- Idempotent: revisiting the screen from Transport must not re-enter onboarding.
+select is(
+  (select driver_docs_asked_at from profiles where id = '00000000-0000-0000-0000-0000000f1102'),
+  (select p.driver_docs_asked_at from (select mark_driver_docs_asked()) _,
+          profiles p where p.id = '00000000-0000-0000-0000-0000000f1102'),
+  'running it again leaves the timestamp alone, so opening the screen later does not '
+  'put the driver back through onboarding');
 
 select * from finish();
 rollback;
