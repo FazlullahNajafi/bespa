@@ -298,12 +298,12 @@ order — notices first, because the district mirror is useful at zero local par
 
 ## Known gaps worth writing down
 
-- **A reviewer can approve their own licence.** `reviews_drivers()` asks whether you hold
-  `district_admin` or `super_admin`, not whether the document is somebody else's. For a
-  one-person pilot that is the only way to test the flow at all, and it is how
-  `docs/making-someone-an-admin.md` tells you to do it. Before a real pilot it wants a
-  `user_id <> auth.uid()` check in `review_driver_document`, and before more than one
-  reviewer exists it wants an audit row naming who approved what.
+- **No audit row names who approved what.** `driver_documents.reviewed_by` records the
+  last decision and is overwritten by the next one, so a document approved, withdrawn
+  and re-approved keeps only the final signature. Self-approval itself is closed —
+  `review_driver_document` refuses a document belonging to the caller and the queue
+  excludes it — but a second reviewer makes the history worth keeping, not just the
+  verdict.
 - **Nothing expires a verification.** A licence has an expiry date and this schema does
   not record it, so an approved driver stays approved. Withdrawing is manual — send the
   document back from the queue, which un-badges their existing trips immediately.

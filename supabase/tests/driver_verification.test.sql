@@ -13,7 +13,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(28);
 
 set search_path = public, extensions;
 
@@ -196,6 +196,42 @@ select is(
      array['00000000-0000-0000-0000-0000000f1101']::uuid[])),
   0,
   'withdrawing the licence un-badges the trips they already posted');
+
+-- ---------------------------------------------------------------------------
+-- A reviewer may not check their own documents
+-- ---------------------------------------------------------------------------
+-- Holding the role is not the same as being somebody else. The whole value of a
+-- verified badge is that another person looked, and before this check the four-step
+-- test in the docs told a single admin to approve their own licence.
+select tests_become('00000000-0000-0000-0000-0000000f1104');
+select submit_driver_document('licence',
+  '00000000-0000-0000-0000-0000000f1104/licence/mine.jpg');
+
+select throws_ok(
+  $$ select review_driver_document('00000000-0000-0000-0000-0000000f1104',
+       'licence', true) $$,
+  '42501',
+  null,
+  'a district reviewer cannot approve their own licence');
+
+select is(
+  (select count(*)::int from driver_review_queue()
+    where user_id = '00000000-0000-0000-0000-0000000f1104'),
+  0,
+  'and it is not in their own queue — a card whose buttons both fail is a worse '
+  'answer than no card');
+
+select is(
+  (select count(*)::int from driver_documents
+    where user_id = '00000000-0000-0000-0000-0000000f1104'),
+  1,
+  'though they can still see what they sent, which is how their own driver screen '
+  'shows it back to them');
+
+select is(
+  is_verified_driver('00000000-0000-0000-0000-0000000f1104'),
+  false,
+  'and they stay unverified until somebody else looks');
 
 -- ---------------------------------------------------------------------------
 -- The onboarding flag (spec 04.5 as a gated step)

@@ -193,14 +193,29 @@ Withdrawing a licence — send it back after approving — takes the badge off t
 driver has **already** posted, because the badge is read live rather than stored on the
 trip. A cached badge is the one that keeps vouching after the vouching stopped.
 
+## You cannot check your own documents
+
+Holding the role is not the same as being somebody else, and the whole value of a
+verified badge is that another person looked. So `review_driver_document` refuses a
+document belonging to the caller, and your own paperwork does not appear in your own
+queue — a card with two buttons that both fail is a worse answer than no card.
+
+A reviewer who also drives must ask another reviewer. That is the point of it.
+
+**This means testing needs two accounts.** One sends the licence, the other approves it.
+
 ## For testing, end to end
 
-1. Grant yourself `super_admin` with the statement above, reopen the app.
-2. On the driver account: occupation **Driver** during sign-up, or Rides → Post a trip →
-   **Get verified**. Send a photo of anything for the licence.
-3. On your account: Profile → **Driver documents** → open it → **Looks right**.
-4. Back on the driver account, Post a trip now shows the form instead of the offer.
+Two accounts — say a Google sign-in for the driver, and an email account for yourself.
 
-One account can do all of it: grant yourself `super_admin`, send your own licence, and
-approve it. Nothing stops a reviewer approving their own document — worth knowing before
-a real pilot, and listed in the open issues in `docs/architecture.md`.
+1. Grant **your own** account `super_admin` with the statement above, and reopen the app.
+   Do not grant it to the driver account; it could not approve itself anyway, and the
+   queue would simply look empty.
+2. On the **driver** account: pick occupation **Driver** during sign-up, or go
+   Rides → Post a trip → **Get verified**. Send a photo of anything for the licence.
+3. On **your** account: Profile → **Driver documents**. The driver's licence is waiting.
+   Open the photo, then **Looks right**.
+4. Back on the driver account: Post a trip now shows the form instead of the offer.
+
+If the queue is empty when you expect something, the usual cause is that both steps were
+done on the same account.
