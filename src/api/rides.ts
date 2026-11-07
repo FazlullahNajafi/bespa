@@ -127,7 +127,12 @@ export function useTrips(args: { from?: string; to?: string; date?: string }) {
       let query = supabase
         .from('trips')
         .select(TRIP_COLUMNS)
-        .neq('status', 'completed')
+        // A cancelled or departed trip is not on offer, and leaving it here was worse
+        // than untidy: cancelling frees its seats, so the board advertised a cancelled
+        // Gongma Minjee → Kargil run as "4 seats free". That is the failure that sends
+        // somebody to a stand at five in the morning. Anyone who had booked still sees
+        // it under My bookings, which reads bookings rather than the board.
+        .in('status', ['open', 'filling', 'confirmed'])
         .gte('departure_date', new Date().toISOString().slice(0, 10))
         .order('departure_date')
         .limit(50);

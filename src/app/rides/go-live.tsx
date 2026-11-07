@@ -139,7 +139,7 @@ export default function GoLiveScreen() {
     return (
       <Screen>
         <BackLink />
-        <Text style={[type.display, { color: colors.text }]}>{t('rides.live')}</Text>
+        <Text style={[type.display, { color: colors.text }]}>{t('rides.board.live')}</Text>
 
         <Card>
           <Text style={[type.body, styles.bold, { color: colors.text }]}>
@@ -156,8 +156,9 @@ export default function GoLiveScreen() {
         <Banner message={t('rides.board.goLiveIntro')} tone="info" />
 
         <Button
-          label={t('rides.minusSeat')}
+          label={t('rides.board.minusSeat')}
           variant="secondary"
+          leading={<Icon name="close" size={20} color={colors.primary} />}
           loading={setSeats.isPending}
           onPress={() =>
             void setSeats.mutateAsync({
@@ -167,8 +168,9 @@ export default function GoLiveScreen() {
           }
         />
         <Button
-          label={t('rides.departed')}
+          label={t('rides.board.departed')}
           variant="danger"
+          leading={<Icon name="arrow" size={20} color={colors.onDanger} />}
           loading={endLive.isPending}
           onPress={async () => {
             const result = await endLive.mutateAsync({
@@ -260,7 +262,7 @@ export default function GoLiveScreen() {
       <View style={styles.stepper}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('rides.minusSeat')}
+          accessibilityLabel={t('rides.board.minusSeat')}
           onPress={() => setSeatsCount((n) => Math.max(0, n - 1))}
           style={[styles.step, { borderColor: colors.border, backgroundColor: colors.surface }]}
         >
