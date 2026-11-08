@@ -9,6 +9,8 @@ export type MyProfile = {
   id: string;
   full_name: string;
   avatar_path: string | null;
+  /** A chosen illustration, used when there is no photograph. */
+  avatar_preset: string | null;
   occupation: string | null;
   bio: string | null;
   village_id: string | null;
@@ -43,7 +45,7 @@ export function useMyProfile(userId: string | undefined) {
       const { data, error } = await supabase
         .from('profiles')
         .select(
-          'id, full_name, avatar_path, occupation, bio, village_id, panchayat_id, roles, ' +
+          'id, full_name, avatar_path, avatar_preset, occupation, bio, village_id, panchayat_id, roles, ' +
           'created_at, privacy_reviewed_at, occupation_asked_at, driver_docs_asked_at',
         )
         .eq('id', userId!)
@@ -139,6 +141,17 @@ export type ProfileEdit = {
   bio: string | null;
   /** E.164, or null to clear it. Omit the field entirely to leave the number alone. */
   phone?: string | null;
+  /**
+   * An illustrated avatar, or null to go back to initials. Omit to leave it alone —
+   * the name-and-bio save must not silently clear a picture.
+   */
+  avatar_preset?: string | null;
+  /**
+   * A freshly uploaded photograph's object path. Omit to leave the current one. Set
+   * together with `avatar_preset: null`, because a photograph wins over an
+   * illustration and leaving both would be storing a preference nobody can see.
+   */
+  avatar_path?: string | null;
 };
 
 const UPDATE_PROFILE = 'update_my_profile';
@@ -177,6 +190,11 @@ registerHandler<ProfileEdit, true>(UPDATE_PROFILE, async (edit) => {
       full_name: edit.full_name,
       occupation: edit.occupation,
       bio: edit.bio,
+      // Spread, not assigned: an absent key leaves the column alone, while `undefined`
+      // written explicitly would be sent as null and wipe a picture the user did not
+      // touch on this save.
+      ...('avatar_preset' in edit ? { avatar_preset: edit.avatar_preset } : {}),
+      ...('avatar_path' in edit ? { avatar_path: edit.avatar_path } : {}),
     })
     .eq('id', uid);
   if (error) throw error;

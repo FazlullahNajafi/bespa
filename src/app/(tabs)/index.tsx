@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { NoticeCard } from '@/components/notice-card';
+import { PlacesStrip } from '@/components/places-strip';
 import { StatGrid } from '@/components/stat-grid';
 import { VillageBanner } from '@/components/village-banner';
 import { WeatherCard } from '@/components/weather-card';
@@ -105,7 +106,7 @@ export default function HomeScreen() {
             accessibilityLabel={t('home.openProfile')}
             style={styles.avatarTap}
           >
-            <Avatar name={name} size={44} />
+            <Avatar name={name} size={44} preset={profile.data?.avatar_preset} />
           </Pressable>
         ) : null}
       </View>
@@ -240,6 +241,20 @@ export default function HomeScreen() {
           </Card>
         </Pressable>
       )}
+
+      {/* Section 7 of spec 03.1. Keeps its heading even when empty, because the empty
+          state is an invitation to add the first place rather than an apology. */}
+      <Pressable
+        onPress={() => router.push('/places')}
+        accessibilityRole="button"
+        accessibilityLabel={t('places.title')}
+      >
+        <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
+          {t('places.title')}
+        </Text>
+      </Pressable>
+
+      <PlacesStrip villageId={profile.data?.village_id} />
     </Screen>
   );
 }

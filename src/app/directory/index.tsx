@@ -264,7 +264,7 @@ export default function DirectoryScreen() {
           {visible.map((member) => (
             <Card key={member.id}>
               <View style={styles.row}>
-                <Avatar name={initialsName(member)} size={40} />
+                <Avatar name={initialsName(member)} size={40} preset={member.avatar_preset} />
                 <View style={styles.rowText}>
                   <Text style={[type.bodySmall, styles.name, { color: colors.text }]}>
                     {member.full_name}

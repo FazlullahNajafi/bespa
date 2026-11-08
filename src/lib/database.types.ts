@@ -915,6 +915,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_path: string | null
+          avatar_preset: string | null
           bio: string | null
           created_at: string
           driver_docs_asked_at: string | null
@@ -932,6 +933,7 @@ export type Database = {
         }
         Insert: {
           avatar_path?: string | null
+          avatar_preset?: string | null
           bio?: string | null
           created_at?: string
           driver_docs_asked_at?: string | null
@@ -949,6 +951,7 @@ export type Database = {
         }
         Update: {
           avatar_path?: string | null
+          avatar_preset?: string | null
           bio?: string | null
           created_at?: string
           driver_docs_asked_at?: string | null
@@ -1380,6 +1383,7 @@ export type Database = {
       directory_members: {
         Row: {
           avatar_path: string | null
+          avatar_preset: string | null
           created_at: string | null
           full_name: string | null
           id: string | null

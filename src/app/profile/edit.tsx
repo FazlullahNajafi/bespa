@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTranslation } from '@/i18n';
 import { BackLink } from '@/components/back-link';
 import { Banner } from '@/components/banner';
 import { Button } from '@/components/button';
+import { Avatar } from '@/components/avatar';
+import { AVATAR_PRESETS } from '@/components/avatar-art';
 import { Chip } from '@/components/chip';
 import { PendingChip } from '@/components/pending-chip';
 import { Screen } from '@/components/screen';
@@ -59,6 +61,9 @@ export default function EditProfileScreen() {
   const [otherText, setOtherText] = useState<string | undefined>();
   const [bio, setBio] = useState<string | undefined>();
   const [phone, setPhone] = useState<string | undefined>();
+  // `undefined` means untouched, `null` means "back to initials" — the two are
+  // different answers and collapsing them would make clearing a picture impossible.
+  const [avatar, setAvatar] = useState<string | null | undefined>();
 
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [failure, setFailure] = useState<string | null>(null);
@@ -81,6 +86,7 @@ export default function EditProfileScreen() {
   // See `lib/phone.ts` — the column stays E.164 because that is what an SMS gateway
   // will want, but nobody should have to know that to fill in a form.
   const phoneValue = phone === undefined ? fromE164(priv.data?.phone) : phone;
+  const avatarValue = avatar === undefined ? (profile.data?.avatar_preset ?? null) : avatar;
 
   /**
    * What Save would actually write, normalised the same way `onSave` normalises it —
@@ -100,10 +106,13 @@ export default function EditProfileScreen() {
   // and no error to read.
   const phoneDirty = phoneValue.trim() !== fromE164(priv.data?.phone);
 
+  const avatarDirty = avatarValue !== (profile.data?.avatar_preset ?? null);
+
   const dirty =
     edited.full_name !== (profile.data?.full_name ?? '') ||
     edited.occupation !== stored ||
     edited.bio !== (profile.data?.bio ?? null) ||
+    avatarDirty ||
     phoneDirty;
 
   async function onSave() {
@@ -124,7 +133,11 @@ export default function EditProfileScreen() {
     setFailure(null);
     setQueued(false);
 
-    const result = await update.mutateAsync(edited);
+    const result = await update.mutateAsync(
+      // Only sent when it changed. An absent key leaves the column alone, so saving a
+      // bio never disturbs a picture.
+      avatarDirty ? { ...edited, avatar_preset: avatarValue } : edited,
+    );
 
     if (result.ok) {
       router.back();
@@ -171,6 +184,46 @@ export default function EditProfileScreen() {
         <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
           {t('profile.edit.subtitle')}
         </Text>
+      </View>
+
+      {/* The picture. Initials first, because they are the default and not a gap —
+          a directory that requires everyone to supply a face is one half the village
+          will not join (spec 03.4 publishes a new profile to the whole village).
+          Illustrations are offered and never guessed: nothing can tell from a name
+          whether somebody wears a hijab. */}
+      <Text style={[type.bodySmall, styles.heading, { color: colors.text }]}>
+        {t('profile.edit.picture')}
+      </Text>
+      <View style={styles.avatars}>
+        <Pressable
+          onPress={() => setAvatar(null)}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: avatarValue === null }}
+          accessibilityLabel={t('profile.edit.avatarInitials')}
+          style={[
+            styles.avatarChoice,
+            avatarValue === null && { borderColor: colors.primary },
+            { borderColor: avatarValue === null ? colors.primary : colors.borderSoft },
+          ]}
+        >
+          <Avatar name={nameValue || '?'} size={52} />
+        </Pressable>
+
+        {AVATAR_PRESETS.map((preset) => (
+          <Pressable
+            key={preset}
+            onPress={() => setAvatar(preset)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: avatarValue === preset }}
+            accessibilityLabel={t(`profile.edit.avatarArt.${preset}`)}
+            style={[
+              styles.avatarChoice,
+              { borderColor: avatarValue === preset ? colors.primary : colors.borderSoft },
+            ]}
+          >
+            <Avatar name={nameValue || '?'} size={52} preset={preset} />
+          </Pressable>
+        ))}
       </View>
 
       <TextField
@@ -259,6 +312,9 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  heading: { fontFamily: fontFamily.semibold, fontWeight: '600', paddingTop: space.sm },
+  avatars: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  avatarChoice: { borderWidth: 2, borderRadius: 32, padding: 3 },
   header: { gap: space.xs },
   group: { gap: space.sm },
   groupLabel: { fontFamily: fontFamily.semibold, fontWeight: '600' },

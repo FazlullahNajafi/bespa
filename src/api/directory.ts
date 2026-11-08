@@ -27,6 +27,8 @@ export type DirectoryMember = {
   full_name: string;
   /** Null when hidden, or when there is none. Initials are the fallback either way. */
   avatar_path: string | null;
+  /** A chosen illustration, behind the same `show_avatar` gate as the photograph. */
+  avatar_preset: string | null;
   occupation: string | null;
   roles: string[];
   created_at: string;
@@ -50,7 +52,7 @@ export function useDirectory(villageId: string | null | undefined) {
     queryFn: async (): Promise<DirectoryMember[]> => {
       const { data, error } = await supabase
         .from('directory_members')
-        .select('id, full_name, avatar_path, occupation, roles, created_at, phone_available')
+        .select('id, full_name, avatar_path, avatar_preset, occupation, roles, created_at, phone_available')
         .order('full_name');
 
       if (error) throw error;

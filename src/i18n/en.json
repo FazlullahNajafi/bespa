@@ -193,7 +193,14 @@
       "nameRequired": "Please enter your name.",
       "unverified": "Not verified",
       "unverifiedNote": "We cannot send a verification code yet. Your number is saved but stays unverified until SMS is set up.",
-      "nothingToSave": "Nothing has changed yet"
+      "nothingToSave": "Nothing has changed yet",
+      "picture": "Your picture",
+      "avatarInitials": "Your initials",
+      "avatarArt": {
+        "man": "Drawing of a man",
+        "hijabi": "Drawing of a woman wearing a hijab",
+        "woman": "Drawing of a woman"
+      }
     },
     "sections": {
       "editProfile": "Edit profile",
@@ -476,7 +483,8 @@
       "denied": "Bespa cannot see your location. Allow it from Android settings, or put the pin on the map.",
       "unsupported": "This phone cannot give a location right now. Check that location is switched on.",
       "failed": "Could not get your location. Try again outdoors, or put the pin on the map."
-    }
+    },
+    "emptyHome": "No places yet. Add the first one in your village."
   },
   "village": {
     "title": "About this village",

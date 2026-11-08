@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
+import { AvatarArt, isAvatarPreset } from '@/components/avatar-art';
 import { fontFamily, radius, readableOn } from '@/theme/tokens';
 import { useColors } from '@/theme/use-scheme';
 
@@ -8,6 +10,10 @@ type Props = {
   size?: number;
   /** Set only when the avatar stands alone; beside the name it is decorative. */
   standalone?: boolean;
+  /** A signed URL for an uploaded photograph, when there is one. */
+  uri?: string | null;
+  /** One of `AVATAR_PRESETS`, when the person chose an illustration instead. */
+  preset?: string | null;
 };
 
 /**
@@ -19,6 +25,11 @@ type Props = {
  * contrast is already asserted by `scripts/check-contrast.py`, and lets `readableOn` pick
  * the initials colour per tint. Worst case across the five tints in both themes is
  * 4.52:1. Deterministic *and* legible, rather than deterministic and sometimes not.
+ *
+ * Three things can fill the circle, in this order: an uploaded photograph, a chosen
+ * illustration, or those initials. The order is the point — initials are the fallback
+ * and not a placeholder waiting to be replaced, because a village directory where
+ * everyone must supply a face is one that half the village will not join.
  */
 const TINTS = ['primary', 'accent', 'success', 'info', 'danger'] as const;
 
@@ -38,8 +49,40 @@ export function initialsOf(name: string) {
   return (first + last).toUpperCase();
 }
 
-export function Avatar({ name, size = 38, standalone = false }: Props) {
+export function Avatar({
+  name,
+  size = 38,
+  standalone = false,
+  uri = null,
+  preset = null,
+}: Props) {
   const colors = useColors();
+
+  if (uri) {
+    return (
+      <Image
+        source={{ uri }}
+        style={{ width: size, height: size, borderRadius: radius.pill }}
+        contentFit="cover"
+        transition={150}
+        cachePolicy="disk"
+        accessibilityRole={standalone ? 'image' : undefined}
+        accessibilityLabel={standalone ? name : undefined}
+      />
+    );
+  }
+
+  if (isAvatarPreset(preset)) {
+    return (
+      <View
+        accessibilityRole={standalone ? 'image' : undefined}
+        accessibilityLabel={standalone ? name : undefined}
+        aria-hidden={standalone ? undefined : true}
+      >
+        <AvatarArt preset={preset} size={size} />
+      </View>
+    );
+  }
 
   const background = colors[tintFor(name)];
   // Per colour, not per theme: in light, white reads on `primary` (10.94:1) but not on

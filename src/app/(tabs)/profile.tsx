@@ -62,7 +62,7 @@ export default function ProfileScreen() {
       <PendingChip />
 
       <View style={styles.identity}>
-        {name ? <Avatar name={name} size={64} standalone /> : null}
+        {name ? <Avatar name={name} size={64} standalone preset={profile.data?.avatar_preset} /> : null}
         <View style={styles.identityText}>
           <Text style={[type.display, { color: colors.text }]} numberOfLines={2}>
             {name}
