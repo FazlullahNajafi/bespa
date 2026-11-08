@@ -1747,6 +1747,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      village_chain: {
+        Args: { unit: string }
+        Returns: {
+          block: string
+          district: string
+          name_bft: string
+          name_en: string
+        }[]
+      }
       withdraw_gallery_image: { Args: { image_id: string }; Returns: string }
       withdraw_place: { Args: { place_id: string }; Returns: string[] }
     }

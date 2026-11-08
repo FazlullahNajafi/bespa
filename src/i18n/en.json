@@ -289,7 +289,8 @@
     "empty": "Nobody from your village has joined yet.",
     "noMatches": "No one matches that.",
     "noNumber": "They have not added a number yet.",
-    "noDialer": "This phone cannot place calls."
+    "noDialer": "This phone cannot place calls.",
+    "noSarpanch": "No sarpanch contact yet. Your panchayat admin can add one."
   },
   "composer": {
     "title": "Write a notice",

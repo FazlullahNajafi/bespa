@@ -9,11 +9,12 @@ import { EmptyState } from '@/components/empty-state';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { NoticeCard } from '@/components/notice-card';
+import { DirectoryPreview } from '@/components/directory-preview';
 import { PlacesStrip } from '@/components/places-strip';
 import { StatGrid } from '@/components/stat-grid';
 import { VillageBanner } from '@/components/village-banner';
 import { WeatherCard } from '@/components/weather-card';
-import { useGeoUnit } from '@/api/geo';
+import { useVillageChain } from '@/api/geo';
 import { useNotices } from '@/api/notices';
 import { useMyWeatherPoint } from '@/api/weather';
 import { useMyProfile } from '@/api/profile';
@@ -66,7 +67,7 @@ export default function HomeScreen() {
 
   const { session } = useSession();
   const profile = useMyProfile(session?.user.id);
-  const village = useGeoUnit(profile.data?.village_id);
+  const village = useVillageChain(profile.data?.village_id);
   const point = useMyWeatherPoint(Boolean(profile.data?.village_id));
   // Spec 03.1 section 6: the latest three, pinned first. The query already orders
   // that way, so the limit is the whole of the rule.
@@ -80,6 +81,14 @@ export default function HomeScreen() {
   const latest = useMemo(() => latestByMetric(stats.data ?? []), [stats.data]);
 
   const name = profile.data?.full_name?.trim() || '';
+
+  // "Sankoo block · Kargil", with either side omitted when it is not there.
+  const where = [village.data?.block, village.data?.district]
+    .filter(Boolean)
+    // A village whose block and district share a name — Kargil sits in Kargil — reads
+    // as a stutter, so the duplicate is dropped rather than printed twice.
+    .filter((part, i, all) => all.indexOf(part) === i)
+    .join(' · ');
   const tint = {
     primary: { soft: colors.infoSurface, solid: colors.primary },
     accent: { soft: colors.accentSoft, solid: colors.accent },
@@ -98,6 +107,18 @@ export default function HomeScreen() {
           <Text style={[type.display, { color: colors.text }]} numberOfLines={2}>
             {name ? t('home.greetingNamed', { name }) : t('home.greeting')}
           </Text>
+          {/* Spec 03.1 §1 wants the Purgi name and `block · district` under the
+              greeting. Each half is dropped when it is missing rather than rendered
+              as an empty separator — most villages have a block, few have a Purgi
+              transliteration recorded yet, and "Gongma Minjee ·" reads as a bug. */}
+          {village.data?.name_bft ? (
+            <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
+              {village.data.name_bft}
+            </Text>
+          ) : null}
+          {where ? (
+            <Text style={[type.caption, { color: colors.textSecondary }]}>{where}</Text>
+          ) : null}
         </View>
         {name ? (
           <Pressable
@@ -255,6 +276,12 @@ export default function HomeScreen() {
       </Pressable>
 
       <PlacesStrip villageId={profile.data?.village_id} />
+
+      {/* Section 8 of spec 03.1. */}
+      <Text style={[type.caption, styles.sectionLabel, { color: colors.textSecondary }]}>
+        {t('directory.title')}
+      </Text>
+      <DirectoryPreview villageId={profile.data?.village_id} />
     </Screen>
   );
 }

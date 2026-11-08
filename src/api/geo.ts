@@ -73,6 +73,39 @@ export function useGeoUnit(id: string | null | undefined) {
 }
 
 /**
+ * A village and the two units above it, in one request.
+ *
+ * Home's header wants "Gongma Minjee · Sankoo block, Kargil" (spec 03.1 §1), which is
+ * three rows of `geo_units` joined to each other. PostgREST can follow a self-reference
+ * when the constraint is named, so this is one round trip rather than three — on a cold
+ * start over 2G that difference is the header appearing with the screen or a second
+ * after it.
+ *
+ * Cached for a day, like `useGeoUnit`: a village does not change block very often, and
+ * when it does the 2026 district split showed that a migration is what moves it.
+ */
+export type VillageChain = {
+  name_en: string;
+  name_bft: string | null;
+  /** The block, when the village has one. */
+  block: string | null;
+  district: string | null;
+};
+
+export function useVillageChain(id: string | null | undefined) {
+  return useQuery({
+    queryKey: keys.geo.chain(id ?? ''),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60 * 60 * 24,
+    queryFn: async (): Promise<VillageChain | null> => {
+      const { data, error } = await supabase.rpc('village_chain', { unit: id! });
+      if (error) throw error;
+      return ((data as VillageChain[] | null)?.[0]) ?? null;
+    },
+  });
+}
+
+/**
  * Setting a village is a mutation, so it goes through the outbox like every other one
  * (spec 10.3). It is registered at module load rather than inside the hook, so a row
  * queued offline can still be drained on a cold start before any screen has mounted.

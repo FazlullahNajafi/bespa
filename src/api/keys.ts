@@ -13,6 +13,8 @@ export const keys = {
     all: ['geo'] as const,
     children: (parentId: string | null) => ['geo', 'children', parentId] as const,
     unit: (id: string) => ['geo', 'unit', id] as const,
+    /** A village plus the block and district above it, for Home's header. */
+    chain: (id: string) => ['geo', 'chain', id] as const,
   },
   weather: {
     all: ['weather'] as const,
