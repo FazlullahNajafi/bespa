@@ -99,6 +99,15 @@ start an Android activity, with the package named so three installed variants ca
 confused. `S.browser_fallback_url` carries the plain scheme URL for a non-Chromium
 browser. Verified on the device: Chrome → 302 → intent → dev client in the foreground.
 
+**A `succeeded` session has not necessarily given you anything.** The status endpoint
+returns `status: "succeeded"` with `documents_consented: []` when the person signed in to
+DigiLocker but shared no licence — because theirs is not in DigiLocker, or because they
+did not tick it on the consent screen — and the document endpoint then answers `400
+Consent for driving_license not provided`. Read as a provider failure this becomes
+"DigiLocker could not be reached", which is both wrong and useless: the remedy is the
+photograph path, not a retry. `digilocker-finish` checks `documents_consented` and closes
+the session as `no_document`, which is ours and not the provider's vocabulary.
+
 **The scheme's landing path needs a route.** `openAuthSessionAsync` normally swallows the
 redirect, but it is a real deep link and the router sees it too — without
 `src/app/digilocker.tsx` the driver gets "Unmatched Route" at the end of a flow that

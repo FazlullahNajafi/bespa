@@ -15,6 +15,7 @@ import { CORS, digilocker, json } from '../_shared/sandbox.ts';
  */
 
 const BUCKET = 'documents';
+const DOC = 'driving_license';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
@@ -58,15 +59,37 @@ Deno.serve(async (req) => {
   }
   if (session.status === 'succeeded') return json({ status: 'succeeded' });
 
+  /**
+   * Closing a session that succeeded at signing in but shared nothing.
+   *
+   * Not an error, and it must not be reported as one: DigiLocker answered, clearly, that
+   * it has no driving licence to give. Either the licence is not in this person's
+   * DigiLocker or they did not tick it on the consent screen, and both have the same
+   * remedy — the photograph path, which is still open.
+   */
+  async function markNoDocument(why: string) {
+    await asService
+      .from('digilocker_sessions')
+      .update({ status: 'no_document', finished_at: new Date().toISOString(), failure: why })
+      .eq('session_id', sessionId);
+
+    return json({ status: 'no_document' });
+  }
+
   // 1. What does the provider say?
   let status = 'created';
+  let consented: unknown[] = [];
   try {
     const res = await digilocker(`/kyc/digilocker/sessions/${sessionId}/status`);
     if (!res.ok) {
       console.error('status failed', res.status, await res.text());
       return json({ error: 'provider_failed' }, 502);
     }
-    status = (await res.json())?.data?.status ?? 'created';
+    const body = await res.json();
+    status = body?.data?.status ?? 'created';
+    consented = Array.isArray(body?.data?.documents_consented)
+      ? body.data.documents_consented
+      : [];
   } catch (e) {
     console.error('status threw', e);
     return json({ error: 'provider_failed' }, 502);
@@ -86,14 +109,27 @@ Deno.serve(async (req) => {
     return json({ status });
   }
 
+  // `succeeded` means the sign-in succeeded, which is not the same as having been given
+  // anything. A session can come back succeeded with `documents_consented: []`, and the
+  // document endpoint then answers "Consent for driving_license not provided" — which
+  // read as a provider outage until this check existed.
+  if (!consented.includes(DOC)) {
+    return await markNoDocument(`${DOC} not consented`);
+  }
+
   // 2. Fetch the document descriptor.
   let file: { url?: string; metadata?: Record<string, unknown> } | undefined;
   try {
-    const res = await digilocker(
-      `/kyc/digilocker/sessions/${sessionId}/documents/driving_license`,
-    );
+    const res = await digilocker(`/kyc/digilocker/sessions/${sessionId}/documents/${DOC}`);
     if (!res.ok) {
-      console.error('document failed', res.status, await res.text());
+      const detail = await res.text();
+      console.error('document failed', res.status, detail);
+
+      // The same answer by another route, in case a future response omits
+      // `documents_consented` rather than returning it empty.
+      if (res.status === 400 && /consent/i.test(detail)) {
+        return await markNoDocument(detail.slice(0, 200));
+      }
       return json({ error: 'provider_failed' }, 502);
     }
     file = (await res.json())?.data?.files?.[0];

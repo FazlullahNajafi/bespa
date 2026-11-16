@@ -36,6 +36,12 @@ import { toErrorCode, toFunctionErrorCode, type ErrorCode } from '@/lib/errors';
 export type DigiLockerOutcome =
   | { status: 'verified' }
   | { status: 'cancelled' }
+  /**
+   * Signed in, shared nothing. DigiLocker answered clearly and the answer was "no
+   * licence here" — a different thing from a failure, and the only one of the three a
+   * driver can act on, so it gets its own words.
+   */
+  | { status: 'noDocument' }
   | { status: 'failed'; code: ErrorCode };
 
 /**
@@ -119,6 +125,7 @@ export function useVerifyLicenceWithDigiLocker() {
 
       const status = finished.data?.status;
       if (status === 'succeeded') return { status: 'verified' };
+      if (status === 'no_document') return { status: 'noDocument' };
 
       // `created` is consent still outstanding — they backed out, or never finished.
       // Anything else is DigiLocker declining, which is not the app's error to report as

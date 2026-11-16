@@ -124,9 +124,11 @@ export function DriverDocs() {
     setNote(
       outcome.status === 'verified'
         ? { key: 'driver.digilocker.verified', bad: false }
-        : outcome.status === 'cancelled'
-          ? { key: 'driver.digilocker.cancelled', bad: false }
-          : { key: `errors.${outcome.code}`, bad: true },
+        : outcome.status === 'noDocument'
+          ? { key: 'driver.digilocker.noDocument', bad: false }
+          : outcome.status === 'cancelled'
+            ? { key: 'driver.digilocker.cancelled', bad: false }
+            : { key: `errors.${outcome.code}`, bad: true },
     );
   }
 

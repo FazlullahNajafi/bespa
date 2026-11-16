@@ -780,6 +780,7 @@
       "or": "or send a photo",
       "verified": "Checked with DigiLocker. Nothing else to send.",
       "cancelled": "DigiLocker didn't finish. Try again, or send a photo instead.",
+      "noDocument": "DigiLocker did not give us your driving licence. Either it is not in your DigiLocker, or it was not ticked on the consent screen. You can send a photo instead.",
       "via": "Checked by the transport department"
     },
     "sent": "Sent. We will check it.",
