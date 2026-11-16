@@ -64,7 +64,8 @@
     "hold_expired": "Your seat hold expired. Please pick your seats again.",
     "unknown": "Something went wrong. Please try again.",
     "invalid_input": "That selection is no longer valid. Please pick again.",
-    "queued": "Saved. It will send when you're back online."
+    "queued": "Saved. It will send when you're back online.",
+    "provider_failed": "DigiLocker couldn't be reached. You can send a photo instead."
   },
   "onboarding": {
     "title": "Which village are you from?",
@@ -770,6 +771,14 @@
     "upload": "Send photo",
     "reupload": "Send another",
     "replace": "Replace",
+    "digilocker": {
+      "cta": "Check with DigiLocker",
+      "hint": "If your licence is in DigiLocker, we can check it with the transport department. No photo, no waiting.",
+      "or": "or send a photo",
+      "verified": "Checked with DigiLocker. Nothing else to send.",
+      "cancelled": "DigiLocker didn't finish. Try again, or send a photo instead.",
+      "via": "Checked by the transport department"
+    },
     "sent": "Sent. We will check it.",
     "rejectedBecause": "Sent back: {{reason}}",
     "notVerifiedYet": "Your licence has not been checked yet.",

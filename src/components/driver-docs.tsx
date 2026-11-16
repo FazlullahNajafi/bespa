@@ -15,6 +15,7 @@ import {
   type DocState,
   type DriverDocKind,
 } from '@/api/driver';
+import { useVerifyLicenceWithDigiLocker } from '@/api/digilocker';
 import { useSession } from '@/store/session';
 import { canPickImages, pickAndResize } from '@/lib/images';
 import { fontFamily, radius, space, type } from '@/theme/tokens';
@@ -37,6 +38,12 @@ import { useColors } from '@/theme/use-scheme';
  * on verification; gating it on all three would keep a licensed driver off the board
  * over a route permit he has not photographed, which empties the board for a clerical
  * reason rather than a safety one.
+ *
+ * **The licence row has two routes to the same `verified`.** DigiLocker fetches it from
+ * the issuer, which needs no photograph and no reviewer; the camera path stays exactly as
+ * it was, because a licence that exists only on paper is still the common case here and a
+ * driver whose licence is not in DigiLocker must not be left at a dead end. The DigiLocker
+ * button is the primary one only while the row is unsettled — see `api/digilocker.ts`.
  *
  * **The photos do not go to the gallery bucket.** `documents` is private to its owner
  * and a district reviewer — see `api/driver.ts`. A licence carries a name, an address
@@ -70,6 +77,8 @@ export function DriverDocs() {
   const docs = useMyDriverDocuments(Boolean(session));
   const submit = useSubmitDriverDocument();
 
+  const digilocker = useVerifyLicenceWithDigiLocker();
+
   const [busy, setBusy] = useState<DriverDocKind | null>(null);
   const [note, setNote] = useState<{ key: string; bad: boolean } | null>(null);
 
@@ -99,6 +108,26 @@ export function DriverDocs() {
     } finally {
       setBusy(null);
     }
+  }
+
+  /**
+   * Consent, then ask the server what happened.
+   *
+   * A cancelled run is reported with the `info` tone, not `danger`. Backing out of a
+   * government consent screen is a choice, and DigiLocker not holding your licence is
+   * ordinary here — neither is something to show a driver as an error when the
+   * photograph path is sitting directly underneath.
+   */
+  async function verifyWithDigiLocker() {
+    setNote(null);
+    const outcome = await digilocker.mutateAsync();
+    setNote(
+      outcome.status === 'verified'
+        ? { key: 'driver.digilocker.verified', bad: false }
+        : outcome.status === 'cancelled'
+          ? { key: 'driver.digilocker.cancelled', bad: false }
+          : { key: `errors.${outcome.code}`, bad: true },
+    );
   }
 
   return (
@@ -152,6 +181,10 @@ export function DriverDocs() {
           const state = stateOf(doc);
           const required = kind === 'licence';
 
+          // DigiLocker holds driving licences and nothing else on this list, so the
+          // option belongs on one row — and only while that row is still unsettled.
+          const offerDigiLocker = kind === 'licence' && state !== 'verified';
+
           return (
             <Card key={kind}>
               <View style={styles.row}>
@@ -181,6 +214,31 @@ export function DriverDocs() {
                 </Text>
               ) : null}
 
+              {/* An issuer-signed licence needs no reviewer and no photograph, so where
+                  it exists it is the better route — hence the primary button, with the
+                  camera demoted to the alternative beneath it. */}
+              {doc?.verified_via === 'digilocker' ? (
+                <Text style={[type.caption, { color: colors.textSecondary }]}>
+                  {t('driver.digilocker.via')}
+                </Text>
+              ) : null}
+
+              {offerDigiLocker ? (
+                <>
+                  <Text style={[type.caption, { color: colors.textSecondary }]}>
+                    {t('driver.digilocker.hint')}
+                  </Text>
+                  <Button
+                    label={t('driver.digilocker.cta')}
+                    loading={digilocker.isPending}
+                    onPress={() => void verifyWithDigiLocker()}
+                  />
+                  <Text style={[type.caption, styles.alternative, { color: colors.textSecondary }]}>
+                    {t('driver.digilocker.or')}
+                  </Text>
+                </>
+              ) : null}
+
               {canPickImages() ? (
                 <Button
                   label={
@@ -190,7 +248,11 @@ export function DriverDocs() {
                         ? t('driver.reupload')
                         : t('driver.replace')
                   }
-                  variant={state === 'notUploaded' || state === 'rejected' ? 'primary' : 'ghost'}
+                  variant={
+                    !offerDigiLocker && (state === 'notUploaded' || state === 'rejected')
+                      ? 'primary'
+                      : 'ghost'
+                  }
                   loading={busy === kind}
                   onPress={() => void send(kind)}
                 />
@@ -220,5 +282,6 @@ const styles = StyleSheet.create({
   },
   rowText: { flex: 1, gap: 2 },
   pills: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.xs },
+  alternative: { textAlign: 'center' },
   bold: { fontFamily: fontFamily.semibold, fontWeight: '600' },
 });

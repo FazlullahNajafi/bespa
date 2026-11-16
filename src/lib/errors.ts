@@ -23,6 +23,7 @@ export type ErrorCode =
   | 'seat_unavailable'
   | 'hold_expired'
   | 'invalid_input'
+  | 'provider_failed'
   | 'unknown';
 
 const KNOWN: ReadonlySet<string> = new Set<ErrorCode>([
@@ -37,6 +38,7 @@ const KNOWN: ReadonlySet<string> = new Set<ErrorCode>([
   'seat_unavailable',
   'hold_expired',
   'invalid_input',
+  'provider_failed',
   'unknown',
 ]);
 
@@ -114,6 +116,27 @@ export function toErrorCode(error: unknown): ErrorCode {
   if (status === 401 || status === 403) return 'not_permitted';
 
   return 'unknown';
+}
+
+/**
+ * An edge function's own answer about why it refused.
+ *
+ * `functions.invoke` turns a non-2xx into an error whose response body is left unread, so
+ * the machine string the function sent has to be pulled out of it deliberately. Without
+ * this, every provider failure reads "Something went wrong" — which tells a driver nothing
+ * about whether to wait, try again, or reach for the camera instead.
+ *
+ * Takes the parsed body and the status rather than a `Response`: the awaiting belongs to
+ * the caller, and this stays a pure function that a test can reach.
+ */
+export function toFunctionErrorCode(body: unknown, status?: number): ErrorCode {
+  const code = (body as { error?: unknown } | null | undefined)?.error;
+
+  // Only codes we have copy for. A function that invents one must not put its own string
+  // on a screen, which is the whole reason this file exists.
+  if (typeof code === 'string' && KNOWN.has(code)) return code as ErrorCode;
+
+  return toErrorCode({ status });
 }
 
 /** i18n key for an arbitrary error. Screens render `t(errorKey(e))`. */

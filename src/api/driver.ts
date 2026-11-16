@@ -30,6 +30,12 @@ export type DriverDocument = {
   status: 'pending' | 'approved' | 'rejected';
   reject_reason: string | null;
   submitted_at: string;
+  /**
+   * Who vouched for it. `digilocker` means the issuer did, and the screen says so —
+   * "being checked" and "checked by the transport department" are not the same claim,
+   * and a driver who went through consent should see which one he got.
+   */
+  verified_via: 'admin' | 'digilocker' | null;
 };
 
 export function stateOf(doc: DriverDocument | undefined): DocState {
@@ -47,7 +53,7 @@ export function useMyDriverDocuments(enabled: boolean) {
     queryFn: async (): Promise<DriverDocument[]> => {
       const { data, error } = await supabase
         .from('driver_documents')
-        .select('kind, storage_path, status, reject_reason, submitted_at');
+        .select('kind, storage_path, status, reject_reason, submitted_at, verified_via');
       if (error) throw error;
       return (data ?? []) as DriverDocument[];
     },
