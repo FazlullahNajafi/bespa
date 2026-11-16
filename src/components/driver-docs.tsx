@@ -203,7 +203,7 @@ export function DriverDocs() {
 
               <View style={styles.pills}>
                 <StatusPill label={t(`driver.state.${state}`)} tone={toneFor(state)} />
-                <Text style={[type.caption, { color: colors.textSecondary }]}>
+                <Text style={[type.caption, styles.pillNote, { color: colors.textSecondary }]}>
                   {required ? t('driver.required') : t('driver.optional')}
                 </Text>
               </View>
@@ -233,9 +233,16 @@ export function DriverDocs() {
                     loading={digilocker.isPending}
                     onPress={() => void verifyWithDigiLocker()}
                   />
-                  <Text style={[type.caption, styles.alternative, { color: colors.textSecondary }]}>
-                    {t('driver.digilocker.or')}
-                  </Text>
+                  {/* Only where the button underneath really is "send a photo". While one
+                      is already being checked that button says "Replace", and offering a
+                      photo they have already sent reads as though it never arrived. */}
+                  {state === 'reviewing' ? null : (
+                    <Text
+                      style={[type.caption, styles.alternative, { color: colors.textSecondary }]}
+                    >
+                      {t('driver.digilocker.or')}
+                    </Text>
+                  )}
                 </>
               ) : null}
 
@@ -281,7 +288,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowText: { flex: 1, gap: 2 },
-  pills: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.xs },
+  // The pill and its note sit on one line until they cannot. On the test device
+  // "Being checked" + "Needed before you can post" ran off the right edge with the last
+  // word cut in half — a row with no wrap does not shrink, it clips.
+  pills: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: space.sm,
+    paddingTop: space.xs,
+  },
+  pillNote: { flexShrink: 1 },
   alternative: { textAlign: 'center' },
   bold: { fontFamily: fontFamily.semibold, fontWeight: '600' },
 });
