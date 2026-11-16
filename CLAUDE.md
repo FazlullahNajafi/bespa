@@ -88,6 +88,22 @@ npx supabase secrets list   # compare `value` against sha256 of what you meant t
 
 That comparison is the only cheap way to tell a wrong key from a provider outage.
 
+**An edge function cannot serve an HTML page.** The gateway rewrites every function
+response to `Content-Type: text/plain` with `X-Content-Type-Options: nosniff` and
+`Content-Security-Policy: default-src 'none'; sandbox`, so a page is displayed as its own
+source with scripts, forms and navigation all inert. `digilocker-callback` was written as
+a meta-refresh page and a driver who had just consented was shown a screen of markup with
+no way back. It is now a **302 to an `intent://` URL** — no body for the gateway to
+neutralise, and `intent://` is how Chrome (which is what a Custom Tab is) is asked to
+start an Android activity, with the package named so three installed variants cannot be
+confused. `S.browser_fallback_url` carries the plain scheme URL for a non-Chromium
+browser. Verified on the device: Chrome → 302 → intent → dev client in the foreground.
+
+**The scheme's landing path needs a route.** `openAuthSessionAsync` normally swallows the
+redirect, but it is a real deep link and the router sees it too — without
+`src/app/digilocker.tsx` the driver gets "Unmatched Route" at the end of a flow that
+worked.
+
 ## Which backend the app talks to
 
 **`.env` points at the hosted project `oibfmuwjzzbqtybwafxa`.** The local Docker stack is

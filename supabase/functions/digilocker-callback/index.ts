@@ -13,6 +13,14 @@ import { safeScheme } from '../_shared/sandbox.ts';
  *
  * It must be deployed with `--no-verify-jwt`: the caller is a browser following a
  * redirect from a government site, with no Supabase session attached.
+ *
+ * **It cannot serve an HTML page, and the first version tried.** The Supabase edge
+ * gateway rewrites a function's response to `Content-Type: text/plain` with
+ * `X-Content-Type-Options: nosniff` and `Content-Security-Policy: default-src 'none';
+ * sandbox` — so a page meant to carry the user onward is displayed as its own source,
+ * with the meta refresh inert and the "tap here" link rendered as text. That is what a
+ * driver saw after consenting: a screen of markup and no way back. A redirect carries no
+ * body, so there is nothing for the gateway to neutralise.
  */
 
 Deno.serve((req) => {
@@ -28,22 +36,32 @@ Deno.serve((req) => {
 
   const target = `${scheme}://digilocker?${params.toString()}`;
 
-  // A meta-refresh page rather than a bare 302. Custom-scheme redirects from a 302 are
-  // unreliable in Android's Custom Tabs, and a user left on a blank error page has no
-  // idea the consent they just gave was recorded. The link is there for when the
-  // automatic hop does not fire.
-  return new Response(
-    `<!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="0; url=${target}">
-<title>Returning to Bespa</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #F6EFE4; color: #1A2238;
-         display: grid; place-items: center; height: 100vh; margin: 0; text-align: center; }
-  a { color: #2B3A6B; font-weight: 600; }
-</style>
-<p>Returning to Bespa…<br><a href="${target}">Tap here if nothing happens</a></p>`,
-    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-  );
+  /**
+   * An `intent://` URL rather than the bare scheme.
+   *
+   * Chrome — which is what a Custom Tab is — treats an unknown scheme in a redirect as an
+   * external launch and blocks it in cases where it cannot see a user gesture. `intent://`
+   * is the documented way to ask Chrome to start an Android activity, and naming the
+   * package removes the ambiguity of three installed variants claiming related schemes.
+   * `browser_fallback_url` is what a non-Chromium browser gets, and it is the plain scheme
+   * URL, so a Firefox Custom Tab still has a chance of hopping across.
+   */
+  const pkg = { 'bespa-dev': 'com.bespa.app.dev', 'bespa-preview': 'com.bespa.app.preview' }[
+    scheme
+  ] ?? 'com.bespa.app';
+
+  const intent =
+    `intent://digilocker?${params.toString()}` +
+    `#Intent;scheme=${scheme};package=${pkg};` +
+    `S.browser_fallback_url=${encodeURIComponent(target)};end`;
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: intent,
+      // Nothing here is worth a second visit, and a cached redirect would outlive the
+      // session id baked into it.
+      'Cache-Control': 'no-store',
+    },
+  });
 });
