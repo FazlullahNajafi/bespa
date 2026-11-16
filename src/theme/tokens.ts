@@ -232,10 +232,10 @@ export const urduAdjust = { fontSizeDelta: 2, lineHeightDelta: 4 } as const;
  * cheap, washed-out screens in the field (spec 04.2, 08.1).
  */
 export const seatState = {
-  free: { token: 'success', glyph: 'circle-outline', labelKey: 'transport.seat.free' },
-  held: { token: 'warning', glyph: 'clock', labelKey: 'transport.seat.held' },
-  booked: { token: 'danger', glyph: 'lock', labelKey: 'transport.seat.booked' },
-  selected: { token: 'primary', glyph: 'check', labelKey: 'transport.seat.selected' },
+  free: { token: 'success', glyph: 'circle-outline', labelKey: 'rides.seatState.free' },
+  beingTaken: { token: 'warning', glyph: 'clock', labelKey: 'rides.seatState.beingTaken' },
+  taken: { token: 'danger', glyph: 'lock', labelKey: 'rides.seatState.taken' },
+  yours: { token: 'primary', glyph: 'check', labelKey: 'rides.seatState.yours' },
 } as const satisfies Record<string, { token: ColorToken; glyph: string; labelKey: string }>;
 
 export const motion = {

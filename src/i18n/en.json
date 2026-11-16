@@ -593,8 +593,8 @@
     "anyDate": "Any date",
     "empty": "No rides posted yet. If you drive, you can post one.",
     "noMatch": "No rides on that route yet.",
-    "seatsFree": "{{count}} seat free",
-    "seatsFree_other": "{{count}} seats free",
+    "seatsFree": "{{count}} seat available",
+    "seatsFree_other": "{{count}} seats available",
     "seatsNone": "Full",
     "perSeat": "₹{{price}} per seat",
     "driverUnverified": "Not verified",
@@ -609,7 +609,7 @@
       "other": "Other vehicle"
     },
     "status": {
-      "open": "Seats free",
+      "open": "Seats available",
       "filling": "Filling up",
       "confirmed": "Confirmed",
       "departed": "Left",
@@ -620,7 +620,7 @@
     "pickSeats": "Pick your seats",
     "seatLabel": "Seat {{number}}, {{position}}, {{state}}",
     "seatState": {
-      "free": "Free",
+      "free": "Available",
       "yours": "Yours",
       "beingTaken": "Someone is choosing",
       "taken": "Taken"
@@ -729,7 +729,7 @@
       "goLive": "Go live",
       "goLiveTitle": "Put your van on the board",
       "goLiveIntro": "You will show for 45 minutes, then drop off by yourself.",
-      "seatsNow": "How many seats are free right now?",
+      "seatsNow": "How many seats are available right now?",
       "fare": "Fare per person (₹)",
       "stand": "Where are you waiting?",
       "standHint": "For example: main stand",
