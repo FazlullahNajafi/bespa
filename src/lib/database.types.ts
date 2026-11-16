@@ -256,8 +256,51 @@ export type Database = {
           },
         ]
       }
+      digilocker_sessions: {
+        Row: {
+          created_at: string
+          failure: string | null
+          finished_at: string | null
+          session_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          failure?: string | null
+          finished_at?: string | null
+          session_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          failure?: string | null
+          finished_at?: string | null
+          session_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digilocker_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "directory_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digilocker_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_documents: {
         Row: {
+          issuer_meta: Json | null
           kind: Database["public"]["Enums"]["driver_doc_kind"]
           reject_reason: string | null
           reviewed_at: string | null
@@ -266,8 +309,12 @@ export type Database = {
           storage_path: string
           submitted_at: string
           user_id: string
+          verified_via:
+            | Database["public"]["Enums"]["doc_verification_source"]
+            | null
         }
         Insert: {
+          issuer_meta?: Json | null
           kind: Database["public"]["Enums"]["driver_doc_kind"]
           reject_reason?: string | null
           reviewed_at?: string | null
@@ -276,8 +323,12 @@ export type Database = {
           storage_path: string
           submitted_at?: string
           user_id: string
+          verified_via?:
+            | Database["public"]["Enums"]["doc_verification_source"]
+            | null
         }
         Update: {
+          issuer_meta?: Json | null
           kind?: Database["public"]["Enums"]["driver_doc_kind"]
           reject_reason?: string | null
           reviewed_at?: string | null
@@ -286,6 +337,9 @@ export type Database = {
           storage_path?: string
           submitted_at?: string
           user_id?: string
+          verified_via?:
+            | Database["public"]["Enums"]["doc_verification_source"]
+            | null
         }
         Relationships: [
           {
@@ -1620,6 +1674,15 @@ export type Database = {
         }
         Returns: string
       }
+      record_digilocker_licence: {
+        Args: {
+          driver: string
+          meta: Json
+          session: string
+          storage_path: string
+        }
+        Returns: undefined
+      }
       record_notice_push: { Args: { p_notice_id: string }; Returns: number }
       register_my_device: {
         Args: { locale?: string; platform?: string; token: string }
@@ -1767,6 +1830,7 @@ export type Database = {
         | "cancelled_by_driver"
         | "no_show"
         | "completed"
+      doc_verification_source: "admin" | "digilocker"
       driver_doc_kind: "licence" | "permit" | "badge"
       event_category:
         | "religious_islamic"
@@ -1972,6 +2036,7 @@ export const Constants = {
         "no_show",
         "completed",
       ],
+      doc_verification_source: ["admin", "digilocker"],
       driver_doc_kind: ["licence", "permit", "badge"],
       event_category: [
         "religious_islamic",
