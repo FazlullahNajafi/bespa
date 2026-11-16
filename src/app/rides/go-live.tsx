@@ -10,6 +10,7 @@ import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
+import { StatusPill } from '@/components/status-pill';
 import { TextField } from '@/components/text-field';
 import {
   useEndLive,
@@ -151,39 +152,93 @@ export default function GoLiveScreen() {
     );
   }
 
-  // ---- already live: the screen becomes the two controls --------------------
+  // ---- already live: the screen becomes the controls ------------------------
   if (mine) {
+    const full = mine.seats_free === 0;
+
+    // Which of the two steppers is spinning. The mutation already carries the number it
+    // was given, so telling "one less" from "one more" needs no extra state.
+    const changingTo = setSeats.isPending ? (setSeats.variables?.seatsFree ?? null) : null;
+
     return (
       <Screen>
         <BackLink />
         <Text style={[type.display, { color: colors.text }]}>{t('rides.board.live')}</Text>
 
+        {/* The same pill the passengers' board shows, in the same words. A driver
+            looking at "0 seats left" has to work out what everyone else is being told;
+            "Full" is what they are being told. */}
         <Card>
-          <Text style={[type.body, styles.bold, { color: colors.text }]}>
-            {mine.from_label} → {mine.to_label}
-          </Text>
-          <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
-            {t('rides.board.seatsLeft', { count: mine.seats_free })}
-            {mine.claimed > 0
-              ? ` · ${t('rides.board.claimed', { count: mine.claimed })}`
-              : ''}
-          </Text>
+          <View style={styles.liveTop}>
+            <Text style={[type.body, styles.bold, styles.grow, { color: colors.text }]}>
+              {mine.from_label} → {mine.to_label}
+            </Text>
+            <StatusPill
+              label={
+                full
+                  ? t('rides.board.full')
+                  : t('rides.board.seatsLeft', { count: mine.seats_free })
+              }
+              tone={full ? 'warning' : 'success'}
+            />
+          </View>
+          {mine.claimed > 0 ? (
+            <Text style={[type.bodySmall, { color: colors.textSecondary }]}>
+              {t('rides.board.claimed', { count: mine.claimed })}
+            </Text>
+          ) : null}
         </Card>
 
-        <Banner message={t('rides.board.goLiveIntro')} tone="info" />
-
-        <Button
-          label={t('rides.board.minusSeat')}
-          variant="secondary"
-          leading={<Icon name="close" size={20} color={colors.primary} />}
-          loading={setSeats.isPending}
-          onPress={() =>
-            void setSeats.mutateAsync({
-              liveId: mine.id,
-              seatsFree: Math.max(0, mine.seats_free - 1),
-            })
-          }
+        <Banner
+          message={full ? t('rides.board.fullNote') : t('rides.board.goLiveIntro')}
+          tone="info"
         />
+
+        {/* Both directions. A count that only goes down leaves a driver whose passenger
+            walked off showing "Full" until the 45 minutes run out, and the one tap too
+            many is the easiest mistake to make on a stepper.
+
+            Two words each, not "One more seat": side by side, the longer label wraps in
+            one button and not the other, and the pair ends up visibly uneven. What they
+            change is written directly above them. */}
+        <View style={styles.seatRow}>
+          <View style={styles.grow}>
+            <Button
+              label={t('rides.board.minusOne')}
+              variant="secondary"
+              disabled={full || setSeats.isPending}
+              loading={changingTo !== null && changingTo < mine.seats_free}
+              onPress={() =>
+                void setSeats.mutateAsync({
+                  liveId: mine.id,
+                  seatsFree: Math.max(0, mine.seats_free - 1),
+                })
+              }
+            />
+          </View>
+          <View style={styles.grow}>
+            <Button
+              label={t('rides.board.plusOne')}
+              variant="secondary"
+              disabled={mine.seats_free >= cap || setSeats.isPending}
+              loading={changingTo !== null && changingTo > mine.seats_free}
+              onPress={() =>
+                void setSeats.mutateAsync({
+                  liveId: mine.id,
+                  seatsFree: Math.min(cap, mine.seats_free + 1),
+                })
+              }
+            />
+          </View>
+        </View>
+
+        {/* Departed is destructive — it takes the van off the board and going live again
+            is a new row — and it sits under a control meant to be tapped repeatedly.
+            The banner above changes height as the van fills and empties, so everything
+            below it moves between taps; without this gap a thumb aimed at the seat
+            buttons can land on Departed. Found exactly that way on the device. */}
+        <View style={styles.departGap} />
+
         <Button
           label={t('rides.board.departed')}
           variant="danger"
@@ -333,6 +388,9 @@ const styles = StyleSheet.create({
   vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   grow: { flex: 1 },
   bold: { fontFamily: fontFamily.semibold, fontWeight: '600' },
+  liveTop: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  seatRow: { flexDirection: 'row', gap: space.sm },
+  departGap: { height: space.lg },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   step: {
     width: 64,

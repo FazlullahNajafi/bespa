@@ -16,7 +16,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(21);
 
 set search_path = public, extensions;
 
@@ -109,6 +109,38 @@ select is(
   (select seats_free from live_board()),
   3::smallint,
   'and the newer count is the one shown');
+
+-- ---------------------------------------------------------------------------
+-- Changing the count while live
+--
+-- `go_live` refuses more seats than the van has, so `set_live_seats` must too — it is
+-- the only way the number changes afterwards, and a rule that holds until the first
+-- adjustment does not hold. Both ends clamp rather than raise: the caller is a stepper,
+-- and there is no wrong number to report back to one, only a limit to stop at.
+-- ---------------------------------------------------------------------------
+
+select set_live_seats((select id from live_board()), 9::smallint);
+select is(
+  (select seats_free from live_board()),
+  6::smallint,
+  'a count above the van capacity is clamped to it, not published');
+
+select set_live_seats((select id from live_board()), (-2)::smallint);
+select is(
+  (select seats_free from live_board()),
+  0::smallint,
+  'and below zero is clamped to zero — a full van, which the board shows as full');
+
+select tests_become('00000000-0000-0000-0000-0000000e1103');
+select throws_ok(
+  $$ select set_live_seats((select id from live_board()), 4::smallint) $$,
+  '42501',
+  null,
+  'a stranger cannot change the seats showing on someone else''s van');
+
+-- Back to where the rest of this file expects it.
+select tests_become('00000000-0000-0000-0000-0000000e1101');
+select set_live_seats((select id from live_board()), 3::smallint);
 
 -- ---------------------------------------------------------------------------
 -- The number on the board is the published one, never the profile's

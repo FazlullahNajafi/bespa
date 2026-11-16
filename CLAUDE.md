@@ -61,6 +61,33 @@ rename `%LOCALAPPDATA%\Docker\run` and `%LOCALAPPDATA%\docker-secrets-engine`, r
 them empty, and restart Docker Desktop (a per-user install, at
 `%LOCALAPPDATA%\Programs\DockerDesktop`).
 
+## DigiLocker (licence verification)
+
+The provider is **Sandbox** — `sandbox.co.in`, an aggregator in front of DigiLocker.
+"Sandbox" is the company's name, **not an environment**: `key_live_…` really are
+production keys hitting `api.sandbox.co.in`, and every call is billable. The environment
+is the key prefix, which is why `_shared/sandbox.ts` derives the base URL from the key
+rather than configuring the two apart.
+
+Three edge functions — `digilocker-start`, `digilocker-callback` (deployed
+`--no-verify-jwt`), `digilocker-finish`. The API secret can pull a person's government
+documents, so it lives only in Supabase's secret store; an APK is a zip file and nothing
+goes in the bundle. `supabase functions deploy` **segfaults on this host** (`exit 139`,
+the same Docker-bundling fault as the disabled edge runtime) — deploy with `--use-api`,
+which bundles server-side.
+
+**`supabase secrets set` can set one of two and report success.** `SANDBOX_API_SECRET`
+landed and `SANDBOX_API_KEY` held some other value entirely, which authenticates as
+nothing: every call 502s, the app says "DigiLocker could not be reached", and the
+function logs are not readable from this shell. `secrets list` prints a **SHA-256 of each
+value**, so it can be checked without ever revealing one:
+
+```bash
+npx supabase secrets list   # compare `value` against sha256 of what you meant to set
+```
+
+That comparison is the only cheap way to tell a wrong key from a provider outage.
+
 ## Which backend the app talks to
 
 **`.env` points at the hosted project `oibfmuwjzzbqtybwafxa`.** The local Docker stack is
