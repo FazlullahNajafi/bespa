@@ -1,0 +1,4 @@
+# Shell scripts run on Linux runners. A CRLF checkout makes bash fail on the shebang
+# line with a carriage return it reports as "command not found", which reads like
+# anything but a line ending.
+*.sh text eol=lf

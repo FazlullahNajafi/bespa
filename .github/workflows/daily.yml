@@ -32,6 +32,17 @@ jobs:
         with:
           python-version: '3.12'
 
+      # The same check the quarter-hourly job runs, with REQUIRE=1: this one keeps
+      # failing while the repository is unconfigured, so a setup task that was never done
+      # stays visible at one mail a day rather than 96.
+      - name: Check configuration
+        id: cfg
+        env:
+          REQUIRE: '1'
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: bash .github/check-secrets.sh
+
       # Mirrors anything new from kargil.nic.in. Already idempotent: the PDF URL is the
       # natural key, so a re-run of the same page writes nothing.
       - name: Import official notices
@@ -58,7 +69,7 @@ jobs:
       # every day, so this only matters when they are skipped or fail early; it is one
       # request and it keeps the guarantee from depending on them.
       - name: Keep the project awake
-        if: always()
+        if: always() && steps.cfg.outputs.configured == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           # The same key the steps above already hold, rather than a third secret to set

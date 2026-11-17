@@ -33,7 +33,23 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Without the secrets the send fails in under a second and GitHub mails "all jobs
+      # have failed" — every quarter hour, forever. That is what it did: 58 runs, every
+      # one there had ever been, from the day this file was added. The check says which
+      # secret is missing, in the job summary, where it can be read without logging in.
+      #
+      # An unconfigured repository stops here *successfully*. Setting a secret is a thing
+      # you do once, and an alarm 96 times a day about it is not a signal. The daily job
+      # runs the same check with REQUIRE=1 and keeps failing, so this cannot be lost.
+      - name: Check configuration
+        id: cfg
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: bash .github/check-secrets.sh
+
       - name: Announce new notices
+        if: steps.cfg.outputs.configured == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

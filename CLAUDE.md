@@ -364,6 +364,18 @@ two repository secrets, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` — that key i
 `sb_secret_` one, which belongs in GitHub's secret store and nowhere in the repo. Run it
 by hand from the Actions tab with the `dry_run` input to see what it would do.
 
+**Those secrets were never set, and the jobs had never once succeeded** — 58 announce
+runs and 15 daily runs, every run there had ever been since 2026-11-02, all red. So no
+notice has ever been pushed, and the keep-awake request the paragraph below depends on
+has never been made. Nothing said so: every secret-consuming step failed in under a
+second and the mail said only that a run had failed in four. `.github/check-secrets.sh`
+is the fix for the silence — it names the missing secret in the **job summary**, which
+is readable without authentication, and describes a key that is present by length and
+prefix, because "set but it is the publishable key" fails in exactly the same second as
+"not set". The quarter-hourly job stops *successfully* when unconfigured (96 alarms a
+day about a one-time setup task is not a signal); the daily job fails, so it cannot be
+forgotten. `docs/turning-on-notice-push.md` is the same ground for the user.
+
 **A free Supabase project pauses after about 7 days of inactivity, and a paused project's
 subdomain stops resolving at all** — so the app reports "you're offline" on a phone with
 full signal and a working cable, and `nslookup` on the host returns NXDOMAIN. Check with
