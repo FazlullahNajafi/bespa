@@ -54,9 +54,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned, not `latest`. Two reasons, and the second is the one that bites.
+      #
+      # `latest` has to resolve a release at job time, and on 2026-11-18 that resolution
+      # failed outright — the job died in eleven seconds before Postgres existed, so the
+      # pgTAP step was skipped and the run was red for a reason unrelated to the code.
+      #
+      # And a floating version means CI and this machine can disagree about the Postgres
+      # image, which is exactly how `revoke execute ... from public` looked correct here
+      # for two weeks: the newer image applies default privileges granting EXECUTE to
+      # `anon`, the older one did not, and only CI ever saw it. Pinning does not fix that
+      # divergence, but it makes the version a thing you change deliberately and can
+      # reproduce locally with `npx supabase@3.2.0`.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.2.0
 
       # pgTAP needs Postgres and nothing else, so every other service is excluded —
       # that is the full list the CLI accepts, and it turns a four-minute image pull
@@ -71,6 +83,10 @@ jobs:
       - name: RLS policy tests
         run: supabase test db
 
+      # Cleanup on an ephemeral runner: it cannot fail the job. When the CLI itself
+      # failed to install there is nothing to stop, and reporting that as a second
+      # failure buries the first.
       - name: Stop
         if: always()
+        continue-on-error: true
         run: supabase stop --no-backup
