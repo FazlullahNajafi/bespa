@@ -471,6 +471,26 @@ makes `select *` fail outright, which through PostgREST is a trap. **Any new use
 table needs the same treatment** — grant the columns a user may write and put the rest
 behind a definer function.
 
+**`revoke execute ... from public` does not close a function to `anon`.** Supabase's
+default privileges grant EXECUTE on every new function in `public` to `anon`,
+`authenticated` and `service_role` *explicitly*, and revoking from PUBLIC does not touch
+an explicit grant — the ACL reads `anon=X/postgres` afterwards. That line is used
+throughout this repo and had closed nothing: every definer function was callable with the
+publishable key, which ships inside the APK. Most survive it by checking `auth.uid()`
+themselves; six did not, because their caller was always a script or an edge function
+holding the secret key, and for those the GRANT *was* the security. The worst was
+`notice_push_queue`, which returns `expo_token` per user while the sender's own docstring
+says the secret key is "the ONLY key that may read a push token". Migration
+`20261118060000` revokes from `anon, authenticated` by name, and
+`supabase/tests/function_grants.test.sql` asserts all six so a new service-key function
+added without its revoke fails there rather than in a village.
+
+**It was invisible locally and only CI saw it**, because `ci.yml` pins
+`supabase/setup-cli@v1` to `version: latest` while this machine is on 2.115, and the
+newer Postgres image sets those default privileges where the older one did not. The
+pgTAP assertion was right in both places; only one of the two databases was telling the
+truth. When a privilege test passes here and fails there, trust the failure.
+
 **Errors never surface raw.** `src/lib/errors.ts` maps every Postgres/GoTrue failure to a
 stable `ErrorCode` resolving to an `errors.*` i18n key. PostgREST reads the digits after
 `PT` in a SQLSTATE as an HTTP status, which is how `PT429` becomes a 429 — a plain
