@@ -143,8 +143,16 @@ commission. Charging for a ride booking would push drivers back to phone calls i
    Union endorsement would solve both verification and cold start at once.
 5. **SMS/OTP provider and cost** — phone verification is the one hard per-user cost.
    Budget it, and decide whether Google sign-in can carry users who cannot receive SMS.
-6. **Purgi orthography** — Latin transliteration or Perso-Arabic script? This must be
-   settled with local input before any Purgi string is written, because it is expensive to
-   change later.
+6. **Purgi orthography** — ~~Latin transliteration or Perso-Arabic script?~~ **Settled
+   2026-11-23: all three, Tibetan script included**, which this question never offered.
+   Purgi is read in three scripts in Kargil depending on who is reading, so choosing one
+   would have been choosing a readership. They are script subtags of one language rather
+   than three languages — `bft-Latn`, `bft-Arab`, `bft-Tibt` — and the translator fills
+   them as adjacent columns of one sheet, because they are transliterations of each other
+   rather than three translation efforts. The Tibetan register is deliberately the script
+   as a local reads it, not literary Bhoti, which the valley would not follow. Latin can
+   begin today; the other two cannot render until their fonts are bundled, because DM
+   Sans has no Arabic and no Tibetan glyphs and React Native draws tofu rather than
+   falling back.
 7. **Name** — does "Bespa" carry a meaning in Purgi that should shape the identity and the
    illustration set?

@@ -178,7 +178,24 @@ python scripts/check-contrast.py     # asserts spec 08.6 contrast floors against
 python scripts/gen-icons.py          # src/components/icon.tsx, from the design export
 python scripts/gen-geo-seed.py       # supabase/seed/002_*.sql, from the district spreadsheet
 python scripts/geocode-villages.py   # supabase/seed/003_*.sql, hits two geocoding APIs
+
+python scripts/i18n-export.py        # i18n.csv — 672 strings for the translator
+python scripts/i18n-import.py i18n.csv   # writes src/i18n/{ur,bft-*}.json
 ```
+
+**Purgi is three locales, not one.** Spec 09.4 #6 asked Latin or Perso-Arabic and was
+answered 2026-11-23 with all three, Tibetan script included — `bft-Latn`, `bft-Arab`,
+`bft-Tibt`, script subtags of one language, because Purgi is read in three scripts in
+Kargil and picking one picks a readership. The Tibetan register is the script as a local
+reads it, not literary Bhoti.
+
+**Only Latin can render today.** The app bundles four DM Sans faces and nothing else, and
+DM Sans carries no Arabic and no Tibetan glyphs. React Native does **not** fall back to a
+system face when the `fontFamily` it was given lacks the glyph — it draws tofu, the same
+failure as the old tab icons. So `ur`, `bft-Arab` and `bft-Tibt` bundles may be filled
+before their fonts exist and will show empty boxes until Noto Nastaliq Urdu / Noto Serif
+Tibetan are bundled and `tokens.ts` picks a family by active language instead of naming
+DM Sans outright. `docs/translating-the-app.md` is the translator's half.
 
 ### EAS builds and updates
 
