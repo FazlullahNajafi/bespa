@@ -273,7 +273,7 @@ order — notices first, because the district mirror is useful at zero local par
 | The outbox | Done | Verified on device, `PendingChip` mounted, retry policy unit-tested. |
 | Offline cache | Done | A profile renders offline on a cold start; the phone number deliberately does not. |
 | Notices — reading | Done | List, detail, document link, share text, and the card on Home. The mirror imports daily and never deletes. |
-| Notices — announcing | Done | Push registration, the fan-out queue, and the daily sender. |
+| Notices — announcing | Done, and finally running | Push registration, the fan-out queue, and the daily sender. The sender had never once succeeded until 2026-11-22: its two repository secrets were never set, so 73 scheduled runs failed in four seconds each. `.github/check-secrets.sh` is why the next one will say so. |
 | Notices — composing | Done | The composer screen, verified on device. Expiry is four choices rather than a date picker — a picker is native code and a new build, to say "about a week". |
 | Village directory | Done | Migration, API module, screen, and 16 pgTAP assertions. The contact reveal is rate-limited and audited where the subject can read it. |
 | Village gallery | Done | Submit through the outbox, moderate, pager, tab tagging, and the admin-chosen Home banner. 26 pgTAP assertions. |
@@ -286,13 +286,11 @@ order — notices first, because the district mirror is useful at zero local par
 | Crash reporting | Done | Sentry on from `preview` upward, off in dev by design. Source-map upload verified on build `95bf076f`. |
 | Android chrome | Done | Edge-to-edge handled in one place: the status-bar band, keyboard avoidance, and exactly one payer for the bottom inset. |
 | CI | Done | Two jobs on every push and PR, including pgTAP against a fresh database. |
-| Transport, Calendar, Services | Phase 2–3 | Three stubs naming the phase that will build them. Nothing invented in the meantime. |
-
----
-
+| Calendar, Services | Phase 2 | Two stubs naming the phase that will build them. Nothing invented in the meantime. Transport is no longer one of them. |
 | Transport — long distance | Prototype, working | Post, browse, hold, book, cancel, with spec 04.6's `trip_seats` concurrency enforced in the database and 35 pgTAP assertions, eight of them the two-passengers-one-seat race. No ratings, payment QR or Realtime. |
 | Transport — the live board | Prototype, working | Spec 04.4's short-distance half: go live, 45-minute auto-expiry evaluated on read, "I'm coming" as a ten-minute courtesy signal. 18 assertions. |
 | Driver verification | Done | Three RTO documents in a private `documents` bucket readable by their owner and a district reviewer only, a fourth onboarding step, and spec 04.5's gate on posting. 24 assertions, four of them the privacy boundary. |
+| Driver verification — DigiLocker | Built, one path unproven | A second route to `approved` beside the photograph: consent in a Custom Tab, the licence fetched from the issuer and filed with no human reviewer. Three edge functions, 9 pgTAP assertions, and every refusal path walked on the device. **A consent that actually shares a licence has never completed**, so the storage upload and `record_digilocker_licence` are proved only by pgTAP. |
 
 ---
 
@@ -319,16 +317,29 @@ order — notices first, because the district mirror is useful at zero local par
 The phasing is spec 09.1's, with Civic before Transport: it is lower-risk, and it builds
 the admin relationships that driver recruitment will need.
 
-**Finish Phase 1 — Village.** The composer, the gallery and Places are in. What is left
-is the village profile — description, cover photo, the my-village card — and **stats under
-the source-and-year rule**, which is now the interesting one: a fresh Ladakh census is due
-in 2026 and its results are not out, so every figure on that screen will be a 2011 number
-that has to be replaced without a migration. That settles spec 09.4's open question #3 in
-favour of the spec's `(metric_key, value, year, source)` row design: an admin edits a row,
-the screen renders the year beside the number, and nobody has to ship an app update to
-correct a population. Then Home's remaining sections, each independently empty-able.
-*Exit:* three pilot villages populated with real content by real admins, with no developer
-touching the database, and Home cold-starting to first paint under 4s on a 2 GB Android.
+**Phase 1 — Village — is built.** The composer, the gallery, Places, the directory, the
+village profile and the stats screen are all in. Stats follow the source-and-year rule,
+which settled spec 09.4's open question #3 in favour of the spec's
+`(metric_key, value, year, source)` row design: a fresh Ladakh census is due in 2026 and
+its results are not out, so every figure on that screen is a 2011 number that an admin
+must be able to replace without a migration. The year renders beside the number and
+nobody ships an app update to correct a population.
+
+What is left of Phase 1 is not code. *Exit:* three pilot villages populated with real
+content by real admins, with no developer touching the database, and Home cold-starting
+to first paint under 4s on a 2 GB Android. Neither half has been attempted, and until
+one has, everything above is a claim about software rather than about a village.
+
+**Two clocks that are not code, and should already be running.** Both take weeks of
+somebody else's time, and nothing in this repository shortens either:
+
+- **DLT / SMS registration.** Entity, header and template approval, one to three weeks.
+  Phone verification is half the Phase 0 exit criterion and the single hard per-user
+  cost. Until it exists, profile edit saves a number unverified against spec 03.6.
+- **Urdu and Purgi strings.** `en.json` is the only bundle; `ur` and `bft` are declared,
+  RTL is wired, and neither has a string in it. The audience is Kargil. Purgi cannot
+  begin at all until spec 09.4 #6 — the orthography — is settled, and that is a decision
+  for a speaker, not a developer.
 
 **Phase 2 — Civic.** The dual calendar and `hijri.ts` — a tabular implementation in-repo,
 about 60 lines, unit-tested against dates a local scholar supplies, because this is risk
